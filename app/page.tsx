@@ -17,12 +17,12 @@ export default function Home() {
   ];
 
   const services = [
-    "아파트 매매",
-    "전세",
-    "상가 매매",
-    "상가 임대",
-    "토지",
-    "무료 시세 분석",
+    "상가 매매.임대",
+    "원룸,투룸,다가구",
+    "아파트 매매,전세",
+    "오피스텔 매매,임대",
+    "창고,공장 전문",
+    "토지 투자 상담",
   ];
 
   return (
@@ -48,15 +48,15 @@ export default function Home() {
             className="max-w-3xl"
           >
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-[#C9A227]">
-              대한민국 프리미엄 부동산
+              백조현대부동산중개
             </p>
             <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
-              당신의 자산,
+              가치를 보는 안목,
               <br />
-              가장 가치 있는 거래를 만듭니다.
+              신뢰를 만드는 중개
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-white/80 sm:text-xl">
-              신뢰와 전문성으로 고객의 자산 가치를 높여드립니다.
+              고객의 성공적인 부동산 선택을 위해 함께 고민하고 함께 만들어 가겠습니다.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
