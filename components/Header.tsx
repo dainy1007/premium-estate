@@ -1,40 +1,25 @@
 "use client";
 
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const navItems = [
   "HOME",
   "회사소개",
-  "서비스",
+  "전문분야",
   "추천매물",
-  "고객후기",
   "상담문의",
 ];
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setScrolled(latest > 20);
   });
-
-  useEffect(() => {
-    if (!mobileMenuOpen) {
-      return;
-    }
-
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setMobileMenuOpen(false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [mobileMenuOpen]);
 
   return (
     <motion.header
@@ -42,111 +27,118 @@ export default function Header() {
       animate={{
         opacity: 1,
         y: 0,
-        backgroundColor: scrolled ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0)",
-        boxShadow: scrolled
-          ? "0 10px 30px rgba(10, 37, 64, 0.08)"
-          : "0 0 0 rgba(0, 0, 0, 0)",
+        backgroundColor: scrolled
+          ? "rgba(255,255,255,0.96)"
+          : "rgba(255,255,255,0)",
       }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={{ duration: 0.3 }}
       className="fixed inset-x-0 top-0 z-50"
     >
-      <div className="mx-auto flex h-20 max-w-[1200px] items-center justify-between px-4 sm:px-6 lg:px-8">
+
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+
         <a href="#" className="flex items-center gap-3">
-          <div
-            className={`flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold tracking-[0.3em] ${
-              scrolled
-                ? "border-[#C9A227] bg-[#0A2540] text-[#C9A227]"
-                : "border-white/90 bg-white/10 text-white"
-            }`}
-          >
-            PE
+
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0A2540] text-xs font-bold text-[#C9A227]">
+            백조
           </div>
+
+
           <div>
-            <p
-              className={`text-base font-semibold tracking-[0.24em] ${
-                scrolled ? "text-[#0A2540]" : "text-white"
-              }`}
-            >
-              PREMIUM ESTATE
+
+            <p className={`font-bold tracking-wide ${
+              scrolled ? "text-[#0A2540]" : "text-white"
+            }`}>
+              백조현대부동산중개
             </p>
-            <p
-              className={`text-xs uppercase tracking-[0.3em] ${
-                scrolled ? "text-[#0A2540]/70" : "text-white/80"
-              }`}
-            >
-              Trusted Real Estate
+
+
+            <p className={`text-xs ${
+              scrolled ? "text-[#0A2540]/60" : "text-white/80"
+            }`}>
+              Trusted Real Estate Partner
             </p>
+
           </div>
+
         </a>
 
-        <nav className="hidden items-center gap-7 md:flex">
-          {navItems.map((item) => (
+
+        <nav className="hidden gap-8 md:flex">
+
+          {navItems.map((item)=>(
             <a
               key={item}
               href="#"
-              className={`text-sm font-medium transition-colors hover:text-[#C9A227] ${
-                scrolled ? "text-[#0A2540]" : "text-white"
+              className={`text-sm font-medium hover:text-[#C9A227] ${
+                scrolled
+                ? "text-[#0A2540]"
+                : "text-white"
               }`}
             >
               {item}
             </a>
           ))}
+
         </nav>
 
-        <div className="hidden md:block">
+
+        <div className="hidden md:flex items-center gap-3">
+
+          <a
+            href="tel:01077750014"
+            className="rounded-full border border-[#C9A227] px-4 py-2 text-sm font-semibold text-[#C9A227]"
+          >
+            ☎ 010-7775-0014
+          </a>
+
+
           <a
             href="#contact"
-            className="inline-flex items-center justify-center rounded-full bg-[#C9A227] px-5 py-2.5 text-sm font-semibold text-[#0A2540] shadow-lg shadow-[#C9A227]/20 transition-transform hover:-translate-y-0.5"
+            className="rounded-full bg-[#C9A227] px-5 py-2.5 text-sm font-semibold text-[#0A2540]"
           >
-            무료상담
+            상담문의
           </a>
+
         </div>
 
+
         <button
-          type="button"
-          aria-label="Toggle navigation"
-          onClick={() => setMobileMenuOpen((prev) => !prev)}
-          className={`flex h-11 w-11 items-center justify-center rounded-full border md:hidden ${
-            scrolled
-              ? "border-[#0A2540]/10 bg-white text-[#0A2540]"
-              : "border-white/30 bg-white/10 text-white"
-          }`}
+          onClick={()=>setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden text-white"
         >
-          <div className="flex flex-col gap-1.5">
-            <span className="block h-0.5 w-5 rounded-full bg-current" />
-            <span className="block h-0.5 w-5 rounded-full bg-current" />
-            <span className="block h-0.5 w-5 rounded-full bg-current" />
-          </div>
+          ☰
         </button>
+
       </div>
 
-      <motion.div
-        initial={false}
-        animate={{
-          height: mobileMenuOpen ? "auto" : 0,
-          opacity: mobileMenuOpen ? 1 : 0,
-        }}
-        transition={{ duration: 0.25, ease: "easeInOut" }}
-        className="overflow-hidden border-t border-[#0A2540]/10 bg-white/95 backdrop-blur md:hidden"
-      >
-        <div className="mx-auto flex max-w-[1200px] flex-col gap-3 px-4 py-4">
-          {navItems.map((item) => (
+
+      {mobileMenuOpen && (
+
+        <div className="bg-white p-6 md:hidden">
+
+          {navItems.map((item)=>(
             <a
               key={item}
               href="#"
-              className="text-sm font-medium text-[#0A2540] transition-colors hover:text-[#C9A227]"
+              className="block py-2 text-[#0A2540]"
             >
               {item}
             </a>
           ))}
+
+
           <a
-            href="#contact"
-            className="mt-2 inline-flex items-center justify-center rounded-full bg-[#C9A227] px-4 py-2.5 text-sm font-semibold text-[#0A2540]"
+            href="tel:01077750014"
+            className="mt-3 block rounded-full bg-[#C9A227] py-3 text-center font-semibold"
           >
-            무료상담
+            ☎ 전화 상담
           </a>
+
         </div>
-      </motion.div>
+
+      )}
+
     </motion.header>
   );
 }
