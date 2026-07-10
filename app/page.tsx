@@ -7,6 +7,7 @@ import FeaturedProperties from "../components/FeaturedProperties";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Testimonials from "../components/Testimonials";
+import Map from "../components/Map";
 
 export default function Home() {
   const stats = [
@@ -134,10 +135,11 @@ export default function Home() {
         </div>
       </section>
 
-      <FeaturedProperties />
-      <Testimonials />
-      <Contact />
-      <Footer />
+     <FeaturedProperties />
+<Testimonials />
+<Map />
+<Contact />
+<Footer />
     </main>
   );
 }
