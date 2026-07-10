@@ -110,7 +110,7 @@ export default function AdminPage() {
                       <div className="flex gap-2">
 
                         <Link
-                          href={`/properties/${property.id}`}
+                          href={`/admin/properties/${property.id}`}
                           className="rounded-full border px-4 py-2 text-sm"
                         >
                           보기
