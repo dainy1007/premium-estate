@@ -1,29 +1,105 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase";
 
 const transactionTypes = ["매매", "전세", "월세", "상가", "토지"];
 
 export default function NewPropertyPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [form, setForm] = useState({
+    title: "",
+    type: "",
+    deal_type: "",
+    location: "",
+    address: "",
+    price: "",
+    area: "",
+    contract_area: "",
+    exclusive_area: "",
+    rooms: 0,
+    bathrooms: 0,
+    floor: "",
+    description: "",
+    image_url: "",
+  });
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      setPreviewUrl(null);
-      return;
-    }
+const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
 
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-  };
+  if (!file) {
+    setPreviewUrl(null);
+    setImageFile(null);
+    return;
+  }
 
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    console.log("매물 등록 요청");
-  };
+  setImageFile(file);
+
+  const objectUrl = URL.createObjectURL(file);
+  setPreviewUrl(objectUrl);
+};
+
+  const handleSubmit = async (event: FormEvent) => {
+  event.preventDefault();
+
+  let uploadedImageUrl = "";
+
+  // 1. 이미지 업로드
+ if (imageFile) {
+  const fileName = `${Date.now()}-${imageFile.name}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("property-images")
+    .upload(fileName, imageFile);
+
+  if (uploadError) {
+    console.error(uploadError);
+    alert("이미지 업로드 실패");
+    return;
+  }
+
+  const { data } = supabase.storage
+    .from("property-images")
+    .getPublicUrl(fileName);
+
+  uploadedImageUrl = data.publicUrl;
+}
+
+  // 2. 매물 데이터 저장
+  const { error } = await supabase
+    .from("properties")
+    .insert([
+      {
+        title: form.title,
+        type: form.type,
+        deal_type: form.deal_type,
+        location: form.location,
+        address: form.address,
+        price: form.price,
+        area: form.area,
+        contract_area: form.contract_area,
+        exclusive_area: form.exclusive_area,
+        rooms: form.rooms,
+        bathrooms: form.bathrooms,
+        floor: form.floor,
+        description: form.description,
+        image_url: uploadedImageUrl,
+      },
+    ]);
+
+  if (error) {
+    console.error("매물 등록 오류:", error);
+    alert("매물 등록에 실패했습니다.");
+    return;
+  }
+
+  alert("매물이 등록되었습니다.");
+
+  window.location.href = "/admin";
+};
 
   return (
     <main className="min-h-screen bg-[#F8F9FB] px-4 py-8 text-[#0A2342] sm:px-6 lg:px-8">
@@ -60,13 +136,31 @@ export default function NewPropertyPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">매물명</label>
                 <input
+                  value={form.title}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      title: e.target.value,
+                    })
+                  }
                   className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
                   placeholder="예: 범어동 프리미엄 아파트"
                 />
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">거래유형</label>
-                <select className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]">
+                <select
+                  value={form.deal_type}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      deal_type: e.target.value,
+                      type: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
+                >
+                  <option value="">거래유형 선택</option>
                   {transactionTypes.map((type) => (
                     <option key={type} value={type}>
                       {type}
@@ -80,6 +174,13 @@ export default function NewPropertyPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">지역</label>
                 <input
+                  value={form.location}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      location: e.target.value,
+                    })
+                  }
                   className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
                   placeholder="예: 대구 수성구"
                 />
@@ -87,6 +188,13 @@ export default function NewPropertyPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">주소</label>
                 <input
+                  value={form.address}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      address: e.target.value,
+                    })
+                  }
                   className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
                   placeholder="예: 범어동 123-4"
                 />
@@ -97,6 +205,13 @@ export default function NewPropertyPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">가격</label>
                 <input
+                  value={form.price}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      price: e.target.value,
+                    })
+                  }
                   className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
                   placeholder="예: 6억 8,000만원"
                 />
@@ -104,6 +219,13 @@ export default function NewPropertyPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">면적</label>
                 <input
+                  value={form.area}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      area: e.target.value,
+                    })
+                  }
                   className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
                   placeholder="예: 84㎡"
                 />
@@ -115,6 +237,13 @@ export default function NewPropertyPage() {
                 <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">방 개수</label>
                 <input
                   type="number"
+                  value={form.rooms}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      rooms: Number(e.target.value),
+                    })
+                  }
                   className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
                   placeholder="3"
                 />
@@ -123,6 +252,13 @@ export default function NewPropertyPage() {
                 <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">욕실 개수</label>
                 <input
                   type="number"
+                  value={form.bathrooms}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      bathrooms: Number(e.target.value),
+                    })
+                  }
                   className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
                   placeholder="2"
                 />
@@ -130,8 +266,15 @@ export default function NewPropertyPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">층수</label>
                 <input
+                  value={form.floor}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      floor: e.target.value,
+                    })
+                  }
                   className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
-                  placeholder="12"
+                  placeholder="예: 7층 중 5층"
                 />
               </div>
             </div>
@@ -140,6 +283,13 @@ export default function NewPropertyPage() {
               <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">설명</label>
               <textarea
                 rows={5}
+                value={form.description}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    description: e.target.value,
+                  })
+                }
                 className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
                 placeholder="매물에 대한 상세 설명을 입력해주세요."
               />

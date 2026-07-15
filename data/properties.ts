@@ -1,4 +1,4 @@
-import type { Property } from "../types/property";
+import { supabase } from "../lib/supabase";
 
 export const properties: Property[] = [
   {
