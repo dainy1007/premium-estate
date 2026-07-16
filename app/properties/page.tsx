@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { parsePropertyPriceAmount } from "@/lib/property-price";
 import { supabase } from "@/lib/supabase";
 import { Property } from "@/types/property";
 
@@ -96,7 +97,7 @@ export default function PropertiesPage() {
       const matchesDealType = dealType === ALL || property.deal_type === dealType;
       const matchesLocation = location === ALL || property.location === location;
       const hasPriceFilter = minimum !== null || maximum !== null;
-      const amount = property.price_amount;
+      const amount = property.price_amount ?? parsePropertyPriceAmount(property.price);
       const matchesMinimum = minimum === null || (amount != null && amount >= minimum);
       const matchesMaximum = maximum === null || (amount != null && amount <= maximum);
       const matchesPrice = !hasPriceFilter || (amount != null && matchesMinimum && matchesMaximum);
@@ -110,13 +111,15 @@ export default function PropertiesPage() {
       }
 
       if (sortOption === "낮은가격순" || sortOption === "높은가격순") {
-        const aPrice = a.price_amount ?? Number.MAX_SAFE_INTEGER;
-        const bPrice = b.price_amount ?? Number.MAX_SAFE_INTEGER;
+        const aAmount = a.price_amount ?? parsePropertyPriceAmount(a.price);
+        const bAmount = b.price_amount ?? parsePropertyPriceAmount(b.price);
+        const aPrice = aAmount ?? Number.MAX_SAFE_INTEGER;
+        const bPrice = bAmount ?? Number.MAX_SAFE_INTEGER;
 
         if (sortOption === "낮은가격순") return aPrice - bPrice;
 
-        const highA = a.price_amount ?? -1;
-        const highB = b.price_amount ?? -1;
+        const highA = aAmount ?? -1;
+        const highB = bAmount ?? -1;
         return highB - highA;
       }
 
