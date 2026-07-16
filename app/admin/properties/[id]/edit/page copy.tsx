@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import {
-  useEffect,
-  useState,
-  type ChangeEvent,
-} from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function PropertyEditPage() {
@@ -16,8 +12,6 @@ export default function PropertyEditPage() {
   const id = Number(params.id);
 
   const [loading, setLoading] = useState(true);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [form, setForm] = useState({
   title: "",
@@ -68,79 +62,56 @@ export default function PropertyEditPage() {
 
 
 
- const handleImageChange = (
-  event: ChangeEvent<HTMLInputElement>
-) => {
-  const file = event.target.files?.[0];
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
 
-  if (!file) return;
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
 
-  setImageFile(file);
-
-  const objectUrl = URL.createObjectURL(file);
-
-  setPreviewUrl(objectUrl);
-};
-
-const handleChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-) => {
-  setForm((prev) => ({
-    ...prev,
-    [e.target.name]: e.target.value,
-  }));
-};
+  };
 
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
 
-  let imageUrl = form.image_url;
+    e.preventDefault();
 
-  if (imageFile) {
-    const fileName = `${Date.now()}-${imageFile.name}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("property-images")
-      .upload(fileName, imageFile);
+    const { error } = await supabase
+      .from("properties")
+      .update({
+        title: form.title,
+        price: form.price,
+        address: form.address,
+        area: form.area,
+        description: form.description,
+        location: form.address,
+      })
+      .eq("id", id);
 
-    if (uploadError) {
-      console.error("이미지 업로드 오류:", uploadError);
-      alert("이미지 업로드에 실패했습니다.");
+
+
+    if (error) {
+
+      console.error("수정 오류:", error);
+
+      alert("매물 수정 실패");
+
       return;
+
     }
 
-    const { data } = supabase.storage
-      .from("property-images")
-      .getPublicUrl(fileName);
 
-    imageUrl = data.publicUrl;
-  }
+    alert("매물이 수정되었습니다.");
 
-  const { error } = await supabase
-    .from("properties")
-    .update({
-      title: form.title,
-      price: form.price,
-      address: form.address,
-      area: form.area,
-      description: form.description,
-      location: form.address,
-      image_url: imageUrl,
-    })
-    .eq("id", id);
+    router.push("/admin");
 
-  if (error) {
-    console.error("수정 오류:", error);
-    alert("매물 수정에 실패했습니다.");
-    return;
-  }
-
-  alert("매물이 수정되었습니다.");
-  router.push("/admin");
-  router.refresh();
-};
+  };
 
 
 
@@ -282,42 +253,34 @@ const handleChange = (
             </label>
 
             <textarea
-  name="description"
-  value={form.description}
-  onChange={handleChange}
-  rows={6}
-  className="w-full rounded-xl border px-4 py-3"
-/>
 
-</div>
+              name="description"
 
-<div>
-  <label className="block mb-2 font-semibold">
-    이미지
-  </label>
+              value={form.description}
 
-  <input
-    type="file"
-    accept="image/*"
-    onChange={handleImageChange}
-    className="w-full rounded-xl border px-4 py-3"
-  />
+              onChange={handleChange}
 
-  {(previewUrl || form.image_url) && (
-    <img
-      src={previewUrl || form.image_url}
-      alt="미리보기"
-      className="mt-4 h-56 w-full rounded-xl object-cover"
-    />
-  )}
-</div>
+              rows={6}
 
-<button
-  type="submit"
-  className="rounded-full bg-[#C9A227] px-8 py-3 font-semibold text-[#0A2342]"
->
-  저장하기
-</button>
+              className="w-full rounded-xl border px-4 py-3"
+
+            />
+
+          </div>
+
+
+
+          <button
+
+            type="submit"
+
+            className="rounded-full bg-[#C9A227] px-8 py-3 font-semibold text-[#0A2342]"
+
+          >
+
+            저장하기
+
+          </button>
 
 
         </form>
