@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PropertyGallery from "@/components/properties/PropertyGallery";
+import PropertyShareActions from "@/components/properties/PropertyShareActions";
 
 interface PropertyDetailPageProps {
   params: Promise<{
@@ -24,6 +25,14 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
+  const { data: relatedProperties } = await supabase
+    .from("properties")
+    .select("id, title, price, location, deal_type, type, image_url")
+    .neq("id", Number(id))
+    .eq("type", property.type)
+    .order("created_at", { ascending: false })
+    .limit(3);
+
   const detailItems = [
     { label: "지역", value: property.location },
     { label: "기본 면적", value: property.area },
@@ -43,6 +52,9 @@ export default async function PropertyDetailPage({
       value: property.deal_type || property.type,
     },
   ].filter((item) => item.value);
+
+  const mapAddress = property.address || property.location;
+  const encodedAddress = encodeURIComponent(mapAddress || "대구광역시 달성군 유가읍");
 
   return (
     <main className="min-h-screen bg-white pb-24 text-[#0A2342] md:pb-0">
@@ -85,6 +97,8 @@ export default async function PropertyDetailPage({
               {property.price || "가격 문의"}
             </p>
 
+            <PropertyShareActions title={property.title} />
+
             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {detailItems.map((item) => (
                 <div key={item.label} className="rounded-2xl bg-[#F8F9FB] p-4">
@@ -98,6 +112,27 @@ export default async function PropertyDetailPage({
               <div className="mt-4 rounded-2xl bg-[#F8F9FB] p-4">
                 <p className="text-sm text-gray-500">상세 주소</p>
                 <p className="mt-1 font-semibold">{property.address}</p>
+              </div>
+            )}
+
+            {mapAddress && (
+              <div className="mt-4 flex flex-wrap gap-3">
+                <a
+                  href={`https://map.naver.com/p/search/${encodedAddress}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-[#0A2342]/15 px-4 py-2 text-sm font-semibold transition hover:border-[#C9A227] hover:bg-[#C9A227]/10"
+                >
+                  네이버지도에서 보기
+                </a>
+                <a
+                  href={`https://map.kakao.com/link/search/${encodedAddress}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-[#0A2342]/15 px-4 py-2 text-sm font-semibold transition hover:border-[#C9A227] hover:bg-[#C9A227]/10"
+                >
+                  카카오맵에서 보기
+                </a>
               </div>
             )}
 
@@ -143,6 +178,54 @@ export default async function PropertyDetailPage({
             </Link>
           </div>
         </div>
+
+        {relatedProperties && relatedProperties.length > 0 && (
+          <section className="mt-14">
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold tracking-[0.25em] text-[#C9A227]">
+                  RELATED PROPERTIES
+                </p>
+                <h2 className="mt-2 text-3xl font-bold">비슷한 매물</h2>
+              </div>
+              <Link href="/properties" className="text-sm font-semibold hover:text-[#C9A227]">
+                전체 매물 보기 →
+              </Link>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              {relatedProperties.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/properties/${item.id}`}
+                  className="group overflow-hidden rounded-[28px] border border-[#0A2342]/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="overflow-hidden bg-[#F3F4F6]">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-52 items-center justify-center text-sm text-gray-500">
+                        등록된 이미지가 없습니다.
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <p className="text-sm font-semibold text-[#C9A227]">
+                      {item.deal_type || item.type || "매물"}
+                    </p>
+                    <h3 className="mt-2 line-clamp-2 text-xl font-bold">{item.title}</h3>
+                    <p className="mt-3 font-bold">{item.price || "가격 문의"}</p>
+                    <p className="mt-2 text-sm text-[#0A2342]/60">{item.location || "지역 문의"}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="mt-8 rounded-[32px] border p-8">
           <h2 className="text-2xl font-bold">백조현대부동산중개</h2>
