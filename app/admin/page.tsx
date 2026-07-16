@@ -16,23 +16,23 @@ export default function AdminPage() {
   const [propertyList, setPropertyList] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
-  async function getProperties() {
-    const { data, error } = await supabase
-      .from("properties")
-      .select("*")
-      .order("id", { ascending: false });
+  useEffect(() => {
+    async function getProperties() {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("*")
+        .order("id", { ascending: false });
 
-    if (error) {
-      console.error("매물 불러오기 오류:", error);
+      if (error) {
+        console.error("매물 불러오기 오류:", error);
+        setLoading(false);
+        return;
+      }
+
+      setPropertyList(data || []);
       setLoading(false);
-      return;
     }
 
-    setPropertyList(data || []);
-    setLoading(false);
-  }
-
-  useEffect(() => {
     getProperties();
   }, []);
 

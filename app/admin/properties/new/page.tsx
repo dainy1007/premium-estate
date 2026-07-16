@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { MAX_PROPERTY_IMAGES, uploadPropertyImages, syncCoverImage } from "@/lib/property-images";
+import { formatKrwAmount, parsePropertyPriceAmount } from "@/lib/property-price";
 
 const transactionTypes = ["매매", "전세", "월세", "상가", "토지"];
 
@@ -70,6 +71,8 @@ const handleRemoveImage = (imageId: string) => {
   event.preventDefault();
   setSubmitting(true);
 
+  const priceAmount = parsePropertyPriceAmount(form.price);
+
   const { data: property, error } = await supabase
     .from("properties")
     .insert([
@@ -80,6 +83,7 @@ const handleRemoveImage = (imageId: string) => {
         location: form.location,
         address: form.address,
         price: form.price,
+        price_amount: priceAmount,
         area: form.area,
         contract_area: form.contract_area,
         exclusive_area: form.exclusive_area,
@@ -233,6 +237,9 @@ const handleRemoveImage = (imageId: string) => {
                   className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"
                   placeholder="예: 6억 8,000만원"
                 />
+                <p className="mt-2 text-xs text-[#0A2342]/55">
+                  검색용 가격: {formatKrwAmount(parsePropertyPriceAmount(form.price))}
+                </p>
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">면적</label>

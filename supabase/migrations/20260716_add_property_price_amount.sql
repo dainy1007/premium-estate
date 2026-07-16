@@ -65,7 +65,7 @@ $$;
 drop trigger if exists properties_set_price_amount on public.properties;
 
 create trigger properties_set_price_amount
-before insert or update of price
+before insert or update of price, price_amount
 on public.properties
 for each row
 execute function public.set_property_price_amount();
