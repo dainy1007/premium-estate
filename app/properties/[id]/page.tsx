@@ -24,9 +24,36 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
+  const detailItems = [
+    { label: "지역", value: property.location },
+    { label: "기본 면적", value: property.area },
+    { label: "계약면적", value: property.contract_area },
+    { label: "전용면적", value: property.exclusive_area },
+    {
+      label: "방",
+      value: property.rooms ? `${property.rooms}개` : null,
+    },
+    {
+      label: "욕실",
+      value: property.bathrooms ? `${property.bathrooms}개` : null,
+    },
+    { label: "층수", value: property.floor },
+    {
+      label: "거래유형",
+      value: property.deal_type || property.type,
+    },
+  ].filter((item) => item.value);
+
   return (
-    <main className="min-h-screen bg-white text-[#0A2342]">
-      <section className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-24">
+    <main className="min-h-screen bg-white pb-24 text-[#0A2342] md:pb-0">
+      <section className="mx-auto max-w-7xl px-6 py-10 md:px-8 md:py-16">
+        <Link
+          href="/properties"
+          className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#0A2342]/10 px-4 py-2 text-sm font-semibold transition hover:border-[#C9A227] hover:bg-[#C9A227]/10"
+        >
+          ← 매물 목록으로
+        </Link>
+
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <PropertyGallery
             title={property.title}
@@ -55,30 +82,16 @@ export default async function PropertyDetailPage({
             </h1>
 
             <p className="mt-4 text-xl font-bold text-[#C9A227]">
-              {property.price}
+              {property.price || "가격 문의"}
             </p>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl bg-[#F8F9FB] p-4">
-                <p className="text-sm text-gray-500">지역</p>
-                <p className="mt-1 font-semibold">
-                  {property.location || "-"}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-[#F8F9FB] p-4">
-                <p className="text-sm text-gray-500">면적</p>
-                <p className="mt-1 font-semibold">
-                  {property.area || "-"}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-[#F8F9FB] p-4">
-                <p className="text-sm text-gray-500">유형</p>
-                <p className="mt-1 font-semibold">
-                  {property.deal_type || property.type || "-"}
-                </p>
-              </div>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {detailItems.map((item) => (
+                <div key={item.label} className="rounded-2xl bg-[#F8F9FB] p-4">
+                  <p className="text-sm text-gray-500">{item.label}</p>
+                  <p className="mt-1 font-semibold">{item.value}</p>
+                </div>
+              ))}
             </div>
 
             {property.address && (
@@ -123,10 +136,10 @@ export default async function PropertyDetailPage({
             </a>
 
             <Link
-              href="/"
+              href="/properties"
               className="rounded-full border border-white/30 px-6 py-3.5 text-center font-semibold text-white hover:bg-white/10"
             >
-              추천 매물 보기
+              다른 매물 보기
             </Link>
           </div>
         </div>
@@ -154,6 +167,15 @@ export default async function PropertyDetailPage({
           </div>
         </div>
       </section>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#0A2342]/10 bg-white/95 p-3 shadow-[0_-8px_30px_rgba(10,35,66,0.12)] backdrop-blur md:hidden">
+        <a
+          href="tel:01077750014"
+          className="flex w-full items-center justify-center rounded-full bg-[#C9A227] px-6 py-3.5 font-bold text-[#0A2342]"
+        >
+          ☎ 이 매물 전화 상담
+        </a>
+      </div>
     </main>
   );
 }
