@@ -2,12 +2,25 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { parsePropertyPriceAmount } from "@/lib/property-price";
 import { supabase } from "@/lib/supabase";
 import { Property } from "@/types/property";
 
 const ALL = "전체";
 
-type SortOption = "최신순" | "오래된순" | "이름순";
+const PRICE_OPTIONS = [
+  { label: "제한 없음", value: "" },
+  { label: "5천만원", value: "50000000" },
+  { label: "1억원", value: "100000000" },
+  { label: "2억원", value: "200000000" },
+  { label: "3억원", value: "300000000" },
+  { label: "5억원", value: "500000000" },
+  { label: "10억원", value: "1000000000" },
+  { label: "20억원", value: "2000000000" },
+  { label: "50억원", value: "5000000000" },
+];
+
+type SortOption = "최신순" | "오래된순" | "이름순" | "낮은가격순" | "높은가격순";
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -17,6 +30,8 @@ export default function PropertiesPage() {
   const [propertyType, setPropertyType] = useState(ALL);
   const [dealType, setDealType] = useState(ALL);
   const [location, setLocation] = useState(ALL);
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("최신순");
 
   useEffect(() => {
@@ -60,6 +75,8 @@ export default function PropertiesPage() {
 
   const filteredProperties = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
+    const minimum = minPrice ? Number(minPrice) : null;
+    const maximum = maxPrice ? Number(maxPrice) : null;
 
     const result = properties.filter((property) => {
       const searchableText = [
@@ -79,8 +96,13 @@ export default function PropertiesPage() {
       const matchesPropertyType = propertyType === ALL || property.type === propertyType;
       const matchesDealType = dealType === ALL || property.deal_type === dealType;
       const matchesLocation = location === ALL || property.location === location;
+      const hasPriceFilter = minimum !== null || maximum !== null;
+      const amount = property.price_amount ?? parsePropertyPriceAmount(property.price);
+      const matchesMinimum = minimum === null || (amount != null && amount >= minimum);
+      const matchesMaximum = maximum === null || (amount != null && amount <= maximum);
+      const matchesPrice = !hasPriceFilter || (amount != null && matchesMinimum && matchesMaximum);
 
-      return matchesKeyword && matchesPropertyType && matchesDealType && matchesLocation;
+      return matchesKeyword && matchesPropertyType && matchesDealType && matchesLocation && matchesPrice;
     });
 
     return [...result].sort((a, b) => {
@@ -88,18 +110,33 @@ export default function PropertiesPage() {
         return a.title.localeCompare(b.title, "ko");
       }
 
+      if (sortOption === "낮은가격순" || sortOption === "높은가격순") {
+        const aAmount = a.price_amount ?? parsePropertyPriceAmount(a.price);
+        const bAmount = b.price_amount ?? parsePropertyPriceAmount(b.price);
+        const aPrice = aAmount ?? Number.MAX_SAFE_INTEGER;
+        const bPrice = bAmount ?? Number.MAX_SAFE_INTEGER;
+
+        if (sortOption === "낮은가격순") return aPrice - bPrice;
+
+        const highA = aAmount ?? -1;
+        const highB = bAmount ?? -1;
+        return highB - highA;
+      }
+
       const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
       const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
 
       return sortOption === "오래된순" ? aTime - bTime : bTime - aTime;
     });
-  }, [properties, keyword, propertyType, dealType, location, sortOption]);
+  }, [properties, keyword, propertyType, dealType, location, minPrice, maxPrice, sortOption]);
 
   const resetFilters = () => {
     setKeyword("");
     setPropertyType(ALL);
     setDealType(ALL);
     setLocation(ALL);
+    setMinPrice("");
+    setMaxPrice("");
     setSortOption("최신순");
   };
 
@@ -138,11 +175,20 @@ export default function PropertiesPage() {
             <FilterSelect label="지역" value={location} options={locations} onChange={setLocation} />
           </div>
 
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:max-w-2xl">
+            <PriceSelect label="최저가격" value={minPrice} onChange={setMinPrice} />
+            <PriceSelect label="최고가격" value={maxPrice} onChange={setMaxPrice} />
+          </div>
+
+          {minPrice && maxPrice && Number(minPrice) > Number(maxPrice) && (
+            <p className="mt-3 text-sm font-medium text-red-600">최저가격은 최고가격보다 낮아야 합니다.</p>
+          )}
+
           <div className="mt-5 flex flex-col gap-3 border-t border-[#0A2342]/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-[#0A2342]/65">
               전체 {properties.length}개 중 <strong className="text-[#0A2342]">{filteredProperties.length}개</strong> 매물
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <select
                 value={sortOption}
                 onChange={(event) => setSortOption(event.target.value as SortOption)}
@@ -151,6 +197,8 @@ export default function PropertiesPage() {
                 <option>최신순</option>
                 <option>오래된순</option>
                 <option>이름순</option>
+                <option>낮은가격순</option>
+                <option>높은가격순</option>
               </select>
               <button
                 type="button"
@@ -254,6 +302,25 @@ function FilterSelect({
         {options.map((option) => (
           <option key={option} value={option}>
             {option}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function PriceSelect({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-semibold">{label}</label>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-2xl border border-[#0A2342]/15 bg-white px-4 py-3 outline-none transition focus:border-[#C9A227]"
+      >
+        {PRICE_OPTIONS.map((option) => (
+          <option key={`${label}-${option.value}`} value={option.value}>
+            {option.label}
           </option>
         ))}
       </select>

@@ -10,6 +10,7 @@ import {
   syncCoverImage,
   uploadPropertyImages,
 } from "@/lib/property-images";
+import { formatKrwAmount, parsePropertyPriceAmount } from "@/lib/property-price";
 import type { PropertyImage } from "@/types/property";
 
 type NewImage = { id: string; file: File; previewUrl: string };
@@ -142,11 +143,14 @@ export default function PropertyEditPage() {
     event.preventDefault();
     setSubmitting(true);
 
+    const priceAmount = parsePropertyPriceAmount(form.price);
+
     const { error } = await supabase
       .from("properties")
       .update({
         title: form.title,
         price: form.price,
+        price_amount: priceAmount,
         address: form.address,
         area: form.area,
         description: form.description,
@@ -223,6 +227,11 @@ export default function PropertyEditPage() {
                   onChange={(event) => setForm((prev) => ({ ...prev, [name]: event.target.value }))}
                   className="w-full rounded-xl border px-4 py-3"
                 />
+                {name === "price" && (
+                  <p className="mt-2 text-xs text-[#0A2342]/55">
+                    검색용 가격: {formatKrwAmount(parsePropertyPriceAmount(form.price))}
+                  </p>
+                )}
               </div>
             ))}
 
