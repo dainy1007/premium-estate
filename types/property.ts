@@ -13,6 +13,7 @@ export interface Property {
   id: number;
   title: string;
   price: string;
+  price_amount?: number | null;
   location: string;
   area: string;
   description: string;
