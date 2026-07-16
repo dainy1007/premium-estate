@@ -2,7 +2,7 @@ export function parsePropertyPriceAmount(price: string | null | undefined): numb
   if (!price || !price.trim()) return null;
 
   const cleaned = price.replace(/[\s,원]/g, "");
-  const eokMatch = cleaned.match(/(\d+(?:\.\d+)?)억(?:(\d+(?:\.\d+)?)만?)?/);
+  const eokMatch = cleaned.match(/^(\d+(?:\.\d+)?)억(?:(\d+(?:\.\d+)?)만?)?$/);
 
   if (eokMatch) {
     const eokAmount = Number(eokMatch[1]);
@@ -11,9 +11,11 @@ export function parsePropertyPriceAmount(price: string | null | undefined): numb
     if (Number.isFinite(eokAmount) && Number.isFinite(manAmount)) {
       return Math.round(eokAmount * 100_000_000 + manAmount * 10_000);
     }
+
+    return null;
   }
 
-  const manMatch = cleaned.match(/(\d+(?:\.\d+)?)만/);
+  const manMatch = cleaned.match(/^(\d+(?:\.\d+)?)만$/);
 
   if (manMatch) {
     const manAmount = Number(manMatch[1]);
@@ -21,7 +23,8 @@ export function parsePropertyPriceAmount(price: string | null | undefined): numb
   }
 
   if (/^\d+$/.test(cleaned)) {
-    return Number(cleaned);
+    const amount = Number(cleaned);
+    return Number.isSafeInteger(amount) ? amount : null;
   }
 
   return null;
