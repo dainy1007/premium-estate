@@ -18,5 +18,13 @@ export interface Property {
   description: string;
   image_url: string;
   created_at?: string;
+  type?: string | null;
+  deal_type?: string | null;
+  address?: string | null;
+  contract_area?: string | null;
+  exclusive_area?: string | null;
+  rooms?: number | null;
+  bathrooms?: number | null;
+  floor?: string | null;
   property_images?: PropertyImage[];
 }
