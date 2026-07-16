@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import PropertyGallery from "@/components/properties/PropertyGallery";
 
 interface PropertyDetailPageProps {
   params: Promise<{
@@ -15,7 +16,7 @@ export default async function PropertyDetailPage({
 
   const { data: property, error } = await supabase
     .from("properties")
-    .select("*")
+    .select("*, property_images(*)")
     .eq("id", Number(id))
     .single();
 
@@ -27,19 +28,14 @@ export default async function PropertyDetailPage({
     <main className="min-h-screen bg-white text-[#0A2342]">
       <section className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-24">
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="overflow-hidden rounded-[32px] border border-[#0A2342]/10 shadow-xl">
-            {property.image_url ? (
-              <img
-                src={property.image_url}
-                alt={property.title}
-                className="h-[420px] w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-[420px] items-center justify-center bg-gray-100 text-gray-500">
-                등록된 이미지가 없습니다.
-              </div>
+          <PropertyGallery
+            title={property.title}
+            fallbackImageUrl={property.image_url}
+            images={(property.property_images || []).sort(
+              (a: { display_order: number }, b: { display_order: number }) =>
+                a.display_order - b.display_order
             )}
-          </div>
+          />
 
           <div className="flex flex-col justify-center">
             <p className="text-sm font-semibold tracking-[0.3em] text-[#C9A227]">

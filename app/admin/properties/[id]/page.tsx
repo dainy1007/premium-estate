@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
+import type { PropertyImage } from "@/types/property";
+
 type Property = {
   id: number;
   title: string;
@@ -15,6 +17,7 @@ type Property = {
   description: string;
   image_url?: string;
   deal_type?: string;
+  property_images?: PropertyImage[];
 };
 
 export default function PropertyDetailPage() {
@@ -28,7 +31,7 @@ export default function PropertyDetailPage() {
     async function getProperty() {
       const { data, error } = await supabase
         .from("properties")
-        .select("*")
+        .select("*, property_images(*)")
         .eq("id", id)
         .single();
 
@@ -77,12 +80,24 @@ export default function PropertyDetailPage() {
           </Link>
         </div>
 
-        {property.image_url && (
-          <img
-            src={property.image_url}
-            alt={property.title}
-            className="w-full h-72 object-cover rounded-2xl mb-8"
-          />
+        {(property.property_images?.length || property.image_url) && (
+          <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3">
+            {(property.property_images?.length
+              ? [...property.property_images].sort((a, b) => a.display_order - b.display_order)
+              : [{ id: 0, image_url: property.image_url, alt_text: property.title }]
+            ).map((image, index) => (
+              <div key={image.id} className="relative overflow-hidden rounded-2xl">
+                <img
+                  src={image.image_url || ""}
+                  alt={image.alt_text || property.title}
+                  className="h-40 w-full object-cover"
+                />
+                {index === 0 && (
+                  <span className="absolute left-3 top-3 rounded-full bg-[#C9A227] px-2 py-1 text-xs font-bold text-[#0A2342]">대표</span>
+                )}
+              </div>
+            ))}
+          </div>
         )}
 
         <div className="space-y-4">
