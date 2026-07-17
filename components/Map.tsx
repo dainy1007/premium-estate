@@ -1,146 +1,136 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Script from "next/script";
+import { useCallback, useRef, useState } from "react";
 
 const OFFICE_NAME = "백조현대부동산중개";
-const OFFICE_ADDRESS = "대구광역시 달성군 유가읍 테크노공원로 69 파크뷰타워 105호";
+const OFFICE_ADDRESS = "대구광역시 달성군 유가읍 테크노공원로 69";
+const OFFICE_DETAIL = "파크뷰타워 105호";
 const OFFICE_PHONE = "010-7775-0014";
+const FALLBACK_LAT = 35.6939;
+const FALLBACK_LNG = 128.4598;
 
 type MapStatus = "loading" | "ready" | "error" | "missing-key";
 
+type KakaoMaps = {
+  load: (callback: () => void) => void;
+  LatLng: new (latitude: number, longitude: number) => unknown;
+  Map: new (
+    container: HTMLElement,
+    options: { center: unknown; level: number },
+  ) => {
+    setCenter: (position: unknown) => void;
+  };
+  Marker: new (options: { map: unknown; position: unknown }) => unknown;
+  InfoWindow: new (options: { content: string }) => {
+    open: (map: unknown, marker: unknown) => void;
+  };
+  services: {
+    Status: { OK: string };
+    Geocoder: new () => {
+      addressSearch: (
+        address: string,
+        callback: (
+          result: Array<{ x: string; y: string }>,
+          status: string,
+        ) => void,
+      ) => void;
+    };
+  };
+};
+
 declare global {
   interface Window {
-    kakao?: {
-      maps: {
-        load: (callback: () => void) => void;
-        LatLng: new (latitude: number, longitude: number) => unknown;
-        Map: new (
-          container: HTMLElement,
-          options: { center: unknown; level: number },
-        ) => {
-          setCenter: (position: unknown) => void;
-        };
-        Marker: new (options: { map: unknown; position: unknown }) => unknown;
-        InfoWindow: new (options: { content: string }) => {
-          open: (map: unknown, marker: unknown) => void;
-        };
-        services: {
-          Status: { OK: string };
-          Geocoder: new () => {
-            addressSearch: (
-              address: string,
-              callback: (
-                result: Array<{ x: string; y: string }>,
-                status: string,
-              ) => void,
-            ) => void;
-          };
-        };
-      };
-    };
+    kakao?: { maps: KakaoMaps };
   }
-}
-
-function loadKakaoMapScript(appKey: string) {
-  return new Promise<void>((resolve, reject) => {
-    if (window.kakao?.maps) {
-      window.kakao.maps.load(resolve);
-      return;
-    }
-
-    const existingScript = document.querySelector<HTMLScriptElement>(
-      'script[data-kakao-map="true"]',
-    );
-
-    if (existingScript) {
-      existingScript.addEventListener("load", () => {
-        window.kakao?.maps.load(resolve);
-      });
-      existingScript.addEventListener("error", () => reject(new Error("script")));
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.dataset.kakaoMap = "true";
-    script.async = true;
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`;
-    script.onload = () => window.kakao?.maps.load(resolve);
-    script.onerror = () => reject(new Error("script"));
-    document.head.appendChild(script);
-  });
 }
 
 export default function Map() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus] = useState<MapStatus>("loading");
+  const initializedRef = useRef(false);
+  const appKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
+  const [status, setStatus] = useState<MapStatus>(
+    appKey ? "loading" : "missing-key",
+  );
 
-  useEffect(() => {
-    const appKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
+  const initializeMap = useCallback(() => {
+    if (initializedRef.current) return;
 
-    if (!appKey) {
-      setStatus("missing-key");
+    const container = mapContainerRef.current;
+    const kakaoMaps = window.kakao?.maps;
+
+    if (!container || !kakaoMaps) {
+      console.error("[KakaoMap] SDK 또는 지도 컨테이너를 찾지 못했습니다.");
+      setStatus("error");
       return;
     }
 
-    let cancelled = false;
+    initializedRef.current = true;
 
-    async function initializeMap() {
+    kakaoMaps.load(() => {
       try {
-        await loadKakaoMapScript(appKey);
-
-        if (cancelled || !mapContainerRef.current || !window.kakao?.maps) {
-          return;
-        }
-
-        const { maps } = window.kakao;
-        const fallbackPosition = new maps.LatLng(35.6939, 128.4598);
-        const map = new maps.Map(mapContainerRef.current, {
+        const fallbackPosition = new kakaoMaps.LatLng(
+          FALLBACK_LAT,
+          FALLBACK_LNG,
+        );
+        const map = new kakaoMaps.Map(container, {
           center: fallbackPosition,
           level: 3,
         });
-        const geocoder = new maps.services.Geocoder();
+        const geocoder = new kakaoMaps.services.Geocoder();
 
         geocoder.addressSearch(OFFICE_ADDRESS, (result, searchStatus) => {
-          if (cancelled) return;
-
-          if (searchStatus !== maps.services.Status.OK || !result[0]) {
+          if (searchStatus !== kakaoMaps.services.Status.OK || !result[0]) {
+            console.error("[KakaoMap] 주소 검색 실패:", searchStatus, result);
             setStatus("error");
             return;
           }
 
-          const position = new maps.LatLng(
+          const position = new kakaoMaps.LatLng(
             Number(result[0].y),
             Number(result[0].x),
           );
-          map.setCenter(position);
 
-          const marker = new maps.Marker({ map, position });
-          const infoWindow = new maps.InfoWindow({
+          map.setCenter(position);
+          const marker = new kakaoMaps.Marker({ map, position });
+          const infoWindow = new kakaoMaps.InfoWindow({
             content:
-              '<div style="width:210px;padding:12px;text-align:center;font-size:14px;line-height:1.5;color:#0A2342"><strong>백조현대부동산중개</strong><br/><span style="font-size:12px;color:#666">파크뷰타워 105호</span></div>',
+              '<div style="width:220px;padding:12px;text-align:center;font-size:14px;line-height:1.5;color:#0A2342"><strong>백조현대부동산중개</strong><br/><span style="font-size:12px;color:#666">파크뷰타워 105호</span></div>',
           });
+
           infoWindow.open(map, marker);
           setStatus("ready");
         });
-      } catch {
-        if (!cancelled) setStatus("error");
+      } catch (error) {
+        console.error("[KakaoMap] 지도 초기화 실패:", error);
+        setStatus("error");
       }
-    }
-
-    initializeMap();
-
-    return () => {
-      cancelled = true;
-    };
+    });
   }, []);
 
   const encodedName = encodeURIComponent(OFFICE_NAME);
-  const encodedAddress = encodeURIComponent(OFFICE_ADDRESS);
+  const encodedAddress = encodeURIComponent(`${OFFICE_ADDRESS} ${OFFICE_DETAIL}`);
   const kakaoMapUrl = `https://map.kakao.com/link/search/${encodedAddress}`;
-  const directionsUrl = `https://map.kakao.com/link/to/${encodedName},35.6939,128.4598`;
+  const directionsUrl = `https://map.kakao.com/link/to/${encodedName},${FALLBACK_LAT},${FALLBACK_LNG}`;
 
   return (
     <section className="bg-white px-6 py-20">
+      {appKey && (
+        <Script
+          id="kakao-map-sdk"
+          src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`}
+          strategy="afterInteractive"
+          onLoad={() => {
+            console.info("[KakaoMap] SDK 로드 완료");
+            initializeMap();
+          }}
+          onError={(error) => {
+            console.error("[KakaoMap] SDK 로드 실패:", error);
+            setStatus("error");
+          }}
+        />
+      )}
+
       <div className="mx-auto max-w-7xl">
         <div className="text-center">
           <p className="text-sm font-semibold tracking-[0.35em] text-[#C9A227]">
@@ -160,7 +150,8 @@ export default function Map() {
               <div>
                 <p className="font-semibold text-[#0A2342]">
                   {status === "loading" && "카카오맵을 불러오는 중입니다."}
-                  {status === "missing-key" && "카카오맵 API 키가 설정되지 않았습니다."}
+                  {status === "missing-key" &&
+                    "카카오맵 JavaScript 키가 설정되지 않았습니다."}
                   {status === "error" && "지도를 불러오지 못했습니다."}
                 </p>
                 {status !== "loading" && (
@@ -182,9 +173,9 @@ export default function Map() {
           <div>
             <h3 className="text-xl font-semibold">{OFFICE_NAME}</h3>
             <p className="mt-3 leading-7 text-white/80">
-              대구광역시 달성군 유가읍 테크노공원로 69
+              {OFFICE_ADDRESS}
               <br />
-              파크뷰타워 105호
+              {OFFICE_DETAIL}
             </p>
             <a
               href="tel:01077750014"
