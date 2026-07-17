@@ -11,6 +11,7 @@ const FALLBACK_LAT = 35.6939;
 const FALLBACK_LNG = 128.4598;
 
 type MapStatus = "loading" | "ready" | "error" | "missing-key";
+type Coordinates = { latitude: number; longitude: number };
 
 type KakaoMaps = {
   load: (callback: () => void) => void;
@@ -52,6 +53,10 @@ export default function Map() {
   const [status, setStatus] = useState<MapStatus>(
     appKey ? "loading" : "missing-key",
   );
+  const [coordinates, setCoordinates] = useState<Coordinates>({
+    latitude: FALLBACK_LAT,
+    longitude: FALLBACK_LNG,
+  });
 
   const initializeMap = useCallback(() => {
     if (initializedRef.current) return;
@@ -86,12 +91,13 @@ export default function Map() {
             return;
           }
 
-          const position = new kakaoMaps.LatLng(
-            Number(result[0].y),
-            Number(result[0].x),
-          );
+          const latitude = Number(result[0].y);
+          const longitude = Number(result[0].x);
+          const position = new kakaoMaps.LatLng(latitude, longitude);
 
+          setCoordinates({ latitude, longitude });
           map.setCenter(position);
+
           const marker = new kakaoMaps.Marker({ map, position });
           const infoWindow = new kakaoMaps.InfoWindow({
             content:
@@ -111,7 +117,7 @@ export default function Map() {
   const encodedName = encodeURIComponent(OFFICE_NAME);
   const encodedAddress = encodeURIComponent(`${OFFICE_ADDRESS} ${OFFICE_DETAIL}`);
   const kakaoMapUrl = `https://map.kakao.com/link/search/${encodedAddress}`;
-  const directionsUrl = `https://map.kakao.com/link/to/${encodedName},${FALLBACK_LAT},${FALLBACK_LNG}`;
+  const directionsUrl = `https://map.kakao.com/link/to/${encodedName},${coordinates.latitude},${coordinates.longitude}`;
 
   return (
     <section className="bg-white px-6 py-20">
