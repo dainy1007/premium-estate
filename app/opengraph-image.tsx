@@ -41,17 +41,18 @@ export default function OpenGraphImage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div
             style={{
+              display: "flex",
+              flexDirection: "column",
               fontSize: 68,
               fontWeight: 800,
               lineHeight: 1.15,
               letterSpacing: "-0.04em",
             }}
           >
-            가치를 보는 안목,
-            <br />
-            신뢰를 만드는 중개
+            <span>가치를 보는 안목,</span>
+            <span>신뢰를 만드는 중개</span>
           </div>
-          <div style={{ fontSize: 30, opacity: 0.9 }}>
+          <div style={{ display: "flex", fontSize: 30, opacity: 0.9 }}>
             달성군 · 유가읍 · 현풍읍 · 구지면 · 대구테크노폴리스
           </div>
         </div>
