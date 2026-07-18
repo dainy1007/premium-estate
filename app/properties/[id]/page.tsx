@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import type { Metadata } from "next";
+import { getProperty, getRelatedProperties } from "@/lib/property";
 import PropertyGallery from "@/components/properties/PropertyGallery";
 import PropertyShareActions from "@/components/properties/PropertyShareActions";
 
@@ -9,29 +10,132 @@ interface PropertyDetailPageProps {
     id: string;
   }>;
 }
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  "https://premium-estate.vercel.app";
+  
+export async function generateMetadata({
+  params,
+}: PropertyDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const propertyId = Number(id);
+
+  if (!Number.isInteger(propertyId) || propertyId <= 0) {
+    return {
+      title: "매물을 찾을 수 없습니다 | 백조현대부동산중개",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const property = await getProperty(propertyId);
+
+  if (!property) {
+    return {
+      title: "매물을 찾을 수 없습니다 | 백조현대부동산중개",
+      description: "요청하신 매물 정보를 찾을 수 없습니다.",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const dealType = property.deal_type || property.type || "부동산 매물";
+  const location = property.location || "대구 달성군";
+  const price = property.price || "가격 문의";
+
+  const title = `${property.title} | 백조현대부동산중개`;
+
+  const description = property.description
+    ? property.description.replace(/\s+/g, " ").trim().slice(0, 160)
+    : `${location} ${dealType}, ${price}. 백조현대부동산중개 매물 정보입니다.`;
+
+  const canonicalUrl = `${SITE_URL}/properties/${propertyId}`;
+  const imageUrl =
+    property.image_url || `${SITE_URL}/opengraph-image`;
+
+  return {
+    title,
+    description,
+
+    keywords: [
+      property.title,
+      location,
+      dealType,
+      property.type,
+      property.deal_type,
+      "백조현대부동산중개",
+      "대구 부동산",
+      "달성군 부동산",
+      "대구테크노폴리스 부동산",
+      "유가읍 부동산",
+      "현풍읍 부동산",
+    ].filter((keyword): keyword is string => Boolean(keyword)),
+
+    alternates: {
+      canonical: canonicalUrl,
+    },
+
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: "백조현대부동산중개",
+      locale: "ko_KR",
+      type: "website",
+      images: [
+        {
+          url: imageUrl,
+          alt: property.title,
+        },
+      ],
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
+  };
+}
 
 export default async function PropertyDetailPage({
   params,
 }: PropertyDetailPageProps) {
-  const { id } = await params;
+const { id } = await params;
+const propertyId = Number(id);
 
-  const { data: property, error } = await supabase
-    .from("properties")
-    .select("*, property_images(*)")
-    .eq("id", Number(id))
-    .single();
+if (!Number.isInteger(propertyId) || propertyId <= 0) {
+  notFound();
+}
 
-  if (error || !property) {
-    notFound();
-  }
+const property = await getProperty(propertyId);
 
-  const { data: relatedProperties } = await supabase
-    .from("properties")
-    .select("id, title, price, location, deal_type, type, image_url")
-    .neq("id", Number(id))
-    .eq("type", property.type)
-    .order("created_at", { ascending: false })
-    .limit(3);
+if (!property) {
+  notFound();
+}
+
+const relatedProperties = await getRelatedProperties(
+  propertyId,
+  property.type || ""
+);
+
 
   const detailItems = [
     { label: "지역", value: property.location },
@@ -55,10 +159,95 @@ export default async function PropertyDetailPage({
 
   const mapAddress = property.address || property.location;
   const encodedAddress = encodeURIComponent(mapAddress || "대구광역시 달성군 유가읍");
+const canonicalUrl = `${SITE_URL}/properties/${propertyId}`;
 
-  return (
-    <main className="min-h-screen bg-white pb-24 text-[#0A2342] md:pb-0">
-      <section className="mx-auto max-w-7xl px-6 py-10 md:px-8 md:py-16">
+const propertyJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "RealEstateListing",
+  name: property.title,
+  description:
+    property.description ||
+    `${property.location || "대구 달성군"}의 부동산 매물입니다.`,
+  url: canonicalUrl,
+  image: property.image_url ? [property.image_url] : undefined,
+  datePosted: property.created_at || undefined,
+  offers: {
+    "@type": "Offer",
+    url: canonicalUrl,
+    priceCurrency: "KRW",
+    price: property.price || "가격 문의",
+    availability: "https://schema.org/InStock",
+  },
+  itemOffered: {
+    "@type": "Accommodation",
+    name: property.title,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress:
+        property.address || property.location || "대구광역시 달성군",
+      addressRegion: "대구광역시",
+      addressCountry: "KR",
+    },
+  },
+  seller: {
+    "@type": "RealEstateAgent",
+    name: "백조현대부동산중개",
+    telephone: "010-7775-0014",
+    url: SITE_URL,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress:
+        "달성군 유가읍 테크노공원로69 파크뷰타워 105호",
+      addressLocality: "달성군",
+      addressRegion: "대구광역시",
+      addressCountry: "KR",
+    },
+  },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "홈",
+      item: SITE_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "매물 목록",
+      item: `${SITE_URL}/properties`,
+    },
+    {
+      "@type": "ListItem",
+      position: 3,
+      name: property.title,
+      item: canonicalUrl,
+    },
+  ],
+};
+
+return (
+  <main className="min-h-screen bg-white pb-24 text-[#0A2342] md:pb-0">
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(propertyJsonLd),
+      }}
+    />
+
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(breadcrumbJsonLd),
+      }}
+    />
+
+    <section className="mx-auto max-w-7xl px-6 py-10 md:px-8 md:py-16">
+
         <Link
           href="/properties"
           className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#0A2342]/10 px-4 py-2 text-sm font-semibold transition hover:border-[#C9A227] hover:bg-[#C9A227]/10"
