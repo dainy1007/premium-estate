@@ -1,4 +1,4 @@
-const fallbackUrl = "https://premium-estate.vercel.app";
+const fallbackUrl = "https://premium-estate-rho.vercel.app";
 
 export const siteConfig = {
   name: "백조현대부동산중개",
