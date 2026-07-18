@@ -24,9 +24,16 @@ export const metadata: Metadata = {
   authors: [{ name: siteConfig.representative }],
   creator: siteConfig.name,
   publisher: siteConfig.name,
-  alternates: {
-    canonical: "/",
-  },
+
+
+verification: {
+  google: "gGwghIT-xUJ9KAUdLQdiAzqZSlTDKbgxFQ5LqykElbw",
+},
+
+alternates: {
+  canonical: "/",
+},
+
   openGraph: {
     type: "website",
     locale: "ko_KR",
