@@ -84,13 +84,14 @@ export async function POST(request: Request) {
 if (!supabaseUrl || !serviceRoleKey || !resendApiKey || !fromEmail) {
   return NextResponse.json(
     {
-      error: "환경변수 확인",
-      supabaseUrl: !!supabaseUrl,
-      serviceRoleKey: !!serviceRoleKey,
-      resendApiKey: !!resendApiKey,
-      fromEmail: !!fromEmail,
+      error:
+        `환경변수 확인: ` +
+        `supabaseUrl=${Boolean(supabaseUrl)}, ` +
+        `serviceRoleKey=${Boolean(serviceRoleKey)}, ` +
+        `resendApiKey=${Boolean(resendApiKey)}, ` +
+        `fromEmail=${Boolean(fromEmail)}`,
     },
-    { status: 500 }
+    { status: 500 },
   );
 }
 
