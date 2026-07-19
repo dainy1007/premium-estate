@@ -197,12 +197,13 @@ export async function POST(request: Request) {
   const { error: updateError } = await supabase
     .from("inquiries")
     .update({
-      reply,
-      status: "completed",
-      reply_sent_at: sentAt,
-      reply_email_id: resendResult.id,
-      updated_at: sentAt,
-    })
+.update({
+  reply_text: reply,
+  status: "completed",
+  reply_sent_at: sentAt,
+  reply_email_id: resendResult.id,
+  updated_at: sentAt,
+})
     .eq("id", inquiryId);
 
   if (updateError) {
