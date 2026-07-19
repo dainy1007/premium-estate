@@ -81,15 +81,18 @@ export async function POST(request: Request) {
   const fromEmail = process.env.RESEND_FROM_EMAIL;
   const replyToEmail = process.env.RESEND_REPLY_TO_EMAIL;
 
-  if (!supabaseUrl || !serviceRoleKey || !resendApiKey || !fromEmail) {
-    return NextResponse.json(
-      {
-        error:
-          "이메일 발송 환경변수가 설정되지 않았습니다. SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY, RESEND_FROM_EMAIL을 확인해 주세요.",
-      },
-      { status: 500 },
-    );
-  }
+if (!supabaseUrl || !serviceRoleKey || !resendApiKey || !fromEmail) {
+  return NextResponse.json(
+    {
+      error: "환경변수 확인",
+      supabaseUrl: !!supabaseUrl,
+      serviceRoleKey: !!serviceRoleKey,
+      resendApiKey: !!resendApiKey,
+      fromEmail: !!fromEmail,
+    },
+    { status: 500 }
+  );
+}
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
