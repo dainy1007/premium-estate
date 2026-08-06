@@ -94,6 +94,7 @@ export default function FeaturedProperties() {
                 (a, b) => Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order
               );
               const coverImage = images[0]?.image_url || property.image_url;
+              const isCompleted = property.listing_status === "completed";
 
               return (
                 <Link
@@ -106,14 +107,14 @@ export default function FeaturedProperties() {
                       <img
                         src={coverImage}
                         alt={property.title}
-                        className={`h-60 w-full object-cover transition duration-500 group-hover:scale-105 ${property.is_sold ? "grayscale-[35%]" : ""}`}
+                        className={`h-60 w-full object-cover transition duration-500 group-hover:scale-105 ${isCompleted ? "grayscale-[35%]" : ""}`}
                       />
                     ) : (
                       <div className="flex h-60 items-center justify-center text-[#0A2342]/45">이미지 준비중</div>
                     )}
                     <div className="absolute left-4 top-4 flex flex-wrap gap-2">
                       {property.is_featured && <Badge>추천</Badge>}
-                      {property.is_sold && <StatusBadge>계약완료</StatusBadge>}
+                      {isCompleted && <StatusBadge>계약완료</StatusBadge>}
                       {property.type && <Badge>{property.type}</Badge>}
                       {property.deal_type && <Badge>{property.deal_type}</Badge>}
                     </div>
@@ -128,7 +129,7 @@ export default function FeaturedProperties() {
                       <div>
                         <p className="text-sm text-[#0A2342]/55">면적 {property.area || "문의"}</p>
                         <p className="mt-1 text-lg font-bold text-[#C9A227]">
-                          {property.is_sold ? "계약완료" : property.price || "가격 문의"}
+                          {isCompleted ? "계약완료" : property.price || "가격 문의"}
                         </p>
                       </div>
                       <span className="text-sm font-semibold text-[#0A2342] transition group-hover:text-[#C9A227]">
