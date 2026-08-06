@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 const adminLinks = [
   { href: "/admin/overview", label: "운영 현황" },
   { href: "/admin", label: "매물 관리" },
+  { href: "/admin/bulk", label: "일괄 관리" },
   { href: "/admin/inquiries", label: "문의 관리" },
 ];
 
