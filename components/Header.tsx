@@ -9,7 +9,7 @@ const navItems = [
   { label: "회사소개", href: "/#about" },
   { label: "전문분야", href: "/#services" },
   { label: "매물검색", href: "/properties" },
-  { label: "상담문의", href: "/#contact" },
+  { label: "상담문의", href: "/contact" },
 ];
 
 export default function Header() {
@@ -63,7 +63,7 @@ export default function Header() {
           <a href="tel:01077750014" className="rounded-full border border-[#C9A227] px-4 py-2 text-sm font-semibold text-[#C9A227]">
             ☎ 010-7775-0014
           </a>
-          <Link href="/#contact" className="rounded-full bg-[#C9A227] px-5 py-2.5 text-sm font-semibold text-[#0A2540]">
+          <Link href="/contact" className="rounded-full bg-[#C9A227] px-5 py-2.5 text-sm font-semibold text-[#0A2540]">
             상담문의
           </Link>
         </div>
@@ -90,9 +90,18 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
-          <a href="tel:01077750014" className="mt-3 block rounded-full bg-[#C9A227] py-3 text-center font-semibold">
-            ☎ 전화 상담
-          </a>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <a href="tel:01077750014" className="rounded-full border border-[#C9A227] py-3 text-center font-semibold text-[#0A2540]">
+              전화 상담
+            </a>
+            <Link
+              href="/contact"
+              onClick={() => setMobileMenuOpen(false)}
+              className="rounded-full bg-[#C9A227] py-3 text-center font-semibold text-[#0A2540]"
+            >
+              문의 남기기
+            </Link>
+          </div>
         </div>
       )}
     </motion.header>
