@@ -22,7 +22,7 @@ export async function getProperty(id: number) {
 export async function getRelatedProperties(id: number, type: string) {
   const { data } = await supabase
     .from("properties")
-    .select("id, title, price, location, deal_type, type, image_url, is_hidden, is_sold, is_featured, display_order")
+    .select("*")
     .neq("id", id)
     .eq("type", type)
     .order("created_at", { ascending: false })
