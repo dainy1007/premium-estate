@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { Property } from "@/types/property";
 
 const ALL = "전체";
+const ITEMS_PER_PAGE = 9;
 
 const PRICE_OPTIONS = [
   { label: "제한 없음", value: "" },
@@ -33,6 +34,7 @@ export default function PropertiesPage() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("최신순");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     async function getProperties() {
@@ -57,6 +59,10 @@ export default function PropertiesPage() {
 
     getProperties();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [keyword, propertyType, dealType, location, minPrice, maxPrice, sortOption]);
 
   const propertyTypes = useMemo(
     () => [ALL, ...Array.from(new Set(properties.map((item) => item.type).filter(Boolean) as string[]))],
@@ -130,6 +136,19 @@ export default function PropertiesPage() {
     });
   }, [properties, keyword, propertyType, dealType, location, minPrice, maxPrice, sortOption]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredProperties.length / ITEMS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pageStart = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedProperties = filteredProperties.slice(pageStart, pageStart + ITEMS_PER_PAGE);
+
+  const pageNumbers = useMemo(() => {
+    const start = Math.max(1, safeCurrentPage - 2);
+    const end = Math.min(totalPages, start + 4);
+    const adjustedStart = Math.max(1, end - 4);
+
+    return Array.from({ length: end - adjustedStart + 1 }, (_, index) => adjustedStart + index);
+  }, [safeCurrentPage, totalPages]);
+
   const resetFilters = () => {
     setKeyword("");
     setPropertyType(ALL);
@@ -138,6 +157,12 @@ export default function PropertiesPage() {
     setMinPrice("");
     setMaxPrice("");
     setSortOption("최신순");
+    setCurrentPage(1);
+  };
+
+  const moveToPage = (page: number) => {
+    setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+    window.scrollTo({ top: 420, behavior: "smooth" });
   };
 
   return (
@@ -187,6 +212,11 @@ export default function PropertiesPage() {
           <div className="mt-5 flex flex-col gap-3 border-t border-[#0A2342]/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-[#0A2342]/65">
               전체 {properties.length}개 중 <strong className="text-[#0A2342]">{filteredProperties.length}개</strong> 매물
+              {filteredProperties.length > 0 && (
+                <span className="ml-2 text-[#0A2342]/45">
+                  · {pageStart + 1}-{Math.min(pageStart + ITEMS_PER_PAGE, filteredProperties.length)}번째 표시
+                </span>
+              )}
             </p>
             <div className="flex flex-wrap gap-3">
               <select
@@ -228,52 +258,82 @@ export default function PropertiesPage() {
           </div>
         )}
 
-        {!loading && !errorMessage && filteredProperties.length > 0 && (
-          <div className="mt-8 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
-            {filteredProperties.map((property) => {
-              const orderedImages = [...(property.property_images || [])].sort(
-                (a, b) => Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order
-              );
-              const coverImage = orderedImages[0]?.image_url || property.image_url;
+        {!loading && !errorMessage && paginatedProperties.length > 0 && (
+          <>
+            <div className="mt-8 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
+              {paginatedProperties.map((property) => {
+                const orderedImages = [...(property.property_images || [])].sort(
+                  (a, b) => Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order
+                );
+                const coverImage = orderedImages[0]?.image_url || property.image_url;
 
-              return (
-                <article key={property.id} className="overflow-hidden rounded-[24px] border border-[#0A2342]/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <Link href={`/properties/${property.id}`}>
-                    {coverImage ? (
-                      <img src={coverImage} alt={property.title} className="h-60 w-full object-cover" />
-                    ) : (
-                      <div className="flex h-60 items-center justify-center bg-[#EEF1F5] text-[#0A2342]/45">
-                        이미지 준비중
-                      </div>
-                    )}
-                  </Link>
+                return (
+                  <article key={property.id} className="overflow-hidden rounded-[24px] border border-[#0A2342]/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                    <Link href={`/properties/${property.id}`}>
+                      {coverImage ? (
+                        <img src={coverImage} alt={property.title} className="h-60 w-full object-cover" />
+                      ) : (
+                        <div className="flex h-60 items-center justify-center bg-[#EEF1F5] text-[#0A2342]/45">
+                          이미지 준비중
+                        </div>
+                      )}
+                    </Link>
 
-                  <div className="p-6">
-                    <div className="flex flex-wrap gap-2">
-                      {property.type && <Badge>{property.type}</Badge>}
-                      {property.deal_type && <Badge>{property.deal_type}</Badge>}
-                    </div>
-                    <h2 className="mt-4 text-xl font-bold">{property.title}</h2>
-                    <p className="mt-2 line-clamp-1 text-sm text-[#0A2342]/65">
-                      {property.address || property.location}
-                    </p>
-                    <div className="mt-4 flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-[#0A2342]/55">면적 {property.area || "문의"}</p>
-                        <p className="mt-1 text-lg font-bold text-[#C9A227]">{property.price || "가격 문의"}</p>
+                    <div className="p-6">
+                      <div className="flex flex-wrap gap-2">
+                        {property.type && <Badge>{property.type}</Badge>}
+                        {property.deal_type && <Badge>{property.deal_type}</Badge>}
                       </div>
-                      <Link
-                        href={`/properties/${property.id}`}
-                        className="rounded-full bg-[#0A2342] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#12385f]"
-                      >
-                        상세보기
-                      </Link>
+                      <h2 className="mt-4 text-xl font-bold">{property.title}</h2>
+                      <p className="mt-2 line-clamp-1 text-sm text-[#0A2342]/65">
+                        {property.address || property.location}
+                      </p>
+                      <div className="mt-4 flex items-end justify-between gap-4">
+                        <div>
+                          <p className="text-sm text-[#0A2342]/55">면적 {property.area || "문의"}</p>
+                          <p className="mt-1 text-lg font-bold text-[#C9A227]">{property.price || "가격 문의"}</p>
+                        </div>
+                        <Link
+                          href={`/properties/${property.id}`}
+                          className="rounded-full bg-[#0A2342] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#12385f]"
+                        >
+                          상세보기
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <nav aria-label="매물 목록 페이지" className="mt-12 flex flex-wrap items-center justify-center gap-2">
+                <PaginationButton disabled={safeCurrentPage === 1} onClick={() => moveToPage(safeCurrentPage - 1)}>
+                  이전
+                </PaginationButton>
+
+                {pageNumbers.map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => moveToPage(page)}
+                    aria-current={page === safeCurrentPage ? "page" : undefined}
+                    className={`h-10 min-w-10 rounded-full px-3 text-sm font-semibold transition ${
+                      page === safeCurrentPage
+                        ? "bg-[#0A2342] text-white"
+                        : "border border-[#0A2342]/15 bg-white text-[#0A2342] hover:border-[#C9A227] hover:bg-[#C9A227]/10"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <PaginationButton disabled={safeCurrentPage === totalPages} onClick={() => moveToPage(safeCurrentPage + 1)}>
+                  다음
+                </PaginationButton>
+              </nav>
+            )}
+          </>
         )}
       </section>
     </main>
@@ -325,6 +385,27 @@ function PriceSelect({ label, value, onChange }: { label: string; value: string;
         ))}
       </select>
     </div>
+  );
+}
+
+function PaginationButton({
+  children,
+  disabled,
+  onClick,
+}: {
+  children: React.ReactNode;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm font-semibold transition hover:border-[#C9A227] hover:bg-[#C9A227]/10 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-[#0A2342]/15 disabled:hover:bg-white"
+    >
+      {children}
+    </button>
   );
 }
 
