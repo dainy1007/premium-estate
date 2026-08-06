@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import Contact from "../components/Contact";
 import FeaturedProperties from "../components/FeaturedProperties";
 import Footer from "../components/Footer";
@@ -11,6 +11,8 @@ import Testimonials from "../components/Testimonials";
 import Map from "../components/Map";
 
 export default function Home() {
+  const [searchKeyword, setSearchKeyword] = useState("");
+
   const stats = [
     { value: "15+", label: "경력" },
     { value: "1200+", label: "거래" },
@@ -63,12 +65,36 @@ export default function Home() {
               대구 달성군과 테크노폴리스 지역의 주거·상업용 매물을 정확하고 빠르게 안내합니다.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <form
+              action="/search"
+              method="get"
+              className="mt-8 flex w-full max-w-2xl flex-col gap-3 rounded-[24px] border border-white/15 bg-white/10 p-3 backdrop-blur-md sm:flex-row"
+            >
+              <label htmlFor="home-property-search" className="sr-only">
+                지역, 주소, 매물명 검색
+              </label>
+              <input
+                id="home-property-search"
+                name="q"
+                value={searchKeyword}
+                onChange={(event) => setSearchKeyword(event.target.value)}
+                placeholder="지역, 주소, 매물명을 입력하세요"
+                className="min-w-0 flex-1 rounded-2xl border border-white/15 bg-white px-5 py-3.5 text-[#0A2342] outline-none placeholder:text-[#0A2342]/45 focus:border-[#C9A227]"
+              />
+              <button
+                type="submit"
+                className="rounded-2xl bg-[#C9A227] px-6 py-3.5 text-sm font-semibold text-[#0A2342] transition hover:bg-[#d8b53b]"
+              >
+                매물 검색
+              </button>
+            </form>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/properties"
-                className="inline-flex items-center justify-center rounded-full bg-[#C9A227] px-6 py-3.5 text-sm font-semibold text-[#0A2342] shadow-lg shadow-[#C9A227]/20 transition duration-300 hover:-translate-y-1 hover:bg-[#d8b53b]"
+                className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:bg-white/20"
               >
-                전체 매물 검색
+                상세 조건 검색
               </Link>
               <a
                 href="tel:01077750014"
@@ -90,7 +116,7 @@ export default function Home() {
               {quickLinks.map((item) => (
                 <Link
                   key={item}
-                  href="/properties"
+                  href={`/search?type=${encodeURIComponent(item)}`}
                   className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-[#C9A227] hover:bg-[#C9A227]/20"
                 >
                   {item}
