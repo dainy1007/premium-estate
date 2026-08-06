@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 const adminLinks = [
+  { href: "/admin/overview", label: "운영 현황" },
   { href: "/admin", label: "매물 관리" },
   { href: "/admin/inquiries", label: "문의 관리" },
 ];
@@ -73,15 +74,19 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
   if (pathname === "/admin/login") return children;
 
-  const isActive = (href: string) =>
-    href === "/admin" ? pathname === href || pathname.startsWith("/admin/properties") : pathname.startsWith(href);
+  const isActive = (href: string) => {
+    if (href === "/admin") {
+      return pathname === href || pathname.startsWith("/admin/properties");
+    }
+    return pathname.startsWith(href);
+  };
 
   return (
     <div className="min-h-screen bg-slate-100">
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-6">
-            <Link href="/admin" className="truncate font-bold text-[#0A2342]">
+            <Link href="/admin/overview" className="truncate font-bold text-[#0A2342]">
               백조현대부동산 관리자
             </Link>
 
