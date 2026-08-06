@@ -6,6 +6,8 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Property } from "@/types/property";
 
+const ITEMS_PER_PAGE = 9;
+
 export default function PropertySearchPage() {
   return (
     <Suspense fallback={<SearchPageLoading />}>
@@ -37,12 +39,12 @@ function PropertySearchContent() {
   const [errorMessage, setErrorMessage] = useState("");
   const [dealType, setDealType] = useState("전체");
   const [sortOption, setSortOption] = useState("최신순");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     async function loadProperties() {
       setLoading(true);
       setErrorMessage("");
-
       const { data, error } = await supabase
         .from("properties")
         .select("*, property_images(*)")
@@ -51,16 +53,17 @@ function PropertySearchContent() {
       if (error) {
         console.error("매물 검색 오류:", error);
         setErrorMessage("매물 검색 중 오류가 발생했습니다.");
-        setLoading(false);
-        return;
+      } else {
+        setProperties((data || []) as Property[]);
       }
-
-      setProperties((data || []) as Property[]);
       setLoading(false);
     }
-
     loadProperties();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dealType, keyword, sortOption, type]);
 
   const dealTypes = useMemo(
     () => ["전체", ...Array.from(new Set(properties.map((item) => item.deal_type).filter(Boolean) as string[]))],
@@ -70,25 +73,16 @@ function PropertySearchContent() {
   const results = useMemo(() => {
     const normalizedKeyword = keyword.toLowerCase();
     const typeTerms = type ? type.split("·") : [];
-
     const filtered = properties.filter((property) => {
-      const searchable = [
-        property.title,
-        property.location,
-        property.address,
-        property.description,
-        property.type,
-        property.deal_type,
-      ]
+      const searchable = [property.title, property.location, property.address, property.description, property.type, property.deal_type]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
-
-      const keywordMatches = !normalizedKeyword || searchable.includes(normalizedKeyword);
-      const typeMatches = typeTerms.length === 0 || typeTerms.some((term) => searchable.includes(term.toLowerCase()));
-      const dealMatches = dealType === "전체" || property.deal_type === dealType;
-
-      return keywordMatches && typeMatches && dealMatches;
+      return (
+        (!normalizedKeyword || searchable.includes(normalizedKeyword)) &&
+        (typeTerms.length === 0 || typeTerms.some((term) => searchable.includes(term.toLowerCase()))) &&
+        (dealType === "전체" || property.deal_type === dealType)
+      );
     });
 
     return [...filtered].sort((a, b) => {
@@ -99,6 +93,22 @@ function PropertySearchContent() {
     });
   }, [dealType, keyword, properties, sortOption, type]);
 
+  const totalPages = Math.max(1, Math.ceil(results.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageStart = (safePage - 1) * ITEMS_PER_PAGE;
+  const paginatedResults = results.slice(pageStart, pageStart + ITEMS_PER_PAGE);
+
+  const moveToPage = (page: number) => {
+    setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+    window.scrollTo({ top: 360, behavior: "smooth" });
+  };
+
+  const resetLocalFilters = () => {
+    setDealType("전체");
+    setSortOption("최신순");
+    setCurrentPage(1);
+  };
+
   return (
     <main className="min-h-screen bg-[#F8F9FB] text-[#0A2342]">
       <section className="bg-[#0A2342] px-6 pb-14 pt-24 text-white">
@@ -107,9 +117,7 @@ function PropertySearchContent() {
           <p className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-[#C9A227]">Property Search</p>
           <h1 className="mt-3 text-4xl font-bold">매물 검색 결과</h1>
           <p className="mt-4 text-white/70">
-            {keyword && `검색어 “${keyword}”`}
-            {keyword && type && " · "}
-            {type && `유형 “${type}”`}
+            {keyword && `검색어 “${keyword}”`}{keyword && type && " · "}{type && `유형 “${type}”`}
           </p>
         </div>
       </section>
@@ -117,25 +125,25 @@ function PropertySearchContent() {
       <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="mb-8 rounded-[24px] border border-[#0A2342]/10 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <p className="text-sm text-[#0A2342]/65">총 <strong className="text-[#0A2342]">{results.length}개</strong> 매물</p>
+            <p className="text-sm text-[#0A2342]/65">
+              총 <strong className="text-[#0A2342]">{results.length}개</strong> 매물
+              {results.length > 0 && <span className="ml-2 text-[#0A2342]/45">· {pageStart + 1}-{Math.min(pageStart + ITEMS_PER_PAGE, results.length)}번째 표시</span>}
+            </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <select value={dealType} onChange={(event) => setDealType(event.target.value)} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm outline-none focus:border-[#C9A227]">
                 {dealTypes.map((item) => <option key={item}>{item}</option>)}
               </select>
               <select value={sortOption} onChange={(event) => setSortOption(event.target.value)} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm outline-none focus:border-[#C9A227]">
-                <option>최신순</option>
-                <option>오래된순</option>
-                <option>이름순</option>
+                <option>최신순</option><option>오래된순</option><option>이름순</option>
               </select>
-              <Link href="/properties" className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-center text-sm font-semibold transition hover:border-[#C9A227] hover:bg-[#C9A227]/10">상세 조건 검색</Link>
+              <button type="button" onClick={resetLocalFilters} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm font-semibold hover:border-[#C9A227] hover:bg-[#C9A227]/10">조건 초기화</button>
+              <Link href="/properties" className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-center text-sm font-semibold hover:border-[#C9A227] hover:bg-[#C9A227]/10">상세 조건 검색</Link>
             </div>
           </div>
         </div>
 
         {loading && <p className="py-20 text-center text-[#0A2342]/55">매물을 검색하는 중입니다...</p>}
-
         {!loading && errorMessage && <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700">{errorMessage}</div>}
-
         {!loading && !errorMessage && results.length === 0 && (
           <div className="rounded-[28px] border border-dashed border-[#0A2342]/20 bg-white p-12 text-center">
             <p className="text-lg font-semibold">조건에 맞는 매물이 없습니다.</p>
@@ -143,40 +151,50 @@ function PropertySearchContent() {
           </div>
         )}
 
-        {!loading && !errorMessage && results.length > 0 && (
-          <div className="grid gap-7 md:grid-cols-2 xl:grid-cols-3">
-            {results.map((property) => {
-              const orderedImages = [...(property.property_images || [])].sort(
-                (a, b) => Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order
-              );
-              const coverImage = orderedImages[0]?.image_url || property.image_url;
-
-              return (
-                <article key={property.id} className="overflow-hidden rounded-[24px] border border-[#0A2342]/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <Link href={`/properties/${property.id}`}>
-                    {coverImage ? <img src={coverImage} alt={property.title} className="h-60 w-full object-cover" /> : <div className="flex h-60 items-center justify-center bg-[#EEF1F5] text-[#0A2342]/45">이미지 준비중</div>}
-                  </Link>
-                  <div className="p-6">
-                    <div className="flex flex-wrap gap-2">
-                      {property.type && <span className="rounded-full bg-[#C9A227]/15 px-3 py-1 text-xs font-semibold text-[#8C6E00]">{property.type}</span>}
-                      {property.deal_type && <span className="rounded-full bg-[#C9A227]/15 px-3 py-1 text-xs font-semibold text-[#8C6E00]">{property.deal_type}</span>}
-                    </div>
-                    <h2 className="mt-4 text-xl font-bold">{property.title}</h2>
-                    <p className="mt-2 line-clamp-1 text-sm text-[#0A2342]/65">{property.address || property.location}</p>
-                    <div className="mt-4 flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-[#0A2342]/55">면적 {property.area || "문의"}</p>
-                        <p className="mt-1 text-lg font-bold text-[#C9A227]">{property.price || "가격 문의"}</p>
+        {!loading && !errorMessage && paginatedResults.length > 0 && (
+          <>
+            <div className="grid gap-7 md:grid-cols-2 xl:grid-cols-3">
+              {paginatedResults.map((property) => {
+                const orderedImages = [...(property.property_images || [])].sort((a, b) => Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order);
+                const coverImage = orderedImages[0]?.image_url || property.image_url;
+                return (
+                  <article key={property.id} className="overflow-hidden rounded-[24px] border border-[#0A2342]/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                    <Link href={`/properties/${property.id}`}>
+                      {coverImage ? <img src={coverImage} alt={property.title} className="h-60 w-full object-cover" /> : <div className="flex h-60 items-center justify-center bg-[#EEF1F5] text-[#0A2342]/45">이미지 준비중</div>}
+                    </Link>
+                    <div className="p-6">
+                      <div className="flex flex-wrap gap-2">
+                        {property.type && <span className="rounded-full bg-[#C9A227]/15 px-3 py-1 text-xs font-semibold text-[#8C6E00]">{property.type}</span>}
+                        {property.deal_type && <span className="rounded-full bg-[#C9A227]/15 px-3 py-1 text-xs font-semibold text-[#8C6E00]">{property.deal_type}</span>}
                       </div>
-                      <Link href={`/properties/${property.id}`} className="rounded-full bg-[#0A2342] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#12385f]">상세보기</Link>
+                      <h2 className="mt-4 text-xl font-bold">{property.title}</h2>
+                      <p className="mt-2 line-clamp-1 text-sm text-[#0A2342]/65">{property.address || property.location}</p>
+                      <div className="mt-4 flex items-end justify-between gap-4">
+                        <div><p className="text-sm text-[#0A2342]/55">면적 {property.area || "문의"}</p><p className="mt-1 text-lg font-bold text-[#C9A227]">{property.price || "가격 문의"}</p></div>
+                        <Link href={`/properties/${property.id}`} className="rounded-full bg-[#0A2342] px-4 py-2 text-sm font-semibold text-white hover:bg-[#12385f]">상세보기</Link>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <nav aria-label="검색 결과 페이지" className="mt-12 flex flex-wrap items-center justify-center gap-2">
+                <PageButton disabled={safePage === 1} onClick={() => moveToPage(safePage - 1)}>이전</PageButton>
+                {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                  <button key={page} type="button" onClick={() => moveToPage(page)} aria-current={page === safePage ? "page" : undefined} className={`h-10 min-w-10 rounded-full px-3 text-sm font-semibold ${page === safePage ? "bg-[#0A2342] text-white" : "border border-[#0A2342]/15 bg-white hover:border-[#C9A227] hover:bg-[#C9A227]/10"}`}>{page}</button>
+                ))}
+                <PageButton disabled={safePage === totalPages} onClick={() => moveToPage(safePage + 1)}>다음</PageButton>
+              </nav>
+            )}
+          </>
         )}
       </section>
     </main>
   );
+}
+
+function PageButton({ children, disabled, onClick }: { children: React.ReactNode; disabled: boolean; onClick: () => void }) {
+  return <button type="button" disabled={disabled} onClick={onClick} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm font-semibold hover:border-[#C9A227] hover:bg-[#C9A227]/10 disabled:cursor-not-allowed disabled:opacity-35">{children}</button>;
 }
