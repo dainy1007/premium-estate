@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import React from "react";
+import Link from "next/link";
+import React, { useState } from "react";
 import Contact from "../components/Contact";
 import FeaturedProperties from "../components/FeaturedProperties";
 import Footer from "../components/Footer";
@@ -10,6 +11,8 @@ import Testimonials from "../components/Testimonials";
 import Map from "../components/Map";
 
 export default function Home() {
+  const [searchKeyword, setSearchKeyword] = useState("");
+
   const stats = [
     { value: "15+", label: "경력" },
     { value: "1200+", label: "거래" },
@@ -18,19 +21,21 @@ export default function Home() {
   ];
 
   const services = [
-    "상가 매매.임대",
-    "원룸,투룸,다가구",
-    "아파트 매매,전세",
-    "오피스텔 매매,임대",
-    "창고,공장 전문",
+    "상가 매매·임대",
+    "원룸·투룸·다가구",
+    "아파트 매매·전세",
+    "오피스텔 매매·임대",
+    "창고·공장 전문",
     "토지 투자 상담",
   ];
+
+  const quickLinks = ["상가", "원룸·투룸", "아파트", "오피스텔", "창고·공장", "토지"];
 
   return (
     <main className="min-h-screen bg-white text-[#0A2342]">
       <Header />
 
-      <section className="relative isolate flex min-h-screen items-center overflow-hidden bg-[#0A2342]">
+      <section className="relative isolate flex min-h-[92vh] items-center overflow-hidden bg-[#0A2342]">
         <div
           aria-hidden
           className="absolute inset-0 bg-cover bg-center"
@@ -57,21 +62,45 @@ export default function Home() {
               신뢰를 만드는 중개
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-white/80 sm:text-xl">
-              고객의 성공적인 부동산 선택을 위해 함께 고민하고 함께 만들어 가겠습니다.
+              대구 달성군과 테크노폴리스 지역의 주거·상업용 매물을 정확하고 빠르게 안내합니다.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
-                href="#contact"
-                className="inline-flex items-center justify-center rounded-full bg-[#C9A227] px-6 py-3.5 text-sm font-semibold text-[#0A2342] shadow-lg shadow-[#C9A227]/20 transition duration-300 hover:-translate-y-1 hover:bg-[#d8b53b]"
+            <form
+              action="/search"
+              method="get"
+              className="mt-8 flex w-full max-w-2xl flex-col gap-3 rounded-[24px] border border-white/15 bg-white/10 p-3 backdrop-blur-md sm:flex-row"
+            >
+              <label htmlFor="home-property-search" className="sr-only">
+                지역, 주소, 매물명 검색
+              </label>
+              <input
+                id="home-property-search"
+                name="q"
+                value={searchKeyword}
+                onChange={(event) => setSearchKeyword(event.target.value)}
+                placeholder="지역, 주소, 매물명을 입력하세요"
+                className="min-w-0 flex-1 rounded-2xl border border-white/15 bg-white px-5 py-3.5 text-[#0A2342] outline-none placeholder:text-[#0A2342]/45 focus:border-[#C9A227]"
+              />
+              <button
+                type="submit"
+                className="rounded-2xl bg-[#C9A227] px-6 py-3.5 text-sm font-semibold text-[#0A2342] transition hover:bg-[#d8b53b]"
               >
-                무료 상담
-              </a>
-              <a
-                href="#services"
+                매물 검색
+              </button>
+            </form>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/properties"
                 className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:bg-white/20"
               >
-                추천 매물 보기
+                상세 조건 검색
+              </Link>
+              <a
+                href="tel:01077750014"
+                className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:bg-white/20"
+              >
+                전화 상담 010-7775-0014
               </a>
             </div>
           </motion.div>
@@ -79,14 +108,31 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.7 }}
-            className="mt-16 grid w-full max-w-4xl gap-4 md:grid-cols-2 xl:grid-cols-4"
+            transition={{ delay: 0.12, duration: 0.7 }}
+            className="mt-10 w-full max-w-5xl rounded-[28px] border border-white/15 bg-white/10 p-4 backdrop-blur-md sm:p-5"
+          >
+            <p className="mb-3 text-left text-sm font-semibold text-white/75">매물유형 바로가기</p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {quickLinks.map((item) => (
+                <Link
+                  key={item}
+                  href={`/search?type=${encodeURIComponent(item)}`}
+                  className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-[#C9A227] hover:bg-[#C9A227]/20"
+                >
+                  {item}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.7 }}
+            className="mt-8 grid w-full max-w-4xl grid-cols-2 gap-3 md:grid-cols-4"
           >
             {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-2xl border border-white/15 bg-white/10 p-5 text-center backdrop-blur-sm"
-              >
+              <div key={stat.label} className="rounded-2xl border border-white/15 bg-white/10 p-5 text-center backdrop-blur-sm">
                 <p className="text-3xl font-semibold text-[#C9A227]">{stat.value}</p>
                 <p className="mt-2 text-sm text-white/80">{stat.label}</p>
               </div>
@@ -95,22 +141,16 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="services" className="mx-auto max-w-7xl px-6 py-24 md:px-8 md:py-32">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto max-w-2xl text-center"
-        >
-          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-[#C9A227]">
-            Our Services
-          </p>
+      <FeaturedProperties />
+
+      <section id="services" className="mx-auto max-w-7xl px-6 py-20 md:px-8 md:py-28">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-[#C9A227]">Our Services</p>
           <h2 className="mt-3 text-3xl font-bold sm:text-4xl">부동산의 모든 서비스를 한 곳에서 제공합니다.</h2>
           <p className="mt-4 text-base text-[#0A2342]/70 sm:text-lg">
             매매, 임대, 투자, 시세 분석까지 고객 맞춤형 솔루션으로 안내해드립니다.
           </p>
-        </motion.div>
+        </div>
 
         <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {services.map((service, index) => (
@@ -120,26 +160,24 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5, delay: index * 0.06 }}
-              whileHover={{ scale: 1.03, y: -4, boxShadow: "0 20px 45px rgba(10, 37, 64, 0.12)" }}
-              className="rounded-3xl border border-[#0A2342]/10 bg-white p-8 shadow-sm transition-all duration-300 hover:border-[#C9A227]"
+              className="rounded-3xl border border-[#0A2342]/10 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:border-[#C9A227] hover:shadow-lg"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#C9A227]/10 text-lg font-semibold text-[#C9A227]">
                 0{index + 1}
               </div>
-              <h3 className="mt-6 text-xl font-semibold text-[#0A2342]">{service}</h3>
+              <h3 className="mt-6 text-xl font-semibold">{service}</h3>
               <p className="mt-3 text-sm leading-7 text-[#0A2342]/70">
-                전문 컨설턴트가 맞춤형 전략으로 성공적인 거래를 지원합니다.
+                현장 경험을 바탕으로 매물 확인부터 계약까지 꼼꼼하게 안내합니다.
               </p>
             </motion.article>
           ))}
         </div>
       </section>
 
-     <FeaturedProperties />
-<Testimonials />
-<Map />
-<Contact />
-<Footer />
+      <Testimonials />
+      <Map />
+      <Contact />
+      <Footer />
     </main>
   );
 }
