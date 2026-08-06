@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 const adminLinks = [
   { href: "/admin", label: "매물 관리" },
@@ -12,6 +12,64 @@ const adminLinks = [
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const hasUnsavedChanges = useRef(false);
+
+  useEffect(() => {
+    hasUnsavedChanges.current = false;
+
+    const markDirty = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!target.closest("form")) return;
+      if (target.closest("form")?.dataset.ignoreUnsavedWarning === "true") return;
+      hasUnsavedChanges.current = true;
+    };
+
+    const clearDirty = (event: Event) => {
+      const form = event.target;
+      if (form instanceof HTMLFormElement) hasUnsavedChanges.current = false;
+    };
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (!hasUnsavedChanges.current) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest("a");
+      if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+
+      const confirmed = window.confirm("저장하지 않은 변경사항이 있습니다. 페이지를 이동하시겠습니까?");
+      if (!confirmed) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      hasUnsavedChanges.current = false;
+    };
+
+    document.addEventListener("input", markDirty, true);
+    document.addEventListener("change", markDirty, true);
+    document.addEventListener("submit", clearDirty, true);
+    document.addEventListener("click", handleDocumentClick, true);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("input", markDirty, true);
+      document.removeEventListener("change", markDirty, true);
+      document.removeEventListener("submit", clearDirty, true);
+      document.removeEventListener("click", handleDocumentClick, true);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [pathname]);
 
   if (pathname === "/admin/login") return children;
 
@@ -53,7 +111,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             >
               홈페이지 보기
             </Link>
-            <form action="/api/admin/logout" method="post">
+            <form action="/api/admin/logout" method="post" data-ignore-unsaved-warning="true">
               <button
                 type="submit"
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -96,7 +154,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               >
                 홈페이지 보기
               </Link>
-              <form action="/api/admin/logout" method="post">
+              <form action="/api/admin/logout" method="post" data-ignore-unsaved-warning="true">
                 <button
                   type="submit"
                   className="w-full rounded-xl border border-red-200 px-4 py-3 text-left text-sm font-semibold text-red-600"
