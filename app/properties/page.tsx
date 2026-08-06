@@ -4,24 +4,17 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { parsePropertyPriceAmount } from "@/lib/property-price";
 import { supabase } from "@/lib/supabase";
-import { Property } from "@/types/property";
+import type { Property } from "@/types/property";
 
 const ALL = "전체";
 const ITEMS_PER_PAGE = 9;
-
 const PRICE_OPTIONS = [
-  { label: "제한 없음", value: "" },
-  { label: "5천만원", value: "50000000" },
-  { label: "1억원", value: "100000000" },
-  { label: "2억원", value: "200000000" },
-  { label: "3억원", value: "300000000" },
-  { label: "5억원", value: "500000000" },
-  { label: "10억원", value: "1000000000" },
-  { label: "20억원", value: "2000000000" },
-  { label: "50억원", value: "5000000000" },
-];
+  ["제한 없음", ""], ["5천만원", "50000000"], ["1억원", "100000000"],
+  ["2억원", "200000000"], ["3억원", "300000000"], ["5억원", "500000000"],
+  ["10억원", "1000000000"], ["20억원", "2000000000"], ["50억원", "5000000000"],
+] as const;
 
-type SortOption = "최신순" | "오래된순" | "이름순" | "낮은가격순" | "높은가격순";
+type SortOption = "추천순" | "최신순" | "오래된순" | "이름순" | "낮은가격순" | "높은가격순";
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -33,14 +26,13 @@ export default function PropertiesPage() {
   const [location, setLocation] = useState(ALL);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [sortOption, setSortOption] = useState<SortOption>("최신순");
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [sortOption, setSortOption] = useState<SortOption>("추천순");
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    async function getProperties() {
+    async function load() {
       setLoading(true);
-      setErrorMessage("");
-
       const { data, error } = await supabase
         .from("properties")
         .select("*, property_images(*)")
@@ -49,366 +41,148 @@ export default function PropertiesPage() {
       if (error) {
         console.error("매물 목록 불러오기 오류:", error);
         setErrorMessage("매물 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
-        setLoading(false);
-        return;
+      } else {
+        setProperties(((data || []) as Property[]).filter((item) => item.is_hidden !== true));
       }
-
-      setProperties((data || []) as Property[]);
       setLoading(false);
     }
-
-    getProperties();
+    void load();
   }, []);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [keyword, propertyType, dealType, location, minPrice, maxPrice, sortOption]);
+  useEffect(() => setCurrentPage(1), [keyword, propertyType, dealType, location, minPrice, maxPrice, featuredOnly, sortOption]);
 
-  const propertyTypes = useMemo(
-    () => [ALL, ...Array.from(new Set(properties.map((item) => item.type).filter(Boolean) as string[]))],
-    [properties]
-  );
-
-  const dealTypes = useMemo(
-    () => [ALL, ...Array.from(new Set(properties.map((item) => item.deal_type).filter(Boolean) as string[]))],
-    [properties]
-  );
-
-  const locations = useMemo(
-    () => [ALL, ...Array.from(new Set(properties.map((item) => item.location).filter(Boolean)))],
-    [properties]
-  );
+  const propertyTypes = useMemo(() => [ALL, ...Array.from(new Set(properties.map((v) => v.type).filter(Boolean) as string[]))], [properties]);
+  const dealTypes = useMemo(() => [ALL, ...Array.from(new Set(properties.map((v) => v.deal_type).filter(Boolean) as string[]))], [properties]);
+  const locations = useMemo(() => [ALL, ...Array.from(new Set(properties.map((v) => v.location).filter(Boolean)))], [properties]);
 
   const filteredProperties = useMemo(() => {
-    const normalizedKeyword = keyword.trim().toLowerCase();
+    const query = keyword.trim().toLowerCase();
     const minimum = minPrice ? Number(minPrice) : null;
     const maximum = maxPrice ? Number(maxPrice) : null;
 
-    const result = properties.filter((property) => {
-      const searchableText = [
-        property.title,
-        property.location,
-        property.address,
-        property.description,
-        property.price,
-        property.type,
-        property.deal_type,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      const matchesKeyword = !normalizedKeyword || searchableText.includes(normalizedKeyword);
-      const matchesPropertyType = propertyType === ALL || property.type === propertyType;
-      const matchesDealType = dealType === ALL || property.deal_type === dealType;
-      const matchesLocation = location === ALL || property.location === location;
-      const hasPriceFilter = minimum !== null || maximum !== null;
+    const filtered = properties.filter((property) => {
+      const searchable = [property.title, property.location, property.address, property.description, property.price, property.type, property.deal_type]
+        .filter(Boolean).join(" ").toLowerCase();
       const amount = property.price_amount ?? parsePropertyPriceAmount(property.price);
-      const matchesMinimum = minimum === null || (amount != null && amount >= minimum);
-      const matchesMaximum = maximum === null || (amount != null && amount <= maximum);
-      const matchesPrice = !hasPriceFilter || (amount != null && matchesMinimum && matchesMaximum);
-
-      return matchesKeyword && matchesPropertyType && matchesDealType && matchesLocation && matchesPrice;
+      return (!query || searchable.includes(query))
+        && (propertyType === ALL || property.type === propertyType)
+        && (dealType === ALL || property.deal_type === dealType)
+        && (location === ALL || property.location === location)
+        && (!featuredOnly || property.is_featured === true)
+        && (minimum === null || (amount != null && amount >= minimum))
+        && (maximum === null || (amount != null && amount <= maximum));
     });
 
-    return [...result].sort((a, b) => {
-      if (sortOption === "이름순") {
-        return a.title.localeCompare(b.title, "ko");
+    return [...filtered].sort((a, b) => {
+      if (sortOption === "추천순") {
+        const featured = Number(b.is_featured) - Number(a.is_featured);
+        if (featured !== 0) return featured;
+        const order = (a.display_order ?? 0) - (b.display_order ?? 0);
+        if (order !== 0) return order;
       }
-
+      if (sortOption === "이름순") return a.title.localeCompare(b.title, "ko");
       if (sortOption === "낮은가격순" || sortOption === "높은가격순") {
-        const aAmount = a.price_amount ?? parsePropertyPriceAmount(a.price);
-        const bAmount = b.price_amount ?? parsePropertyPriceAmount(b.price);
-        const aPrice = aAmount ?? Number.MAX_SAFE_INTEGER;
-        const bPrice = bAmount ?? Number.MAX_SAFE_INTEGER;
-
-        if (sortOption === "낮은가격순") return aPrice - bPrice;
-
-        const highA = aAmount ?? -1;
-        const highB = bAmount ?? -1;
-        return highB - highA;
+        const aa = a.price_amount ?? parsePropertyPriceAmount(a.price);
+        const bb = b.price_amount ?? parsePropertyPriceAmount(b.price);
+        return sortOption === "낮은가격순"
+          ? (aa ?? Number.MAX_SAFE_INTEGER) - (bb ?? Number.MAX_SAFE_INTEGER)
+          : (bb ?? -1) - (aa ?? -1);
       }
-
-      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-
-      return sortOption === "오래된순" ? aTime - bTime : bTime - aTime;
+      const at = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bt = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return sortOption === "오래된순" ? at - bt : bt - at;
     });
-  }, [properties, keyword, propertyType, dealType, location, minPrice, maxPrice, sortOption]);
+  }, [properties, keyword, propertyType, dealType, location, minPrice, maxPrice, featuredOnly, sortOption]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProperties.length / ITEMS_PER_PAGE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const pageStart = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedProperties = filteredProperties.slice(pageStart, pageStart + ITEMS_PER_PAGE);
+  const safePage = Math.min(currentPage, totalPages);
+  const pageStart = (safePage - 1) * ITEMS_PER_PAGE;
+  const pageItems = filteredProperties.slice(pageStart, pageStart + ITEMS_PER_PAGE);
+  const pages = useMemo(() => {
+    const end = Math.min(totalPages, Math.max(5, safePage + 2));
+    const start = Math.max(1, end - 4);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [safePage, totalPages]);
 
-  const pageNumbers = useMemo(() => {
-    const start = Math.max(1, safeCurrentPage - 2);
-    const end = Math.min(totalPages, start + 4);
-    const adjustedStart = Math.max(1, end - 4);
+  function resetFilters() {
+    setKeyword(""); setPropertyType(ALL); setDealType(ALL); setLocation(ALL);
+    setMinPrice(""); setMaxPrice(""); setFeaturedOnly(false); setSortOption("추천순"); setCurrentPage(1);
+  }
 
-    return Array.from({ length: end - adjustedStart + 1 }, (_, index) => adjustedStart + index);
-  }, [safeCurrentPage, totalPages]);
-
-  const resetFilters = () => {
-    setKeyword("");
-    setPropertyType(ALL);
-    setDealType(ALL);
-    setLocation(ALL);
-    setMinPrice("");
-    setMaxPrice("");
-    setSortOption("최신순");
-    setCurrentPage(1);
-  };
-
-  const moveToPage = (page: number) => {
+  function moveToPage(page: number) {
     setCurrentPage(Math.min(Math.max(page, 1), totalPages));
     window.scrollTo({ top: 420, behavior: "smooth" });
-  };
+  }
 
   return (
     <main className="min-h-screen bg-[#F8F9FB] text-[#0A2342]">
       <section className="bg-[#0A2342] px-6 pb-16 pt-28 text-white">
         <div className="mx-auto max-w-7xl">
-          <Link href="/" className="text-sm font-semibold text-[#C9A227] hover:underline">
-            ← 홈으로
-          </Link>
-          <p className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-[#C9A227]">
-            Property Search
-          </p>
+          <Link href="/" className="text-sm font-semibold text-[#C9A227] hover:underline">← 홈으로</Link>
+          <p className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-[#C9A227]">Property Search</p>
           <h1 className="mt-3 text-4xl font-bold sm:text-5xl">매물 검색</h1>
-          <p className="mt-4 max-w-2xl text-white/75">
-            원하는 조건을 선택해 백조현대부동산중개의 등록 매물을 빠르게 찾아보세요.
-          </p>
+          <p className="mt-4 max-w-2xl text-white/75">원하는 조건을 선택해 등록 매물을 빠르게 찾아보세요.</p>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="rounded-[28px] border border-[#0A2342]/10 bg-white p-5 shadow-sm sm:p-7">
           <div className="grid gap-4 lg:grid-cols-[2fr_1fr_1fr_1fr]">
-            <div>
-              <label className="mb-2 block text-sm font-semibold">검색어</label>
-              <input
-                value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
-                placeholder="매물명, 주소, 지역, 설명 검색"
-                className="w-full rounded-2xl border border-[#0A2342]/15 px-4 py-3 outline-none transition focus:border-[#C9A227]"
-              />
-            </div>
-
-            <FilterSelect label="매물유형" value={propertyType} options={propertyTypes} onChange={setPropertyType} />
-            <FilterSelect label="거래유형" value={dealType} options={dealTypes} onChange={setDealType} />
-            <FilterSelect label="지역" value={location} options={locations} onChange={setLocation} />
+            <Field label="검색어"><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="매물명, 주소, 지역, 설명 검색" className="input" /></Field>
+            <SelectField label="매물유형" value={propertyType} options={propertyTypes} onChange={setPropertyType} />
+            <SelectField label="거래유형" value={dealType} options={dealTypes} onChange={setDealType} />
+            <SelectField label="지역" value={location} options={locations} onChange={setLocation} />
           </div>
-
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:max-w-2xl">
-            <PriceSelect label="최저가격" value={minPrice} onChange={setMinPrice} />
-            <PriceSelect label="최고가격" value={maxPrice} onChange={setMaxPrice} />
+            <PriceField label="최저가격" value={minPrice} onChange={setMinPrice} />
+            <PriceField label="최고가격" value={maxPrice} onChange={setMaxPrice} />
           </div>
-
-          {minPrice && maxPrice && Number(minPrice) > Number(maxPrice) && (
-            <p className="mt-3 text-sm font-medium text-red-600">최저가격은 최고가격보다 낮아야 합니다.</p>
-          )}
-
           <div className="mt-5 flex flex-col gap-3 border-t border-[#0A2342]/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-[#0A2342]/65">
-              전체 {properties.length}개 중 <strong className="text-[#0A2342]">{filteredProperties.length}개</strong> 매물
-              {filteredProperties.length > 0 && (
-                <span className="ml-2 text-[#0A2342]/45">
-                  · {pageStart + 1}-{Math.min(pageStart + ITEMS_PER_PAGE, filteredProperties.length)}번째 표시
-                </span>
-              )}
-            </p>
+            <p className="text-sm text-[#0A2342]/65">공개 매물 {properties.length}개 중 <strong>{filteredProperties.length}개</strong></p>
             <div className="flex flex-wrap gap-3">
-              <select
-                value={sortOption}
-                onChange={(event) => setSortOption(event.target.value as SortOption)}
-                className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm outline-none focus:border-[#C9A227]"
-              >
-                <option>최신순</option>
-                <option>오래된순</option>
-                <option>이름순</option>
-                <option>낮은가격순</option>
-                <option>높은가격순</option>
+              <button type="button" onClick={() => setFeaturedOnly((v) => !v)} className={`rounded-full border px-4 py-2 text-sm font-semibold ${featuredOnly ? "border-[#C9A227] bg-[#C9A227]/15" : "border-[#0A2342]/15"}`}>추천만 보기</button>
+              <select value={sortOption} onChange={(e) => setSortOption(e.target.value as SortOption)} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm">
+                {(["추천순", "최신순", "오래된순", "이름순", "낮은가격순", "높은가격순"] as SortOption[]).map((v) => <option key={v}>{v}</option>)}
               </select>
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="rounded-full border border-[#0A2342]/15 px-4 py-2 text-sm font-semibold transition hover:border-[#C9A227] hover:bg-[#C9A227]/10"
-              >
-                조건 초기화
-              </button>
+              <button type="button" onClick={resetFilters} className="rounded-full border border-[#0A2342]/15 px-4 py-2 text-sm font-semibold">조건 초기화</button>
             </div>
           </div>
         </div>
 
         {loading && <p className="py-20 text-center text-[#0A2342]/60">매물을 불러오는 중입니다...</p>}
+        {!loading && errorMessage && <div className="my-10 rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700">{errorMessage}</div>}
+        {!loading && !errorMessage && filteredProperties.length === 0 && <div className="my-10 rounded-[28px] border border-dashed border-[#0A2342]/20 bg-white p-12 text-center"><p className="text-lg font-semibold">조건에 맞는 매물이 없습니다.</p></div>}
 
-        {!loading && errorMessage && (
-          <div className="my-10 rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700">
-            {errorMessage}
+        {!loading && !errorMessage && pageItems.length > 0 && <>
+          <div className="mt-8 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
+            {pageItems.map((property) => {
+              const images = [...(property.property_images || [])].sort((a, b) => Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order);
+              const cover = images[0]?.image_url || property.image_url;
+              const completed = property.listing_status === "completed";
+              return <article key={property.id} className="overflow-hidden rounded-[24px] border border-[#0A2342]/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                <Link href={`/properties/${property.id}`} className="relative block">
+                  {cover ? <img src={cover} alt={property.title} className={`h-60 w-full object-cover ${completed ? "grayscale-[35%]" : ""}`} /> : <div className="flex h-60 items-center justify-center bg-[#EEF1F5]">이미지 준비중</div>}
+                  <div className="absolute left-4 top-4 flex flex-wrap gap-2">{property.is_featured && <Badge>추천</Badge>}{completed && <StatusBadge>계약완료</StatusBadge>}</div>
+                </Link>
+                <div className="p-6">
+                  <div className="flex flex-wrap gap-2">{property.type && <Badge>{property.type}</Badge>}{property.deal_type && <Badge>{property.deal_type}</Badge>}</div>
+                  <h2 className="mt-4 text-xl font-bold">{property.title}</h2>
+                  <p className="mt-2 line-clamp-1 text-sm text-[#0A2342]/65">{property.address || property.location}</p>
+                  <div className="mt-4 flex items-end justify-between gap-4"><div><p className="text-sm text-[#0A2342]/55">면적 {property.area || "문의"}</p><p className="mt-1 text-lg font-bold text-[#C9A227]">{completed ? "계약완료" : property.price || "가격 문의"}</p></div><Link href={`/properties/${property.id}`} className="rounded-full bg-[#0A2342] px-4 py-2 text-sm font-semibold text-white">상세보기</Link></div>
+                </div>
+              </article>;
+            })}
           </div>
-        )}
-
-        {!loading && !errorMessage && filteredProperties.length === 0 && (
-          <div className="my-10 rounded-[28px] border border-dashed border-[#0A2342]/20 bg-white p-12 text-center">
-            <p className="text-lg font-semibold">조건에 맞는 매물이 없습니다.</p>
-            <button onClick={resetFilters} className="mt-4 font-semibold text-[#C9A227] hover:underline">
-              검색 조건 초기화
-            </button>
-          </div>
-        )}
-
-        {!loading && !errorMessage && paginatedProperties.length > 0 && (
-          <>
-            <div className="mt-8 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
-              {paginatedProperties.map((property) => {
-                const orderedImages = [...(property.property_images || [])].sort(
-                  (a, b) => Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order
-                );
-                const coverImage = orderedImages[0]?.image_url || property.image_url;
-
-                return (
-                  <article key={property.id} className="overflow-hidden rounded-[24px] border border-[#0A2342]/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                    <Link href={`/properties/${property.id}`}>
-                      {coverImage ? (
-                        <img src={coverImage} alt={property.title} className="h-60 w-full object-cover" />
-                      ) : (
-                        <div className="flex h-60 items-center justify-center bg-[#EEF1F5] text-[#0A2342]/45">
-                          이미지 준비중
-                        </div>
-                      )}
-                    </Link>
-
-                    <div className="p-6">
-                      <div className="flex flex-wrap gap-2">
-                        {property.type && <Badge>{property.type}</Badge>}
-                        {property.deal_type && <Badge>{property.deal_type}</Badge>}
-                      </div>
-                      <h2 className="mt-4 text-xl font-bold">{property.title}</h2>
-                      <p className="mt-2 line-clamp-1 text-sm text-[#0A2342]/65">
-                        {property.address || property.location}
-                      </p>
-                      <div className="mt-4 flex items-end justify-between gap-4">
-                        <div>
-                          <p className="text-sm text-[#0A2342]/55">면적 {property.area || "문의"}</p>
-                          <p className="mt-1 text-lg font-bold text-[#C9A227]">{property.price || "가격 문의"}</p>
-                        </div>
-                        <Link
-                          href={`/properties/${property.id}`}
-                          className="rounded-full bg-[#0A2342] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#12385f]"
-                        >
-                          상세보기
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            {totalPages > 1 && (
-              <nav aria-label="매물 목록 페이지" className="mt-12 flex flex-wrap items-center justify-center gap-2">
-                <PaginationButton disabled={safeCurrentPage === 1} onClick={() => moveToPage(safeCurrentPage - 1)}>
-                  이전
-                </PaginationButton>
-
-                {pageNumbers.map((page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => moveToPage(page)}
-                    aria-current={page === safeCurrentPage ? "page" : undefined}
-                    className={`h-10 min-w-10 rounded-full px-3 text-sm font-semibold transition ${
-                      page === safeCurrentPage
-                        ? "bg-[#0A2342] text-white"
-                        : "border border-[#0A2342]/15 bg-white text-[#0A2342] hover:border-[#C9A227] hover:bg-[#C9A227]/10"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-
-                <PaginationButton disabled={safeCurrentPage === totalPages} onClick={() => moveToPage(safeCurrentPage + 1)}>
-                  다음
-                </PaginationButton>
-              </nav>
-            )}
-          </>
-        )}
+          {totalPages > 1 && <nav className="mt-12 flex flex-wrap items-center justify-center gap-2"><PageButton disabled={safePage === 1} onClick={() => moveToPage(safePage - 1)}>이전</PageButton>{pages.map((p) => <button key={p} onClick={() => moveToPage(p)} className={`h-10 min-w-10 rounded-full px-3 text-sm font-semibold ${p === safePage ? "bg-[#0A2342] text-white" : "border border-[#0A2342]/15 bg-white"}`}>{p}</button>)}<PageButton disabled={safePage === totalPages} onClick={() => moveToPage(safePage + 1)}>다음</PageButton></nav>}
+        </>}
       </section>
     </main>
   );
 }
 
-function FilterSelect({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-semibold">{label}</label>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-[#0A2342]/15 bg-white px-4 py-3 outline-none transition focus:border-[#C9A227]"
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function PriceSelect({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-semibold">{label}</label>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-[#0A2342]/15 bg-white px-4 py-3 outline-none transition focus:border-[#C9A227]"
-      >
-        {PRICE_OPTIONS.map((option) => (
-          <option key={`${label}-${option.value}`} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function PaginationButton({
-  children,
-  disabled,
-  onClick,
-}: {
-  children: React.ReactNode;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm font-semibold transition hover:border-[#C9A227] hover:bg-[#C9A227]/10 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-[#0A2342]/15 disabled:hover:bg-white"
-    >
-      {children}
-    </button>
-  );
-}
-
-function Badge({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-full bg-[#C9A227]/15 px-3 py-1 text-xs font-semibold text-[#8C6E00]">{children}</span>;
-}
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <div><label className="mb-2 block text-sm font-semibold">{label}</label>{children}</div>; }
+function SelectField({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) { return <Field label={label}><select value={value} onChange={(e) => onChange(e.target.value)} className="input">{options.map((v) => <option key={v}>{v}</option>)}</select></Field>; }
+function PriceField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) { return <Field label={label}><select value={value} onChange={(e) => onChange(e.target.value)} className="input">{PRICE_OPTIONS.map(([text, val]) => <option key={`${label}-${val}`} value={val}>{text}</option>)}</select></Field>; }
+function PageButton({ children, disabled, onClick }: { children: React.ReactNode; disabled: boolean; onClick: () => void }) { return <button disabled={disabled} onClick={onClick} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-35">{children}</button>; }
+function Badge({ children }: { children: React.ReactNode }) { return <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#0A2342] shadow-sm">{children}</span>; }
+function StatusBadge({ children }: { children: React.ReactNode }) { return <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-sm">{children}</span>; }
