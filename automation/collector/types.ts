@@ -1,4 +1,12 @@
-export type ListingSource = "naver" | "realestatebank" | "hanbang";
+export type ListingSource =
+  | "naver"
+  | "realestatebank"
+  | "hanbang"
+  | "esiljang"
+  | "mk"
+  | "dabang"
+  | "zigbang"
+  | (string & {});
 
 export type ReviewStatus = "pending" | "approved" | "rejected";
 
