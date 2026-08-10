@@ -16,7 +16,7 @@ export default function FeaturedProperties() {
         .from("properties")
         .select("*, property_images(*)")
         .order("created_at", { ascending: false })
-        .limit(6);
+        .limit(24);
 
       if (error) {
         console.error("매물 불러오기 오류:", error);
@@ -25,7 +25,22 @@ export default function FeaturedProperties() {
         return;
       }
 
-      setProperties((data || []) as Property[]);
+      const visibleProperties = ((data || []) as Property[])
+        .filter((property) => property.is_hidden !== true)
+        .sort((a, b) => {
+          const featuredDifference = Number(b.is_featured) - Number(a.is_featured);
+          if (featuredDifference !== 0) return featuredDifference;
+
+          const orderDifference = (a.display_order ?? 0) - (b.display_order ?? 0);
+          if (orderDifference !== 0) return orderDifference;
+
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return bTime - aTime;
+        })
+        .slice(0, 6);
+
+      setProperties(visibleProperties);
       setLoading(false);
     }
 
@@ -38,10 +53,10 @@ export default function FeaturedProperties() {
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#C9A227]">
-              New Properties
+              Featured Properties
             </p>
-            <h2 className="mt-3 text-3xl font-bold text-[#0A2342] sm:text-4xl">최근 등록 매물</h2>
-            <p className="mt-3 text-[#0A2342]/65">새롭게 등록된 매물을 빠르게 확인해 보세요.</p>
+            <h2 className="mt-3 text-3xl font-bold text-[#0A2342] sm:text-4xl">추천·최근 매물</h2>
+            <p className="mt-3 text-[#0A2342]/65">추천 매물을 먼저, 이후 최근 등록 순으로 안내합니다.</p>
           </div>
           <Link
             href="/properties"
@@ -79,6 +94,7 @@ export default function FeaturedProperties() {
                 (a, b) => Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order
               );
               const coverImage = images[0]?.image_url || property.image_url;
+              const isCompleted = property.listing_status === "completed";
 
               return (
                 <Link
@@ -91,12 +107,14 @@ export default function FeaturedProperties() {
                       <img
                         src={coverImage}
                         alt={property.title}
-                        className="h-60 w-full object-cover transition duration-500 group-hover:scale-105"
+                        className={`h-60 w-full object-cover transition duration-500 group-hover:scale-105 ${isCompleted ? "grayscale-[35%]" : ""}`}
                       />
                     ) : (
                       <div className="flex h-60 items-center justify-center text-[#0A2342]/45">이미지 준비중</div>
                     )}
                     <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                      {property.is_featured && <Badge>추천</Badge>}
+                      {isCompleted && <StatusBadge>계약완료</StatusBadge>}
                       {property.type && <Badge>{property.type}</Badge>}
                       {property.deal_type && <Badge>{property.deal_type}</Badge>}
                     </div>
@@ -110,7 +128,9 @@ export default function FeaturedProperties() {
                     <div className="mt-5 flex items-end justify-between gap-4 border-t border-[#0A2342]/10 pt-5">
                       <div>
                         <p className="text-sm text-[#0A2342]/55">면적 {property.area || "문의"}</p>
-                        <p className="mt-1 text-lg font-bold text-[#C9A227]">{property.price || "가격 문의"}</p>
+                        <p className="mt-1 text-lg font-bold text-[#C9A227]">
+                          {isCompleted ? "계약완료" : property.price || "가격 문의"}
+                        </p>
                       </div>
                       <span className="text-sm font-semibold text-[#0A2342] transition group-hover:text-[#C9A227]">
                         상세보기 →
@@ -125,7 +145,7 @@ export default function FeaturedProperties() {
 
         {!loading && !errorMessage && properties.length === 0 && (
           <div className="mt-10 rounded-3xl border border-dashed border-[#0A2342]/20 bg-white p-12 text-center text-[#0A2342]/60">
-            등록된 매물이 없습니다.
+            공개 중인 매물이 없습니다.
           </div>
         )}
       </div>
@@ -136,6 +156,14 @@ export default function FeaturedProperties() {
 function Badge({ children }: { children: React.ReactNode }) {
   return (
     <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#0A2342] shadow-sm backdrop-blur-sm">
+      {children}
+    </span>
+  );
+}
+
+function StatusBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-sm">
       {children}
     </span>
   );

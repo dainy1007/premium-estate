@@ -9,6 +9,8 @@ export interface PropertyImage {
   created_at?: string;
 }
 
+export type PropertyListingStatus = "active" | "completed";
+
 export interface Property {
   id: number;
   title: string;
@@ -28,4 +30,10 @@ export interface Property {
   bathrooms?: number | null;
   floor?: string | null;
   property_images?: PropertyImage[];
+  is_featured?: boolean;
+  is_hidden?: boolean;
+  listing_status?: PropertyListingStatus;
+  display_order?: number;
+  view_count?: number;
+  admin_memo?: string | null;
 }
