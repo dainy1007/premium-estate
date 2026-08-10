@@ -1,7 +1,7 @@
-import type { CollectorSource } from "./types";
+import type { ListingSource } from "../../automation/collector/types";
 
 export type CollectorSourceConfig = {
-  source: CollectorSource;
+  source: ListingSource;
   label: string;
   enabled: boolean;
   priority: number;
