@@ -102,15 +102,20 @@ export default function FeaturedProperties() {
                   href={`/properties/${property.id}`}
                   className="group overflow-hidden rounded-[26px] border border-[#0A2342]/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
                 >
-                  <div className="relative overflow-hidden bg-[#EEF1F5]">
-                    {coverImage ? (
+                  <div className="relative h-60 overflow-hidden bg-[#EEF1F5]">
+                    <div className="absolute inset-0 flex items-center justify-center text-[#0A2342]/45">
+                      이미지 준비중
+                    </div>
+                    {coverImage && (
                       <img
                         src={coverImage}
                         alt={property.title}
-                        className={`h-60 w-full object-cover transition duration-500 group-hover:scale-105 ${isCompleted ? "grayscale-[35%]" : ""}`}
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
+                        className={`absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105 ${isCompleted ? "grayscale-[35%]" : ""}`}
                       />
-                    ) : (
-                      <div className="flex h-60 items-center justify-center text-[#0A2342]/45">이미지 준비중</div>
                     )}
                     <div className="absolute left-4 top-4 flex flex-wrap gap-2">
                       {property.is_featured && <Badge>추천</Badge>}
