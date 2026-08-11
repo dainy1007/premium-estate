@@ -42,9 +42,23 @@ function makeTitle(listing: NaverListing) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!supabaseUrl || !serviceRoleKey) {
+  const missingSupabaseConfig = [
+    !supabaseUrl ? "NEXT_PUBLIC_SUPABASE_URL" : "",
+    !serviceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : "",
+  ].filter(Boolean);
+
+  if (missingSupabaseConfig.length > 0) {
     return NextResponse.json(
-      { ok: false, error: "Supabase server configuration is missing." },
+      {
+        ok: false,
+        error: "Supabase server configuration is missing.",
+        missing: missingSupabaseConfig,
+        diagnostics: {
+          hasSupabaseUrl: Boolean(supabaseUrl),
+          hasServiceRoleKey: Boolean(serviceRoleKey),
+          vercelEnv: process.env.VERCEL_ENV ?? "unknown",
+        },
+      },
       { status: 500 }
     );
   }
@@ -73,7 +87,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, inserted: 0, updated: 0, skipped: 0 });
   }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  const supabase = createClient(supabaseUrl!, serviceRoleKey!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
