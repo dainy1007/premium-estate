@@ -29,13 +29,21 @@ export default function Home() {
     "토지 투자 상담",
   ];
 
-  const quickLinks = ["상가", "원룸·투룸", "아파트", "오피스텔", "창고·공장", "토지"];
+  const quickLinks = ["원룸", "미니투룸", "투룸", "상가", "창고·공장", "토지"];
+
+  const regionLinks = [
+    { label: "유가읍", href: "/search?q=%EC%9C%A0%EA%B0%80%EC%9D%8D" },
+    { label: "현풍읍", href: "/search?q=%ED%98%84%ED%92%8D%EC%9D%8D" },
+    { label: "구지면", href: "/search?q=%EA%B5%AC%EC%A7%80%EB%A9%B4" },
+    { label: "테크노폴리스", href: "/search?q=%ED%85%8C%ED%81%AC%EB%85%B8%ED%8F%B4%EB%A6%AC%EC%8A%A4" },
+    { label: "디지스트 인근", href: "/search?q=%EB%94%94%EC%A7%80%EC%8A%A4%ED%8A%B8" },
+  ];
 
   return (
-    <main className="min-h-screen bg-white text-[#0A2342]">
+    <main className="min-h-screen bg-white pb-20 text-[#0A2342] md:pb-0">
       <Header />
 
-      <section className="relative isolate flex min-h-[92vh] items-center overflow-hidden bg-[#0A2342]">
+      <section className="relative isolate flex min-h-[88vh] items-center overflow-hidden bg-[#0A2342]">
         <div
           aria-hidden
           className="absolute inset-0 bg-cover bg-center"
@@ -46,29 +54,29 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-black/70" />
 
-        <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center px-6 py-28 text-center text-white md:px-8 md:py-32 lg:items-start lg:text-left">
+        <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center px-6 py-24 text-center text-white md:px-8 md:py-28 lg:items-start lg:text-left">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="max-w-3xl"
+            className="max-w-4xl"
           >
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-[#C9A227]">
+            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-[#C9A227]">
               백조현대부동산중개
             </p>
             <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
-              가치를 보는 안목,
+              현풍·유가·구지,
               <br />
-              신뢰를 만드는 중개
+              원하는 매물을 빠르게 찾으세요
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-white/80 sm:text-xl">
-              대구 달성군과 테크노폴리스 지역의 주거·상업용 매물을 정확하고 빠르게 안내합니다.
+              대구 테크노폴리스 생활권의 원룸·투룸·상가·공장·토지를 현장 중심으로 안내합니다.
             </p>
 
             <form
               action="/search"
               method="get"
-              className="mt-8 flex w-full max-w-2xl flex-col gap-3 rounded-[24px] border border-white/15 bg-white/10 p-3 backdrop-blur-md sm:flex-row"
+              className="mt-8 grid w-full max-w-3xl gap-3 rounded-[24px] border border-white/15 bg-white/10 p-3 backdrop-blur-md sm:grid-cols-[1fr_auto]"
             >
               <label htmlFor="home-property-search" className="sr-only">
                 지역, 주소, 매물명 검색
@@ -78,18 +86,30 @@ export default function Home() {
                 name="q"
                 value={searchKeyword}
                 onChange={(event) => setSearchKeyword(event.target.value)}
-                placeholder="지역, 주소, 매물명을 입력하세요"
-                className="min-w-0 flex-1 rounded-2xl border border-white/15 bg-white px-5 py-3.5 text-[#0A2342] outline-none placeholder:text-[#0A2342]/45 focus:border-[#C9A227]"
+                placeholder="예: 현풍 원룸, 유가읍 투룸, 테크노폴리스 상가"
+                className="min-w-0 rounded-2xl border border-white/15 bg-white px-5 py-4 text-[#0A2342] outline-none placeholder:text-[#0A2342]/45 focus:border-[#C9A227]"
               />
               <button
                 type="submit"
-                className="rounded-2xl bg-[#C9A227] px-6 py-3.5 text-sm font-semibold text-[#0A2342] transition hover:bg-[#d8b53b]"
+                className="rounded-2xl bg-[#C9A227] px-7 py-4 text-sm font-bold text-[#0A2342] transition hover:bg-[#d8b53b]"
               >
                 매물 검색
               </button>
             </form>
 
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-4 flex flex-wrap justify-center gap-2 lg:justify-start">
+              {regionLinks.map((region) => (
+                <Link
+                  key={region.label}
+                  href={region.href}
+                  className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 backdrop-blur-sm transition hover:border-[#C9A227] hover:bg-[#C9A227]/20"
+                >
+                  {region.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/properties"
                 className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:bg-white/20"
@@ -98,7 +118,7 @@ export default function Home() {
               </Link>
               <a
                 href="tel:01077750014"
-                className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:bg-white/20"
+                className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#0A2342] transition duration-300 hover:-translate-y-1 hover:bg-[#F5F5F5]"
               >
                 전화 상담 010-7775-0014
               </a>
@@ -141,6 +161,28 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="border-b border-[#0A2342]/10 bg-white py-8">
+        <div className="mx-auto max-w-7xl px-6 md:px-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-[#C9A227]">지역별 빠른 매물 찾기</p>
+              <h2 className="mt-1 text-2xl font-bold text-[#0A2342]">테크노폴리스 생활권 매물을 바로 확인하세요</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-end">
+              {regionLinks.map((region) => (
+                <Link
+                  key={region.label}
+                  href={region.href}
+                  className="rounded-xl border border-[#0A2342]/10 bg-[#F8F9FB] px-4 py-3 text-center text-sm font-semibold text-[#0A2342] transition hover:border-[#C9A227] hover:bg-[#C9A227]/10"
+                >
+                  {region.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <FeaturedProperties />
 
       <section id="services" className="mx-auto max-w-7xl px-6 py-20 md:px-8 md:py-28">
@@ -178,6 +220,21 @@ export default function Home() {
       <Map />
       <Contact />
       <Footer />
+
+      <div className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-2 border-t border-[#0A2342]/10 bg-white shadow-[0_-6px_24px_rgba(0,0,0,0.08)] md:hidden">
+        <a
+          href="tel:01077750014"
+          className="flex items-center justify-center bg-[#0A2342] px-4 py-4 text-sm font-bold text-white"
+        >
+          전화 상담
+        </a>
+        <Link
+          href="/contact"
+          className="flex items-center justify-center bg-[#C9A227] px-4 py-4 text-sm font-bold text-[#0A2342]"
+        >
+          매물 문의
+        </Link>
+      </div>
     </main>
   );
 }
