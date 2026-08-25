@@ -23,10 +23,12 @@ export function detectPropertyDisplayType(input: {
     .join(" ");
   const explicitType = clean(input.type);
 
-  // 최근 등록된 쌔리움 매물 2건은 실제 건축물 유형이 아파트다.
-  // 유가읍 봉리 601 / 현풍읍 중리 480
-  if (/유가읍.*봉리\s*601|봉리\s*601|유가읍\s*쌔리움/i.test(text)) return "아파트";
-  if (/현풍읍.*중리\s*480|중리\s*480|현풍읍\s*쌔리움/i.test(text)) return "아파트";
+  // 아파트 단지명/주소 우선 판정.
+  // 방 3개라는 이유로 '쓰리룸'으로 분류되는 것을 방지한다.
+  if (/남해\s*오네뜨|남해오네뜨|대구테크노폴리스남해오네뜨1차/i.test(text)) return "아파트";
+  if (/하나리움\s*퀸즈\s*파크|하나리움퀸즈파크|하나리움퀸즈/i.test(text)) return "아파트";
+  if (/유가읍.*봉리\s*601|봉리\s*601/i.test(text)) return "아파트";
+  if (/현풍읍.*중리\s*480|중리\s*480/i.test(text)) return "아파트";
   if (/아파트/i.test(explicitType) || /아파트/i.test(text)) return "아파트";
 
   // 대구테크노폴리스 줌시티: 현풍읍 중리 505-2 / 테크노대로 73
@@ -47,7 +49,16 @@ function normalizeTitleByType(title: string, type: string) {
 
   if (type === "오피스텔") return rawTitle.replace(/원룸/g, "오피스텔");
   if (type === "상가주택") return rawTitle.replace(/상가(?!주택)|토지|원룸|투룸|미니투룸/g, "상가주택");
-  if (type === "아파트") return rawTitle.replace(/미니투룸|쓰리룸|투룸|원룸|상가주택|상가|창고|공장|토지|오피스텔|다가구|단독주택/g, "아파트");
+  if (type === "아파트") {
+    const corrected = rawTitle.replace(/미니투룸|쓰리룸|투룸|원룸|상가주택|상가|창고|공장|토지|오피스텔|다가구|단독주택/g, "아파트");
+    if (/남해\s*오네뜨|남해오네뜨/i.test(rawTitle) && !corrected.includes("아파트")) {
+      return `${corrected} 아파트`;
+    }
+    if (/하나리움\s*퀸즈\s*파크|하나리움퀸즈파크|하나리움퀸즈/i.test(rawTitle) && !corrected.includes("아파트")) {
+      return `${corrected} 아파트`;
+    }
+    return corrected;
+  }
 
   const replaceableTypes = /미니투룸|쓰리룸|투룸|원룸|상가주택|상가|창고|공장|토지|오피스텔|아파트|다가구|단독주택/;
   if (replaceableTypes.test(rawTitle) && !rawTitle.includes(type)) {
