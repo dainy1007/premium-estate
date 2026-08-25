@@ -36,12 +36,27 @@ function normalized(value: unknown) {
   return String(value ?? "").trim();
 }
 
-function getListingType(listing: NaverListing) {
+function deriveGeography(listing: NaverListing) {
   const address = normalized(listing.road_address) || normalized(listing.address);
+  const region = normalized(listing.region);
+  const parts = address.split(/\s+/).filter(Boolean);
+
+  const province = parts.find((part) => /(?:도|특별시|광역시|특별자치시|특별자치도)$/.test(part)) || "";
+  const cityCounty = parts.find((part, index) => index > 0 && /(?:시|군|구)$/.test(part)) || "";
+  const town = parts.find((part) => /(?:읍|면|동)$/.test(part)) || region;
+
+  const shortRegion = town || cityCounty || region;
+  const descriptionRegion = [province, cityCounty, town].filter(Boolean).join(" ") || address || region;
+
+  return { address, shortRegion, descriptionRegion };
+}
+
+function getListingType(listing: NaverListing) {
+  const { address, shortRegion } = deriveGeography(listing);
   return detectPropertyDisplayType({
     type: normalized(listing.property_type),
     address,
-    location: normalized(listing.region),
+    location: shortRegion,
     description: normalized(listing.description),
   });
 }
@@ -50,17 +65,22 @@ function sanitizeDescription(listing: NaverListing) {
   let description = normalized(listing.description);
   if (!description) return "";
 
-  const region = normalized(listing.region);
+  const { descriptionRegion } = deriveGeography(listing);
   const propertyType = getListingType(listing);
   const tradeType = normalized(listing.trade_type);
 
-  if (region && propertyType && propertyType !== "매물" && tradeType) {
-    const wrongOpening = `${region}에 위치한 매물 ${tradeType} 매물입니다.`;
-    const wrongTypeOpening = `${region}에 위치한 ${normalized(listing.property_type)} ${tradeType} 매물입니다.`;
-    const correctOpening = `${region}에 위치한 ${propertyType} ${tradeType} 매물입니다.`;
-    description = description.replace(wrongOpening, correctOpening);
-    if (normalized(listing.property_type) && normalized(listing.property_type) !== propertyType) {
-      description = description.replace(wrongTypeOpening, correctOpening);
+  if (descriptionRegion && propertyType && propertyType !== "매물" && tradeType) {
+    const correctOpening = `${descriptionRegion}에 위치한 ${propertyType} ${tradeType} 매물입니다.`;
+
+    // 기존 자동문구의 지역명이 틀려 있어도 첫 문장을 실제 주소 기준으로 강제 교정한다.
+    description = description.replace(
+      /^[^\n.]*에 위치한\s+(?:매물\s+)?[^\n.]*매물입니다\.?/,
+      correctOpening,
+    );
+
+    // 첫 문장이 자동문구가 아니거나 누락된 경우 주소 기반 안내문을 앞에 붙인다.
+    if (!description.startsWith(correctOpening)) {
+      description = `${correctOpening}\n${description}`;
     }
   }
 
@@ -73,9 +93,9 @@ function sanitizeDescription(listing: NaverListing) {
 }
 
 function makeTitle(listing: NaverListing) {
-  const address = normalized(listing.road_address) || normalized(listing.address);
+  const { address, shortRegion } = deriveGeography(listing);
   return buildSeoTitle({
-    location: normalized(listing.region),
+    location: shortRegion,
     address,
     type: getListingType(listing),
     deal_type: normalized(listing.trade_type),
@@ -161,7 +181,7 @@ export async function POST(request: NextRequest) {
     }
 
     const marker = `naver:${articleNo}`;
-    const address = normalized(raw.road_address) || normalized(raw.address);
+    const { address, shortRegion } = deriveGeography(raw);
     const propertyType = getListingType(raw);
     const descriptionParts = [sanitizeDescription(raw)].filter(Boolean);
 
@@ -169,7 +189,7 @@ export async function POST(request: NextRequest) {
       title: makeTitle(raw),
       type: propertyType || normalized(raw.trade_type) || null,
       deal_type: normalized(raw.trade_type) || null,
-      location: normalized(raw.region),
+      location: shortRegion,
       address,
       price: normalized(raw.price),
       area: sanitizePropertyArea(raw.area),
