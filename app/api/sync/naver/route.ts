@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { buildSeoTitle } from "@/lib/property-seo";
 
 export const runtime = "nodejs";
 
@@ -35,10 +36,14 @@ function normalized(value: unknown) {
 }
 
 function makeTitle(listing: NaverListing) {
-  return [listing.region, listing.property_type, listing.trade_type]
-    .map(normalized)
-    .filter(Boolean)
-    .join(" ") || `네이버 매물 ${listing.article_no}`;
+  const address = normalized(listing.road_address) || normalized(listing.address);
+  return buildSeoTitle({
+    location: normalized(listing.region),
+    address,
+    type: normalized(listing.property_type),
+    deal_type: normalized(listing.trade_type),
+    description: normalized(listing.description),
+  }) || `네이버 매물 ${listing.article_no}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -120,11 +125,7 @@ export async function POST(request: NextRequest) {
 
     const marker = `naver:${articleNo}`;
     const address = normalized(raw.road_address) || normalized(raw.address);
-    const descriptionParts = [
-      normalized(raw.description),
-      raw.move_in ? `입주가능일: ${normalized(raw.move_in)}` : "",
-      `네이버 매물번호: ${articleNo}`,
-    ].filter(Boolean);
+    const descriptionParts = [normalized(raw.description)].filter(Boolean);
 
     const payload = {
       title: makeTitle(raw),
