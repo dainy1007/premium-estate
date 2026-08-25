@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
+import { buildImageAlt, buildSeoTitle } from "@/lib/property-seo";
 import { getSeoLanding, seoLandings } from "@/lib/seo-landings";
 import { siteConfig } from "@/lib/site-config";
 import type { Property } from "@/types/property";
@@ -98,10 +99,29 @@ export default async function SeoLandingPage({ params }: SeoLandingPageProps) {
     ],
   };
 
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: landing.heading,
+    description: landing.description,
+    url: canonical,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: properties.length,
+      itemListElement: properties.map((property, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: buildSeoTitle(property),
+        url: `${siteConfig.url}/properties/${property.id}`,
+      })),
+    },
+  };
+
   return (
     <main className="min-h-screen bg-white text-[#0A2342]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c") }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd).replace(/</g, "\\u003c") }} />
 
       <section className="mx-auto max-w-7xl px-6 py-12 md:px-8 md:py-16">
         <nav className="mb-6 text-sm text-[#0A2342]/60" aria-label="breadcrumb">
@@ -138,14 +158,14 @@ export default async function SeoLandingPage({ params }: SeoLandingPageProps) {
                 <Link key={property.id} href={`/properties/${property.id}`} className="group overflow-hidden rounded-[28px] border border-[#0A2342]/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
                   <div className="h-56 overflow-hidden bg-[#F3F4F6]">
                     {property.image_url ? (
-                      <img src={property.image_url} alt={`${landing.heading} - ${property.title}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                      <img src={property.image_url} alt={buildImageAlt(property, 1)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                     ) : (
                       <div className="flex h-full items-center justify-center text-sm text-gray-500">등록된 이미지가 없습니다.</div>
                     )}
                   </div>
                   <div className="p-5">
                     <p className="text-sm font-semibold text-[#C9A227]">{property.deal_type || property.type || "매물"}</p>
-                    <h3 className="mt-2 line-clamp-2 text-xl font-bold">{property.title}</h3>
+                    <h3 className="mt-2 line-clamp-2 text-xl font-bold">{buildSeoTitle(property)}</h3>
                     <p className="mt-3 font-bold">{property.price || "가격 문의"}</p>
                     <p className="mt-2 text-sm text-[#0A2342]/60">{property.location || "대구 달성군"}</p>
                   </div>
