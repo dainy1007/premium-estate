@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useState } from "react";
 
 const navItems = [
   { label: "HOME", href: "/" },
-  { label: "회사소개", href: "/#about" },
-  { label: "전문분야", href: "/#services" },
+  { label: "회사소개", href: "/#about", sectionId: "about" },
+  { label: "전문분야", href: "/#services", sectionId: "services" },
   { label: "매물검색", href: "/properties" },
   { label: "상담문의", href: "/contact" },
 ];
@@ -18,16 +18,39 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { scrollY } = useScroll();
   const pathname = usePathname();
+  const router = useRouter();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setScrolled(latest > 20);
   });
 
-  const handleHomeClick = () => {
+  const handleHomeClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     setMobileMenuOpen(false);
     if (pathname === "/") {
+      event.preventDefault();
+      window.history.replaceState(null, "", "/");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
+  };
+
+  const handleSectionClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    sectionId: string,
+  ) => {
+    setMobileMenuOpen(false);
+
+    if (pathname === "/") {
+      event.preventDefault();
+      const section = document.getElementById(sectionId);
+      if (section) {
+        window.history.replaceState(null, "", `/#${sectionId}`);
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
+
+    event.preventDefault();
+    router.push(`/#${sectionId}`);
   };
 
   return (
@@ -61,7 +84,13 @@ export default function Header() {
             <Link
               key={item.label}
               href={item.href}
-              onClick={item.href === "/" ? handleHomeClick : undefined}
+              onClick={
+                item.href === "/"
+                  ? handleHomeClick
+                  : item.sectionId
+                    ? (event) => handleSectionClick(event, item.sectionId!)
+                    : undefined
+              }
               className={`text-sm font-medium hover:text-[#C9A227] ${scrolled ? "text-[#0A2540]" : "text-white"}`}
             >
               {item.label}
@@ -94,7 +123,13 @@ export default function Header() {
             <Link
               key={item.label}
               href={item.href}
-              onClick={item.href === "/" ? handleHomeClick : () => setMobileMenuOpen(false)}
+              onClick={
+                item.href === "/"
+                  ? handleHomeClick
+                  : item.sectionId
+                    ? (event) => handleSectionClick(event, item.sectionId!)
+                    : () => setMobileMenuOpen(false)
+              }
               className="block py-2 text-[#0A2540]"
             >
               {item.label}
