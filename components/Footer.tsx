@@ -16,6 +16,8 @@ const seoLinks = [
   ["유가읍 상가", "/real-estate/yuga-commercial"],
   ["구지 원룸", "/real-estate/guji-one-room"],
   ["구지 상가", "/real-estate/guji-commercial"],
+  ["구지 쿠팡물류 원룸", "/real-estate/guji-coupang-one-room"],
+  ["엘엔에프 원룸", "/real-estate/guji-lnf-one-room"],
   ["현풍 창고·공장", "/real-estate/hyunpung-warehouse-factory"],
   ["유가읍 창고·공장", "/real-estate/yuga-warehouse-factory"],
   ["구지 창고·공장", "/real-estate/guji-warehouse-factory"],
