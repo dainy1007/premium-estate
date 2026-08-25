@@ -10,6 +10,7 @@ import {
 } from "@/lib/property-seo";
 import PropertyGallery from "@/components/properties/PropertyGallery";
 import PropertyShareActions from "@/components/properties/PropertyShareActions";
+import type { PropertyImage } from "@/types/property";
 
 interface PropertyDetailPageProps {
   params: Promise<{ id: string }>;
@@ -95,8 +96,8 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
   const mapAddress = property.address || property.location;
   const encodedAddress = encodeURIComponent(mapAddress || "대구광역시 달성군 유가읍");
   const canonicalUrl = `${SITE_URL}/properties/${propertyId}`;
-  const allImages = (property.property_images || []).sort(
-    (a: { display_order: number }, b: { display_order: number }) => a.display_order - b.display_order,
+  const allImages: PropertyImage[] = [...(property.property_images || [])].sort(
+    (a, b) => a.display_order - b.display_order,
   );
 
   const propertyJsonLd = {
@@ -105,7 +106,7 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
     name: seoTitle,
     description: property.description || `${property.location || "대구 달성군"}의 부동산 매물입니다.`,
     url: canonicalUrl,
-    image: allImages.length ? allImages.map((image) => image.image_url) : property.image_url ? [property.image_url] : undefined,
+    image: allImages.length ? allImages.map((image: PropertyImage) => image.image_url) : property.image_url ? [property.image_url] : undefined,
     datePosted: property.created_at || undefined,
     keywords: seoKeywords.join(", "),
     offers: {
