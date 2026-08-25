@@ -17,6 +17,9 @@ type ExistingItem = { key: string; kind: "existing"; image: PropertyImage };
 type NewItem = { key: string; kind: "new"; file: File; previewUrl: string };
 type ImageItem = ExistingItem | NewItem;
 
+const PROPERTY_TYPES = ["아파트", "원룸", "미니투룸", "투룸", "쓰리룸", "단독주택", "다가구", "상가주택", "상가", "오피스텔", "창고", "공장", "토지"];
+const DEAL_TYPES = ["매매", "전세", "월세", "임대"];
+
 export default function PropertyEditPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -29,6 +32,8 @@ export default function PropertyEditPage() {
   const [form, setForm] = useState({
     title: "",
     price: "",
+    type: "",
+    deal_type: "",
     address: "",
     location: "",
     area: "",
@@ -52,6 +57,8 @@ export default function PropertyEditPage() {
       setForm({
         title: data.title || "",
         price: data.price || "",
+        type: data.type || "",
+        deal_type: data.deal_type || "",
         address: data.address || "",
         location: data.location || data.address || "",
         area: data.area || "",
@@ -158,6 +165,8 @@ export default function PropertyEditPage() {
           title: form.title,
           price: form.price,
           price_amount: priceAmount,
+          type: form.type,
+          deal_type: form.deal_type,
           address: form.address,
           area: form.area,
           description: form.description,
@@ -230,6 +239,20 @@ export default function PropertyEditPage() {
 
         <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-[1fr_1fr]">
           <div className="space-y-5">
+            <div>
+              <label className="mb-2 block font-semibold">매물유형</label>
+              <select value={form.type} onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))} className="w-full rounded-xl border bg-white px-4 py-3">
+                <option value="">선택</option>
+                {PROPERTY_TYPES.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block font-semibold">거래유형</label>
+              <select value={form.deal_type} onChange={(event) => setForm((prev) => ({ ...prev, deal_type: event.target.value }))} className="w-full rounded-xl border bg-white px-4 py-3">
+                <option value="">선택</option>
+                {DEAL_TYPES.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </div>
             {[["title", "매물명"], ["price", "가격"], ["location", "지역"], ["address", "주소"], ["area", "면적"]].map(([name, label]) => (
               <div key={name}>
                 <label className="mb-2 block font-semibold">{label}</label>
