@@ -18,27 +18,40 @@ export function detectPropertyDisplayType(input: {
   location?: string | null;
   description?: string | null;
 }) {
-  const text = [input.address, input.location, input.title, input.description]
-    .map(clean)
-    .join(" ");
+  const title = clean(input.title);
+  const address = clean(input.address);
+  const location = clean(input.location);
+  const description = clean(input.description);
+  const text = [address, location, title, description].join(" ");
   const explicitType = clean(input.type);
 
-  // 아파트 단지명/주소 우선 판정.
-  // 방 3개라는 이유로 '쓰리룸'으로 분류되는 것을 방지한다.
-  if (/남해\s*오네뜨|남해오네뜨|대구테크노폴리스남해오네뜨1차/i.test(text)) return "아파트";
-  if (/하나리움\s*퀸즈\s*파크|하나리움퀸즈파크|하나리움퀸즈/i.test(text)) return "아파트";
-  if (/유가읍.*봉리\s*601|봉리\s*601/i.test(text)) return "아파트";
-  if (/현풍읍.*중리\s*480|중리\s*480/i.test(text)) return "아파트";
-  if (/아파트/i.test(explicitType) || /아파트/i.test(text)) return "아파트";
-
-  // 대구테크노폴리스 줌시티: 현풍읍 중리 505-2 / 테크노대로 73
-  // 주거형 원룸 표현이 포함되어도 건축물 유형은 오피스텔로 표시한다.
-  if (/중리\s*505-2|테크노대로\s*73|줌시티/i.test(text)) return "오피스텔";
-  if (/오피스텔/i.test(explicitType) || /오피스텔/i.test(text)) return "오피스텔";
+  // 건축물 유형이 명확한 주택 계열은 일반 본문 키워드보다 우선한다.
+  // 설명에 '아파트 인근' 같은 문구가 있어도 주택을 아파트로 오분류하지 않는다.
+  if (/상가\s*주택|상가주택/i.test(explicitType) || /상가\s*주택|상가주택/i.test(title)) return "상가주택";
+  if (/단독\s*주택|단독주택/i.test(explicitType) || /단독\s*주택|단독주택/i.test(title)) return "단독주택";
+  if (/다가구/i.test(explicitType) || /다가구/i.test(title)) return "다가구";
+  if (/쓰리룸/i.test(explicitType) || /쓰리룸/i.test(title)) return "쓰리룸";
+  if (/미니투룸/i.test(explicitType) || /미니투룸/i.test(title)) return "미니투룸";
+  if (/투룸/i.test(explicitType) || /투룸/i.test(title)) return "투룸";
+  if (/원룸/i.test(explicitType) || /원룸/i.test(title)) return "원룸";
 
   // 현풍읍 중리 462-4는 상가주택 매매 매물이다.
   if (/현풍읍.*중리\s*462-4|중리\s*462-4/i.test(text)) return "상가주택";
-  if (/상가\s*주택|상가주택/i.test(explicitType) || /상가\s*주택|상가주택/i.test(text)) return "상가주택";
+
+  // 아파트는 실제 단지명/명시적 유형/제목을 기준으로만 판정한다.
+  // description의 '아파트 인근' 등 일반 문구만으로는 아파트로 바꾸지 않는다.
+  if (/남해\s*오네뜨|남해오네뜨|대구테크노폴리스남해오네뜨1차/i.test(text)) return "아파트";
+  if (/하나리움\s*퀸즈\s*파크|하나리움퀸즈파크|하나리움퀸즈/i.test(text)) return "아파트";
+  if (/아파트/i.test(explicitType) || /아파트/i.test(title)) return "아파트";
+
+  // 대구테크노폴리스 줌시티: 현풍읍 중리 505-2 / 테크노대로 73
+  if (/중리\s*505-2|테크노대로\s*73|줌시티/i.test(text)) return "오피스텔";
+  if (/오피스텔/i.test(explicitType) || /오피스텔/i.test(title)) return "오피스텔";
+
+  if (/상가/i.test(explicitType) || /상가/i.test(title)) return "상가";
+  if (/창고/i.test(explicitType) || /창고/i.test(title)) return "창고";
+  if (/공장/i.test(explicitType) || /공장/i.test(title)) return "공장";
+  if (/토지/i.test(explicitType) || /토지/i.test(title)) return "토지";
 
   return explicitType || "매물";
 }
