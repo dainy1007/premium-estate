@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildSeoTitle } from "@/lib/property-seo";
+import { detectPropertyDisplayType, sanitizePropertyArea } from "@/lib/property-normalize";
 
 export const runtime = "nodejs";
 
@@ -35,10 +36,14 @@ function normalized(value: unknown) {
   return String(value ?? "").trim();
 }
 
-function sanitizeArea(value: unknown) {
-  return normalized(value)
-    .replace(/(\d+(?:\.\d+)?)F㎡/g, "$1㎡")
-    .replace(/전용\s*(\d+(?:\.\d+)?)F\b/g, "전용 $1㎡");
+function getListingType(listing: NaverListing) {
+  const address = normalized(listing.road_address) || normalized(listing.address);
+  return detectPropertyDisplayType({
+    type: normalized(listing.property_type),
+    address,
+    location: normalized(listing.region),
+    description: normalized(listing.description),
+  });
 }
 
 function sanitizeDescription(listing: NaverListing) {
@@ -46,21 +51,23 @@ function sanitizeDescription(listing: NaverListing) {
   if (!description) return "";
 
   const region = normalized(listing.region);
-  const propertyType = normalized(listing.property_type);
+  const propertyType = getListingType(listing);
   const tradeType = normalized(listing.trade_type);
 
-  // 자동 원고에서 매물유형 누락 시 생기는
-  // "현풍읍에 위치한 매물 매매 매물입니다." 형태를 실제 유형으로 보정한다.
   if (region && propertyType && propertyType !== "매물" && tradeType) {
     const wrongOpening = `${region}에 위치한 매물 ${tradeType} 매물입니다.`;
+    const wrongTypeOpening = `${region}에 위치한 ${normalized(listing.property_type)} ${tradeType} 매물입니다.`;
     const correctOpening = `${region}에 위치한 ${propertyType} ${tradeType} 매물입니다.`;
     description = description.replace(wrongOpening, correctOpening);
+    if (normalized(listing.property_type) && normalized(listing.property_type) !== propertyType) {
+      description = description.replace(wrongTypeOpening, correctOpening);
+    }
   }
 
-  // 면적 문자열 인코딩/변환 과정에서 섞인 F 문자를 정상 ㎡ 표기로 보정한다.
   description = description
     .replace(/(\d+(?:\.\d+)?)F㎡/g, "$1㎡")
-    .replace(/전용\s*(\d+(?:\.\d+)?)F\b/g, "전용 $1㎡");
+    .replace(/전용\s*(\d+(?:\.\d+)?)F\b/g, "전용 $1㎡")
+    .replace(/전용(\d+(?:\.\d+)?)㎡/g, "전용 $1㎡");
 
   return description;
 }
@@ -70,7 +77,7 @@ function makeTitle(listing: NaverListing) {
   return buildSeoTitle({
     location: normalized(listing.region),
     address,
-    type: normalized(listing.property_type),
+    type: getListingType(listing),
     deal_type: normalized(listing.trade_type),
     description: normalized(listing.description),
   }) || `네이버 매물 ${listing.article_no}`;
@@ -155,16 +162,17 @@ export async function POST(request: NextRequest) {
 
     const marker = `naver:${articleNo}`;
     const address = normalized(raw.road_address) || normalized(raw.address);
+    const propertyType = getListingType(raw);
     const descriptionParts = [sanitizeDescription(raw)].filter(Boolean);
 
     const payload = {
       title: makeTitle(raw),
-      type: normalized(raw.property_type) || normalized(raw.trade_type) || null,
+      type: propertyType || normalized(raw.trade_type) || null,
       deal_type: normalized(raw.trade_type) || null,
       location: normalized(raw.region),
       address,
       price: normalized(raw.price),
-      area: sanitizeArea(raw.area),
+      area: sanitizePropertyArea(raw.area),
       floor: normalized(raw.floor),
       description: descriptionParts.join("\n"),
       image_url: "",
@@ -200,7 +208,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error || !data) {
-        results.push({ article_no: articleNo, status: "error", error: error.message });
+        results.push({ article_no: articleNo, status: "error", error: error?.message ?? "insert_failed" });
       } else {
         inserted += 1;
         results.push({ article_no: articleNo, status: "inserted", property_id: data.id });
