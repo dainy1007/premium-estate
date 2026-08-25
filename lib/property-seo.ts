@@ -31,9 +31,9 @@ export function normalizePropertyType(value: string) {
   if (/쓰리룸|3룸/i.test(text)) return "쓰리룸";
   if (/투룸|2룸/i.test(text)) return "투룸";
   if (/원룸/i.test(text)) return "원룸";
-  if (/상가|근린생활시설|근생/i.test(text)) return "상가";
   if (/창고/i.test(text)) return "창고";
   if (/공장/i.test(text)) return "공장";
+  if (/상가|근린생활시설|근생/i.test(text)) return "상가";
   if (/오피스텔/i.test(text)) return "오피스텔";
   if (/아파트/i.test(text)) return "아파트";
   if (/토지|대지|전|답|임야/i.test(text)) return "토지";
