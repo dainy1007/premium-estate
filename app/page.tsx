@@ -29,7 +29,14 @@ export default function Home() {
     "토지 투자 상담",
   ];
 
-  const quickLinks = ["아파트", "원룸", "미니투룸", "투룸", "상가", "창고·공장", "토지"];
+  const quickLinks = [
+    { label: "아파트", type: "아파트" },
+    { label: "원룸·투룸", type: "소형주택" },
+    { label: "주택", type: "주택" },
+    { label: "상가", type: "상가" },
+    { label: "창고·공장", type: "창고·공장" },
+    { label: "토지", type: "토지" },
+  ];
 
   const regionLinks = [
     { label: "유가읍", href: "/search?q=%EC%9C%A0%EA%B0%80%EC%9D%8D" },
@@ -78,7 +85,7 @@ export default function Home() {
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.7 }} className="mt-10 w-full max-w-5xl rounded-[28px] border border-white/15 bg-white/10 p-4 backdrop-blur-md sm:p-5">
             <p className="mb-3 text-left text-sm font-semibold text-white/75">매물유형 바로가기</p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">{quickLinks.map((item) => <Link key={item} href={`/search?type=${encodeURIComponent(item)}`} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-[#C9A227] hover:bg-[#C9A227]/20">{item}</Link>)}</div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">{quickLinks.map((item) => <Link key={item.label} href={`/search?type=${encodeURIComponent(item.type)}`} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-[#C9A227] hover:bg-[#C9A227]/20">{item.label}</Link>)}</div>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }} className="mt-8 grid w-full max-w-4xl grid-cols-2 gap-3 md:grid-cols-4">
             {stats.map((stat) => <div key={stat.label} className="rounded-2xl border border-white/15 bg-white/10 p-5 text-center backdrop-blur-sm"><p className="text-3xl font-semibold text-[#C9A227]">{stat.value}</p><p className="mt-2 text-sm text-white/80">{stat.label}</p></div>)}
