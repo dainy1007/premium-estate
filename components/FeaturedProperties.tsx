@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { normalizePropertyForDisplay } from "@/lib/property-normalize";
 import { Property } from "@/types/property";
 
 export default function FeaturedProperties() {
@@ -27,6 +28,7 @@ export default function FeaturedProperties() {
 
       const visibleProperties = ((data || []) as Property[])
         .filter((property) => property.is_hidden !== true)
+        .map(normalizePropertyForDisplay)
         .sort((a, b) => {
           const featuredDifference = Number(b.is_featured) - Number(a.is_featured);
           if (featuredDifference !== 0) return featuredDifference;
