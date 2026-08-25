@@ -26,7 +26,9 @@ export default function PropertyGallery({ title, fallbackImageUrl, images = [], 
   const activeImage = galleryImages[activeIndex];
 
   const getAlt = (image: PropertyImage, index: number, suffix = "") =>
-    image.alt_text || `${altBase || title} 매물사진 ${index + 1}${suffix}`;
+    altBase
+      ? `${altBase} 매물사진 ${index + 1}${suffix}`
+      : image.alt_text || `${title} 매물사진 ${index + 1}${suffix}`;
 
   const goToPrevious = () => setActiveIndex((current) => current === 0 ? galleryImages.length - 1 : current - 1);
   const goToNext = () => setActiveIndex((current) => current === galleryImages.length - 1 ? 0 : current + 1);
