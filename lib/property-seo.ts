@@ -37,11 +37,7 @@ export function normalizePropertyType(value: string) {
   if (/토지|대지|전|답|임야/i.test(text)) return "토지";
   if (/다가구/i.test(text)) return "다가구";
   if (/단독/i.test(text)) return "단독주택";
-  return explicitFallback(text);
-}
-
-function explicitFallback(text: string) {
-  return text || "부동산";
+  return text;
 }
 
 export function normalizeDealType(value: string) {
@@ -117,6 +113,10 @@ export function buildImageAlt(input: SeoPropertyInput, index = 1) {
   return `${buildSeoTitle(input)} 매물사진 ${index}`;
 }
 
+function landingMatchesPropertyType(propertyType: string, propertyTerms: string[]) {
+  return propertyTerms.some((term) => normalizePropertyType(term) === propertyType);
+}
+
 export function getRelatedSeoLandings(input: SeoPropertyInput) {
   const area = detectSeoArea(input);
   const propertyType = detectPropertyType(input);
@@ -146,7 +146,7 @@ export function getRelatedSeoLandings(input: SeoPropertyInput) {
         (slug.startsWith("dgist-") && /디지스트/i.test(landmark));
 
       const locationScore = includesAny(searchable, landing.locationTerms) ? 2 : 0;
-      const propertyScore = includesAny(searchable, landing.propertyTerms) ? 4 : 0;
+      const propertyScore = landingMatchesPropertyType(propertyType, landing.propertyTerms) ? 4 : 0;
       const keywordScore = includesAny(searchable, landing.keywords) ? 1 : 0;
       const score = (areaCompatible ? 4 : 0) + locationScore + propertyScore + keywordScore;
       return { landing, score, areaCompatible };
