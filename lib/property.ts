@@ -19,6 +19,18 @@ export async function getProperty(id: number) {
   return data;
 }
 
+export async function getLatestProperties(limit = 6) {
+  const { data } = await supabase
+    .from("properties")
+    .select("*, property_images(*)")
+    .order("created_at", { ascending: false })
+    .limit(Math.max(limit * 2, limit));
+
+  return ((data ?? []) as Property[])
+    .filter(isPublicProperty)
+    .slice(0, limit);
+}
+
 export async function getRelatedProperties(id: number, type: string) {
   const { data } = await supabase
     .from("properties")
