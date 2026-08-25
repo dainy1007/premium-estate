@@ -27,6 +27,7 @@ export function detectPropertyDisplayType(input: {
   // 주거형 원룸 표현이 포함되어도 건축물 유형은 오피스텔로 표시한다.
   if (/중리\s*505-2|테크노대로\s*73|줌시티/i.test(text)) return "오피스텔";
   if (/오피스텔/i.test(explicitType) || /오피스텔/i.test(text)) return "오피스텔";
+  if (/상가\s*주택|상가주택/i.test(explicitType) || /상가\s*주택|상가주택/i.test(text)) return "상가주택";
 
   return explicitType || "매물";
 }
@@ -34,9 +35,13 @@ export function detectPropertyDisplayType(input: {
 export function normalizePropertyForDisplay<T extends Property>(property: T): T {
   const type = detectPropertyDisplayType(property);
   const isOfficetel = type === "오피스텔";
+  const isCommercialHouse = type === "상가주택";
+  const rawTitle = clean(property.title);
   const title = isOfficetel
-    ? clean(property.title).replace(/원룸/g, "오피스텔")
-    : property.title;
+    ? rawTitle.replace(/원룸/g, "오피스텔")
+    : isCommercialHouse
+      ? rawTitle.replace(/상가(?!주택)/g, "상가주택")
+      : property.title;
 
   return {
     ...property,
