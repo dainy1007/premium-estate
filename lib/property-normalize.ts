@@ -23,6 +23,15 @@ export function deriveLocationFromAddress(value: unknown) {
   return [province, cityCounty, town].filter(Boolean).join(" ");
 }
 
+function deriveTitleLocationFromAddress(value: unknown) {
+  const full = deriveLocationFromAddress(value);
+  if (!full) return "";
+  const parts = full.split(" ").filter(Boolean);
+  // 검색 제목에는 시·군·구 + 읍·면·동을 우선 사용한다.
+  // 예: 경상남도 남해군 이동면 → 남해군 이동면
+  return parts.slice(-2).join(" ") || full;
+}
+
 export function detectPropertyDisplayType(input: {
   type?: string | null;
   title?: string | null;
@@ -37,8 +46,6 @@ export function detectPropertyDisplayType(input: {
   const text = [address, location, title, description].join(" ");
   const explicitType = clean(input.type);
 
-  // 건축물 유형이 명확한 주택 계열은 일반 본문 키워드보다 우선한다.
-  // 설명에 '아파트 인근' 같은 문구가 있어도 주택을 아파트로 오분류하지 않는다.
   if (/상가\s*주택|상가주택/i.test(explicitType) || /상가\s*주택|상가주택/i.test(title)) return "상가주택";
   if (/단독\s*주택|단독주택/i.test(explicitType) || /단독\s*주택|단독주택/i.test(title)) return "단독주택";
   if (/다가구/i.test(explicitType) || /다가구/i.test(title)) return "다가구";
@@ -47,16 +54,12 @@ export function detectPropertyDisplayType(input: {
   if (/투룸/i.test(explicitType) || /투룸/i.test(title)) return "투룸";
   if (/원룸/i.test(explicitType) || /원룸/i.test(title)) return "원룸";
 
-  // 현풍읍 중리 462-4는 상가주택 매매 매물이다.
   if (/현풍읍.*중리\s*462-4|중리\s*462-4/i.test(text)) return "상가주택";
 
-  // 아파트는 실제 단지명/명시적 유형/제목을 기준으로만 판정한다.
-  // description의 '아파트 인근' 등 일반 문구만으로는 아파트로 바꾸지 않는다.
   if (/남해\s*오네뜨|남해오네뜨|대구테크노폴리스남해오네뜨1차/i.test(text)) return "아파트";
   if (/하나리움\s*퀸즈\s*파크|하나리움퀸즈파크|하나리움퀸즈/i.test(text)) return "아파트";
   if (/아파트/i.test(explicitType) || /아파트/i.test(title)) return "아파트";
 
-  // 대구테크노폴리스 줌시티: 현풍읍 중리 505-2 / 테크노대로 73
   if (/중리\s*505-2|테크노대로\s*73|줌시티/i.test(text)) return "오피스텔";
   if (/오피스텔/i.test(explicitType) || /오피스텔/i.test(title)) return "오피스텔";
 
@@ -86,6 +89,22 @@ function normalizeTitleByType(title: string, type: string) {
   return rawTitle;
 }
 
+function normalizeTitleGeography(title: string, address: unknown) {
+  const rawTitle = clean(title);
+  const correctLocation = deriveTitleLocationFromAddress(address);
+  if (!rawTitle || !correctLocation) return rawTitle;
+
+  // 제목 앞쪽의 기존 지역표현이 실제 주소와 다르면 실제 주소 기준으로 교체한다.
+  // 대구 달성군 투룸 월세 + 경상남도 남해군 이동면 → 남해군 이동면 투룸 월세
+  const withoutWrongPrefix = rawTitle
+    .replace(/^(?:대구(?:광역시|시)?\s*)?달성군\s*/i, "")
+    .replace(/^(?:경상남도\s*)?남해군\s*(?:이동면\s*)?/i, "")
+    .replace(/^(?:유가읍|현풍읍|구지면|이동면)\s*/i, "");
+
+  if (rawTitle.startsWith(correctLocation)) return rawTitle;
+  return `${correctLocation} ${withoutWrongPrefix}`.replace(/\s+/g, " ").trim();
+}
+
 function normalizeDescriptionGeography(description: unknown, address: unknown, type: string, dealType: unknown) {
   let text = clean(description)
     .replace(/(\d+(?:\.\d+)?)F㎡/g, "$1㎡")
@@ -108,7 +127,8 @@ function normalizeDescriptionGeography(description: unknown, address: unknown, t
 
 export function normalizePropertyForDisplay<T extends Property>(property: T): T {
   const type = detectPropertyDisplayType(property);
-  const title = normalizeTitleByType(property.title, type);
+  const typedTitle = normalizeTitleByType(property.title, type);
+  const title = normalizeTitleGeography(typedTitle, property.address);
   const geographicLocation = deriveLocationFromAddress(property.address);
 
   return {
