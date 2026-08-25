@@ -16,6 +16,12 @@ const seoLinks = [
   ["유가읍 상가", "/real-estate/yuga-commercial"],
   ["구지 원룸", "/real-estate/guji-one-room"],
   ["구지 상가", "/real-estate/guji-commercial"],
+  ["현풍 창고·공장", "/real-estate/hyunpung-warehouse-factory"],
+  ["유가읍 창고·공장", "/real-estate/yuga-warehouse-factory"],
+  ["구지 창고·공장", "/real-estate/guji-warehouse-factory"],
+  ["현풍 토지", "/real-estate/hyunpung-land"],
+  ["유가읍 토지", "/real-estate/yuga-land"],
+  ["구지 토지", "/real-estate/guji-land"],
 ] as const;
 
 export default function Footer() {
