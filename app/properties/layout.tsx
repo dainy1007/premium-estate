@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getLatestProperties } from "@/lib/property";
 import { buildImageAlt, buildSeoTitle } from "@/lib/property-seo";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.baekjohd.com";
+
 export const metadata: Metadata = {
   title: "대구 달성군 매물 찾기 | 유가읍·현풍읍·구지면 부동산",
   description:
@@ -18,13 +20,13 @@ export const metadata: Metadata = {
     "백조현대부동산중개",
   ],
   alternates: {
-    canonical: "https://www.baekjohd.com/properties",
+    canonical: `${SITE_URL}/properties`,
   },
   openGraph: {
     title: "대구 달성군 매물 찾기 | 백조현대부동산중개",
     description:
       "유가읍·현풍읍·구지면과 대구테크노폴리스의 등록 매물을 조건별로 찾아보세요.",
-    url: "https://www.baekjohd.com/properties",
+    url: `${SITE_URL}/properties`,
     siteName: "백조현대부동산중개",
     locale: "ko_KR",
     type: "website",
@@ -38,8 +40,29 @@ export const metadata: Metadata = {
 export default async function PropertiesLayout({ children }: { children: React.ReactNode }) {
   const latestProperties = await getLatestProperties(6);
 
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "대구 달성군 부동산 매물",
+    description: "유가읍·현풍읍·구지면과 대구테크노폴리스의 공개 부동산 매물 목록입니다.",
+    url: `${SITE_URL}/properties`,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: latestProperties.map((property, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: buildSeoTitle(property),
+        url: `${SITE_URL}/properties/${property.id}`,
+      })),
+    },
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd).replace(/</g, "\\u003c") }}
+      />
       {children}
       {latestProperties.length > 0 && (
         <section className="bg-white px-6 py-16 text-[#0A2342]">
