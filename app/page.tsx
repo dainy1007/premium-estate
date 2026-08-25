@@ -21,12 +21,12 @@ export default function Home() {
   ];
 
   const services = [
-    "상가 매매·임대",
-    "원룸·투룸·다가구",
-    "아파트 매매·전세",
-    "오피스텔 매매·임대",
-    "창고·공장 전문",
-    "토지 투자 상담",
+    { label: "상가 매매·임대", href: "/search?type=%EC%83%81%EA%B0%80" },
+    { label: "원룸·투룸·다가구", href: "/search?type=%EC%86%8C%ED%98%95%EC%A3%BC%ED%83%9D" },
+    { label: "아파트 매매·전세", href: "/search?type=%EC%95%84%ED%8C%8C%ED%8A%B8" },
+    { label: "오피스텔 매매·임대", href: "/search?type=%EC%98%A4%ED%94%BC%EC%8A%A4%ED%85%94" },
+    { label: "창고·공장 전문", href: "/search?type=%EC%B0%BD%EA%B3%A0%C2%B7%EA%B3%B5%EC%9E%A5" },
+    { label: "토지 투자 상담", href: "/search?type=%ED%86%A0%EC%A7%80" },
   ];
 
   const quickLinks = [
@@ -126,7 +126,7 @@ export default function Home() {
 
       <section id="services" className="scroll-mt-24 mx-auto max-w-7xl px-6 py-20 md:px-8 md:py-28">
         <div className="mx-auto max-w-2xl text-center"><p className="text-sm font-semibold uppercase tracking-[0.35em] text-[#C9A227]">Our Services</p><h2 className="mt-3 text-3xl font-bold sm:text-4xl">부동산의 모든 서비스를 한 곳에서 제공합니다.</h2><p className="mt-4 text-base text-[#0A2342]/70 sm:text-lg">매매, 임대, 투자, 시세 분석까지 고객 맞춤형 솔루션으로 안내해드립니다.</p></div>
-        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">{services.map((service, index) => <motion.article key={service} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.5, delay: index * 0.06 }} className="rounded-3xl border border-[#0A2342]/10 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:border-[#C9A227] hover:shadow-lg"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#C9A227]/10 text-lg font-semibold text-[#C9A227]">0{index + 1}</div><h3 className="mt-6 text-xl font-semibold">{service}</h3><p className="mt-3 text-sm leading-7 text-[#0A2342]/70">현장 경험을 바탕으로 매물 확인부터 계약까지 꼼꼼하게 안내합니다.</p></motion.article>)}</div>
+        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">{services.map((service, index) => <motion.div key={service.label} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.5, delay: index * 0.06 }}><Link href={service.href} className="block h-full cursor-pointer rounded-3xl border border-[#0A2342]/10 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:border-[#C9A227] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#C9A227]"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#C9A227]/10 text-lg font-semibold text-[#C9A227]">0{index + 1}</div><h3 className="mt-6 text-xl font-semibold">{service.label}</h3><p className="mt-3 text-sm leading-7 text-[#0A2342]/70">현장 경험을 바탕으로 매물 확인부터 계약까지 꼼꼼하게 안내합니다.</p><p className="mt-5 text-sm font-bold text-[#C9A227]">매물 보기 →</p></Link></motion.div>)}</div>
       </section>
 
       <Testimonials />
