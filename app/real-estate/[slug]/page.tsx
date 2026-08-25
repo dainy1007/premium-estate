@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { buildImageAlt, buildSeoTitle } from "@/lib/property-seo";
 import { getSeoLanding, seoLandings } from "@/lib/seo-landings";
+import { seoExtraLandings } from "@/lib/seo-extra-landings";
 import { siteConfig } from "@/lib/site-config";
 import type { Property } from "@/types/property";
 
@@ -13,13 +14,19 @@ interface SeoLandingPageProps {
 
 export const revalidate = 1800;
 
+const allSeoLandings = [...seoLandings, ...seoExtraLandings];
+
+function findSeoLanding(slug: string) {
+  return getSeoLanding(slug) ?? seoExtraLandings.find((item) => item.slug === slug);
+}
+
 export function generateStaticParams() {
-  return seoLandings.map(({ slug }) => ({ slug }));
+  return allSeoLandings.map(({ slug }) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: SeoLandingPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const landing = getSeoLanding(slug);
+  const landing = findSeoLanding(slug);
 
   if (!landing) {
     return { robots: { index: false, follow: false } };
@@ -73,7 +80,7 @@ async function getMatchingProperties(locationTerms: string[], propertyTerms: str
 
 export default async function SeoLandingPage({ params }: SeoLandingPageProps) {
   const { slug } = await params;
-  const landing = getSeoLanding(slug);
+  const landing = findSeoLanding(slug);
   if (!landing) notFound();
 
   const properties = await getMatchingProperties(landing.locationTerms, landing.propertyTerms);
@@ -192,7 +199,7 @@ export default async function SeoLandingPage({ params }: SeoLandingPageProps) {
         <section className="mt-14 rounded-[32px] bg-[#0A2342] p-8 text-white md:p-10">
           <h2 className="text-2xl font-bold">지역·유형별 매물 더 보기</h2>
           <div className="mt-5 flex flex-wrap gap-3">
-            {seoLandings.filter((item) => item.slug !== landing.slug).map((item) => (
+            {allSeoLandings.filter((item) => item.slug !== landing.slug).map((item) => (
               <Link key={item.slug} href={`/real-estate/${item.slug}`} className="rounded-full border border-white/25 px-4 py-2 text-sm font-semibold hover:bg-white/10">
                 {item.heading}
               </Link>
