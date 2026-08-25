@@ -4,9 +4,17 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { normalizePropertyForDisplay } from "@/lib/property-normalize";
 import type { Property } from "@/types/property";
 
 const ITEMS_PER_PAGE = 9;
+
+const TYPE_GROUPS: Record<string, string[]> = {
+  소형주택: ["원룸", "미니투룸", "투룸"],
+  주택: ["쓰리룸", "단독주택", "상가주택", "다가구"],
+  상가: ["상가", "상가주택"],
+  "창고·공장": ["창고", "공장"],
+};
 
 export default function PropertySearchPage() {
   return (
@@ -55,7 +63,11 @@ function PropertySearchContent() {
         console.error("매물 검색 오류:", error);
         setErrorMessage("매물 검색 중 오류가 발생했습니다.");
       } else {
-        setProperties(((data || []) as Property[]).filter((property) => property.is_hidden !== true));
+        setProperties(
+          ((data || []) as Property[])
+            .filter((property) => property.is_hidden !== true)
+            .map(normalizePropertyForDisplay),
+        );
       }
       setLoading(false);
     }
@@ -73,7 +85,7 @@ function PropertySearchContent() {
 
   const results = useMemo(() => {
     const normalizedKeyword = keyword.toLowerCase();
-    const typeTerms = type ? type.split("·") : [];
+    const typeTerms = TYPE_GROUPS[type] || (type ? type.split("·") : []);
     const filtered = properties.filter((property) => {
       const searchable = [property.title, property.location, property.address, property.description, property.type, property.deal_type]
         .filter(Boolean)
