@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { normalizePropertyForDisplay } from "@/lib/property-normalize";
 import type { Property } from "@/types/property";
 
 function isPublicProperty(property: Property | null | undefined) {
@@ -16,7 +17,7 @@ export async function getProperty(id: number) {
     return null;
   }
 
-  return data;
+  return normalizePropertyForDisplay(data as Property);
 }
 
 export async function getLatestProperties(limit = 6) {
@@ -28,6 +29,7 @@ export async function getLatestProperties(limit = 6) {
 
   return ((data ?? []) as Property[])
     .filter(isPublicProperty)
+    .map(normalizePropertyForDisplay)
     .slice(0, limit);
 }
 
@@ -42,6 +44,7 @@ export async function getRelatedProperties(id: number, type: string) {
 
   return ((data ?? []) as Property[])
     .filter(isPublicProperty)
+    .map(normalizePropertyForDisplay)
     .sort((a, b) => {
       const featuredDifference = Number(b.is_featured) - Number(a.is_featured);
       if (featuredDifference !== 0) return featuredDifference;
