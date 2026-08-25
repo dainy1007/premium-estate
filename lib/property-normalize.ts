@@ -35,16 +35,24 @@ export function detectPropertyDisplayType(input: {
   return explicitType || "매물";
 }
 
+function normalizeTitleByType(title: string, type: string) {
+  const rawTitle = clean(title);
+  if (!rawTitle) return rawTitle;
+
+  if (type === "오피스텔") return rawTitle.replace(/원룸/g, "오피스텔");
+  if (type === "상가주택") return rawTitle.replace(/상가(?!주택)|토지|원룸|투룸|미니투룸/g, "상가주택");
+
+  const replaceableTypes = /미니투룸|쓰리룸|투룸|원룸|상가주택|상가|창고|공장|토지|오피스텔|아파트|다가구|단독주택/;
+  if (replaceableTypes.test(rawTitle) && !rawTitle.includes(type)) {
+    return rawTitle.replace(replaceableTypes, type);
+  }
+
+  return rawTitle;
+}
+
 export function normalizePropertyForDisplay<T extends Property>(property: T): T {
   const type = detectPropertyDisplayType(property);
-  const isOfficetel = type === "오피스텔";
-  const isCommercialHouse = type === "상가주택";
-  const rawTitle = clean(property.title);
-  const title = isOfficetel
-    ? rawTitle.replace(/원룸/g, "오피스텔")
-    : isCommercialHouse
-      ? rawTitle.replace(/상가(?!주택)/g, "상가주택")
-      : property.title;
+  const title = normalizeTitleByType(property.title, type);
 
   return {
     ...property,
