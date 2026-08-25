@@ -60,7 +60,7 @@ function includesAny(text: string, terms: string[]) {
 async function getMatchingProperties(locationTerms: string[], propertyTerms: string[]) {
   const { data } = await supabase
     .from("properties")
-    .select("*")
+    .select("*, property_images(*)")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -76,6 +76,13 @@ async function getMatchingProperties(locationTerms: string[], propertyTerms: str
       return includesAny(locationText, locationTerms) && includesAny(propertyText, propertyTerms);
     })
     .slice(0, 24);
+}
+
+function getCoverImage(property: Property) {
+  const images = [...(property.property_images || [])].sort(
+    (a, b) => Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order,
+  );
+  return images[0]?.image_url || property.image_url || "";
 }
 
 export default async function SeoLandingPage({ params }: SeoLandingPageProps) {
@@ -161,23 +168,26 @@ export default async function SeoLandingPage({ params }: SeoLandingPageProps) {
 
           {properties.length > 0 ? (
             <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {properties.map((property) => (
-                <Link key={property.id} href={`/properties/${property.id}`} className="group overflow-hidden rounded-[28px] border border-[#0A2342]/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                  <div className="h-56 overflow-hidden bg-[#F3F4F6]">
-                    {property.image_url ? (
-                      <img src={property.image_url} alt={buildImageAlt(property, 1)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-sm text-gray-500">등록된 이미지가 없습니다.</div>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <p className="text-sm font-semibold text-[#C9A227]">{property.deal_type || property.type || "매물"}</p>
-                    <h3 className="mt-2 line-clamp-2 text-xl font-bold">{buildSeoTitle(property)}</h3>
-                    <p className="mt-3 font-bold">{property.price || "가격 문의"}</p>
-                    <p className="mt-2 text-sm text-[#0A2342]/60">{property.location || "대구 달성군"}</p>
-                  </div>
-                </Link>
-              ))}
+              {properties.map((property) => {
+                const coverImage = getCoverImage(property);
+                return (
+                  <Link key={property.id} href={`/properties/${property.id}`} className="group overflow-hidden rounded-[28px] border border-[#0A2342]/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                    <div className="h-56 overflow-hidden bg-[#F3F4F6]">
+                      {coverImage ? (
+                        <img src={coverImage} alt={buildImageAlt(property, 1)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-sm text-gray-500">등록된 이미지가 없습니다.</div>
+                      )}
+                    </div>
+                    <div className="p-5">
+                      <p className="text-sm font-semibold text-[#C9A227]">{property.deal_type || property.type || "매물"}</p>
+                      <h3 className="mt-2 line-clamp-2 text-xl font-bold">{buildSeoTitle(property)}</h3>
+                      <p className="mt-3 font-bold">{property.price || "가격 문의"}</p>
+                      <p className="mt-2 text-sm text-[#0A2342]/60">{property.location || "대구 달성군"}</p>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="mt-6 rounded-3xl border border-[#0A2342]/10 bg-[#F8F9FB] p-8">
