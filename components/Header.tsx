@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useState } from "react";
 
@@ -16,10 +17,18 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { scrollY } = useScroll();
+  const pathname = usePathname();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setScrolled(latest > 20);
   });
+
+  const handleHomeClick = () => {
+    setMobileMenuOpen(false);
+    if (pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   return (
     <motion.header
@@ -33,7 +42,7 @@ export default function Header() {
       className="fixed inset-x-0 top-0 z-50"
     >
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-3">
+        <Link href="/" onClick={handleHomeClick} className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0A2540] text-xs font-bold text-[#C9A227]">
             백조
           </div>
@@ -52,6 +61,7 @@ export default function Header() {
             <Link
               key={item.label}
               href={item.href}
+              onClick={item.href === "/" ? handleHomeClick : undefined}
               className={`text-sm font-medium hover:text-[#C9A227] ${scrolled ? "text-[#0A2540]" : "text-white"}`}
             >
               {item.label}
@@ -84,7 +94,7 @@ export default function Header() {
             <Link
               key={item.label}
               href={item.href}
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={item.href === "/" ? handleHomeClick : () => setMobileMenuOpen(false)}
               className="block py-2 text-[#0A2540]"
             >
               {item.label}
