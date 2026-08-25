@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { siteConfig } from "@/lib/site-config";
 import { seoLandings } from "@/lib/seo-landings";
+import { seoExtraLandings } from "@/lib/seo-extra-landings";
 
 export const revalidate = 3600;
 
@@ -13,6 +14,7 @@ type SitemapProperty = {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const allSeoLandings = [...seoLandings, ...seoExtraLandings];
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: siteConfig.url,
@@ -32,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.6,
     },
-    ...seoLandings.map((landing) => ({
+    ...allSeoLandings.map((landing) => ({
       url: `${siteConfig.url}/real-estate/${landing.slug}`,
       lastModified: now,
       changeFrequency: "daily" as const,
