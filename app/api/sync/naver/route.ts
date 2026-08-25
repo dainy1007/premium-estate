@@ -35,6 +35,36 @@ function normalized(value: unknown) {
   return String(value ?? "").trim();
 }
 
+function sanitizeArea(value: unknown) {
+  return normalized(value)
+    .replace(/(\d+(?:\.\d+)?)F㎡/g, "$1㎡")
+    .replace(/전용\s*(\d+(?:\.\d+)?)F\b/g, "전용 $1㎡");
+}
+
+function sanitizeDescription(listing: NaverListing) {
+  let description = normalized(listing.description);
+  if (!description) return "";
+
+  const region = normalized(listing.region);
+  const propertyType = normalized(listing.property_type);
+  const tradeType = normalized(listing.trade_type);
+
+  // 자동 원고에서 매물유형 누락 시 생기는
+  // "현풍읍에 위치한 매물 매매 매물입니다." 형태를 실제 유형으로 보정한다.
+  if (region && propertyType && propertyType !== "매물" && tradeType) {
+    const wrongOpening = `${region}에 위치한 매물 ${tradeType} 매물입니다.`;
+    const correctOpening = `${region}에 위치한 ${propertyType} ${tradeType} 매물입니다.`;
+    description = description.replace(wrongOpening, correctOpening);
+  }
+
+  // 면적 문자열 인코딩/변환 과정에서 섞인 F 문자를 정상 ㎡ 표기로 보정한다.
+  description = description
+    .replace(/(\d+(?:\.\d+)?)F㎡/g, "$1㎡")
+    .replace(/전용\s*(\d+(?:\.\d+)?)F\b/g, "전용 $1㎡");
+
+  return description;
+}
+
 function makeTitle(listing: NaverListing) {
   const address = normalized(listing.road_address) || normalized(listing.address);
   return buildSeoTitle({
@@ -125,7 +155,7 @@ export async function POST(request: NextRequest) {
 
     const marker = `naver:${articleNo}`;
     const address = normalized(raw.road_address) || normalized(raw.address);
-    const descriptionParts = [normalized(raw.description)].filter(Boolean);
+    const descriptionParts = [sanitizeDescription(raw)].filter(Boolean);
 
     const payload = {
       title: makeTitle(raw),
@@ -134,7 +164,7 @@ export async function POST(request: NextRequest) {
       location: normalized(raw.region),
       address,
       price: normalized(raw.price),
-      area: normalized(raw.area),
+      area: sanitizeArea(raw.area),
       floor: normalized(raw.floor),
       description: descriptionParts.join("\n"),
       image_url: "",
@@ -170,7 +200,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error || !data) {
-        results.push({ article_no: articleNo, status: "error", error: error?.message ?? "insert_failed" });
+        results.push({ article_no: articleNo, status: "error", error: error.message });
       } else {
         inserted += 1;
         results.push({ article_no: articleNo, status: "inserted", property_id: data.id });
