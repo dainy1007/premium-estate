@@ -30,7 +30,7 @@ function detectPropertyType(input: SeoPropertyInput) {
   const title = clean(input.title);
   if (title) {
     const normalizedTitleType = normalizePropertyType(title);
-    const knownTypes = ["미니투룸", "쓰리룸", "투룸", "원룸", "창고", "공장", "상가", "오피스텔", "아파트", "토지", "다가구", "단독주택"];
+    const knownTypes = ["미니투룸", "쓰리룸", "투룸", "원룸", "창고", "공장", "상가주택", "상가", "오피스텔", "아파트", "토지", "다가구", "단독주택"];
     if (knownTypes.includes(normalizedTitleType)) return normalizedTitleType;
   }
 
@@ -46,6 +46,7 @@ export function normalizePropertyType(value: string) {
   if (/원룸/i.test(text)) return "원룸";
   if (/창고/i.test(text)) return "창고";
   if (/공장/i.test(text)) return "공장";
+  if (/상가\s*주택|상가주택/i.test(text)) return "상가주택";
   if (/상가|근린생활시설|근생/i.test(text)) return "상가";
   if (/오피스텔/i.test(text)) return "오피스텔";
   if (/아파트/i.test(text)) return "아파트";
