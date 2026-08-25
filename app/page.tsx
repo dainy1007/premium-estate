@@ -39,6 +39,18 @@ export default function Home() {
     { label: "디지스트 인근", href: "/search?q=%EB%94%94%EC%A7%80%EC%8A%A4%ED%8A%B8" },
   ];
 
+  const seoLandingLinks = [
+    { label: "현풍 원룸 월세", href: "/real-estate/hyunpung-one-room" },
+    { label: "유가읍 원룸 월세", href: "/real-estate/yuga-one-room" },
+    { label: "유가읍 미니투룸", href: "/real-estate/yuga-mini-two-room" },
+    { label: "현풍 투룸 월세", href: "/real-estate/hyunpung-two-room" },
+    { label: "테크노폴리스 원룸", href: "/real-estate/techno-one-room" },
+    { label: "디지스트 원룸", href: "/real-estate/dgist-one-room" },
+    { label: "테크노폴리스 상가", href: "/real-estate/techno-commercial" },
+    { label: "현풍 상가", href: "/real-estate/hyunpung-commercial" },
+    { label: "구지 원룸 월세", href: "/real-estate/guji-one-room" },
+  ];
+
   return (
     <main className="min-h-screen bg-white pb-20 text-[#0A2342] md:pb-0">
       <Header />
@@ -61,101 +73,40 @@ export default function Home() {
             transition={{ duration: 0.7 }}
             className="max-w-4xl"
           >
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-[#C9A227]">
-              백조현대부동산중개
-            </p>
-            <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
-              현풍·유가·구지,
-              <br />
-              원하는 매물을 빠르게 찾으세요
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg text-white/80 sm:text-xl">
-              대구 테크노폴리스 생활권의 원룸·투룸·상가·공장·토지를 현장 중심으로 안내합니다.
-            </p>
+            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-[#C9A227]">백조현대부동산중개</p>
+            <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">현풍·유가·구지,<br />원하는 매물을 빠르게 찾으세요</h1>
+            <p className="mt-6 max-w-2xl text-lg text-white/80 sm:text-xl">대구 테크노폴리스 생활권의 원룸·투룸·상가·공장·토지를 현장 중심으로 안내합니다.</p>
 
-            <form
-              action="/search"
-              method="get"
-              className="mt-8 grid w-full max-w-3xl gap-3 rounded-[24px] border border-white/15 bg-white/10 p-3 backdrop-blur-md sm:grid-cols-[1fr_auto]"
-            >
-              <label htmlFor="home-property-search" className="sr-only">
-                지역, 주소, 매물명 검색
-              </label>
-              <input
-                id="home-property-search"
-                name="q"
-                value={searchKeyword}
-                onChange={(event) => setSearchKeyword(event.target.value)}
-                placeholder="예: 현풍 원룸, 유가읍 투룸, 테크노폴리스 상가"
-                className="min-w-0 rounded-2xl border border-white/15 bg-white px-5 py-4 text-[#0A2342] outline-none placeholder:text-[#0A2342]/45 focus:border-[#C9A227]"
-              />
-              <button
-                type="submit"
-                className="rounded-2xl bg-[#C9A227] px-7 py-4 text-sm font-bold text-[#0A2342] transition hover:bg-[#d8b53b]"
-              >
-                매물 검색
-              </button>
+            <form action="/search" method="get" className="mt-8 grid w-full max-w-3xl gap-3 rounded-[24px] border border-white/15 bg-white/10 p-3 backdrop-blur-md sm:grid-cols-[1fr_auto]">
+              <label htmlFor="home-property-search" className="sr-only">지역, 주소, 매물명 검색</label>
+              <input id="home-property-search" name="q" value={searchKeyword} onChange={(event) => setSearchKeyword(event.target.value)} placeholder="예: 현풍 원룸, 유가읍 투룸, 테크노폴리스 상가" className="min-w-0 rounded-2xl border border-white/15 bg-white px-5 py-4 text-[#0A2342] outline-none placeholder:text-[#0A2342]/45 focus:border-[#C9A227]" />
+              <button type="submit" className="rounded-2xl bg-[#C9A227] px-7 py-4 text-sm font-bold text-[#0A2342] transition hover:bg-[#d8b53b]">매물 검색</button>
             </form>
 
             <div className="mt-4 flex flex-wrap justify-center gap-2 lg:justify-start">
               {regionLinks.map((region) => (
-                <Link
-                  key={region.label}
-                  href={region.href}
-                  className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 backdrop-blur-sm transition hover:border-[#C9A227] hover:bg-[#C9A227]/20"
-                >
-                  {region.label}
-                </Link>
+                <Link key={region.label} href={region.href} className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 backdrop-blur-sm transition hover:border-[#C9A227] hover:bg-[#C9A227]/20">{region.label}</Link>
               ))}
             </div>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/properties"
-                className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:bg-white/20"
-              >
-                상세 조건 검색
-              </Link>
-              <a
-                href="tel:01077750014"
-                className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#0A2342] transition duration-300 hover:-translate-y-1 hover:bg-[#F5F5F5]"
-              >
-                전화 상담 010-7775-0014
-              </a>
+              <Link href="/properties" className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:bg-white/20">상세 조건 검색</Link>
+              <a href="tel:01077750014" className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#0A2342] transition duration-300 hover:-translate-y-1 hover:bg-[#F5F5F5]">전화 상담 010-7775-0014</a>
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12, duration: 0.7 }}
-            className="mt-10 w-full max-w-5xl rounded-[28px] border border-white/15 bg-white/10 p-4 backdrop-blur-md sm:p-5"
-          >
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.7 }} className="mt-10 w-full max-w-5xl rounded-[28px] border border-white/15 bg-white/10 p-4 backdrop-blur-md sm:p-5">
             <p className="mb-3 text-left text-sm font-semibold text-white/75">매물유형 바로가기</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {quickLinks.map((item) => (
-                <Link
-                  key={item}
-                  href={`/search?type=${encodeURIComponent(item)}`}
-                  className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-[#C9A227] hover:bg-[#C9A227]/20"
-                >
-                  {item}
-                </Link>
+                <Link key={item} href={`/search?type=${encodeURIComponent(item)}`} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-[#C9A227] hover:bg-[#C9A227]/20">{item}</Link>
               ))}
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.7 }}
-            className="mt-8 grid w-full max-w-4xl grid-cols-2 gap-3 md:grid-cols-4"
-          >
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }} className="mt-8 grid w-full max-w-4xl grid-cols-2 gap-3 md:grid-cols-4">
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-white/15 bg-white/10 p-5 text-center backdrop-blur-sm">
-                <p className="text-3xl font-semibold text-[#C9A227]">{stat.value}</p>
-                <p className="mt-2 text-sm text-white/80">{stat.label}</p>
-              </div>
+              <div key={stat.label} className="rounded-2xl border border-white/15 bg-white/10 p-5 text-center backdrop-blur-sm"><p className="text-3xl font-semibold text-[#C9A227]">{stat.value}</p><p className="mt-2 text-sm text-white/80">{stat.label}</p></div>
             ))}
           </motion.div>
         </div>
@@ -164,21 +115,27 @@ export default function Home() {
       <section className="border-b border-[#0A2342]/10 bg-white py-8">
         <div className="mx-auto max-w-7xl px-6 md:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-[#C9A227]">지역별 빠른 매물 찾기</p>
-              <h2 className="mt-1 text-2xl font-bold text-[#0A2342]">테크노폴리스 생활권 매물을 바로 확인하세요</h2>
-            </div>
+            <div><p className="text-sm font-semibold text-[#C9A227]">지역별 빠른 매물 찾기</p><h2 className="mt-1 text-2xl font-bold text-[#0A2342]">테크노폴리스 생활권 매물을 바로 확인하세요</h2></div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-end">
               {regionLinks.map((region) => (
-                <Link
-                  key={region.label}
-                  href={region.href}
-                  className="rounded-xl border border-[#0A2342]/10 bg-[#F8F9FB] px-4 py-3 text-center text-sm font-semibold text-[#0A2342] transition hover:border-[#C9A227] hover:bg-[#C9A227]/10"
-                >
-                  {region.label}
-                </Link>
+                <Link key={region.label} href={region.href} className="rounded-xl border border-[#0A2342]/10 bg-[#F8F9FB] px-4 py-3 text-center text-sm font-semibold text-[#0A2342] transition hover:border-[#C9A227] hover:bg-[#C9A227]/10">{region.label}</Link>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#F8F9FB] py-12">
+        <div className="mx-auto max-w-7xl px-6 md:px-8">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold tracking-[0.22em] text-[#C9A227]">POPULAR SEARCH</p>
+            <h2 className="mt-2 text-3xl font-bold">지역·매물유형별 인기 검색</h2>
+            <p className="mt-3 leading-7 text-[#0A2342]/70">현풍·유가·구지와 대구테크노폴리스 생활권의 주요 원룸·투룸·상가 매물을 지역별로 바로 확인할 수 있습니다.</p>
+          </div>
+          <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {seoLandingLinks.map((item) => (
+              <Link key={item.href} href={item.href} className="rounded-2xl border border-[#0A2342]/10 bg-white px-5 py-4 font-semibold transition hover:-translate-y-0.5 hover:border-[#C9A227] hover:shadow-md">{item.label} →</Link>
+            ))}
           </div>
         </div>
       </section>
@@ -186,31 +143,11 @@ export default function Home() {
       <FeaturedProperties />
 
       <section id="services" className="mx-auto max-w-7xl px-6 py-20 md:px-8 md:py-28">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-[#C9A227]">Our Services</p>
-          <h2 className="mt-3 text-3xl font-bold sm:text-4xl">부동산의 모든 서비스를 한 곳에서 제공합니다.</h2>
-          <p className="mt-4 text-base text-[#0A2342]/70 sm:text-lg">
-            매매, 임대, 투자, 시세 분석까지 고객 맞춤형 솔루션으로 안내해드립니다.
-          </p>
-        </div>
-
+        <div className="mx-auto max-w-2xl text-center"><p className="text-sm font-semibold uppercase tracking-[0.35em] text-[#C9A227]">Our Services</p><h2 className="mt-3 text-3xl font-bold sm:text-4xl">부동산의 모든 서비스를 한 곳에서 제공합니다.</h2><p className="mt-4 text-base text-[#0A2342]/70 sm:text-lg">매매, 임대, 투자, 시세 분석까지 고객 맞춤형 솔루션으로 안내해드립니다.</p></div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {services.map((service, index) => (
-            <motion.article
-              key={service}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.5, delay: index * 0.06 }}
-              className="rounded-3xl border border-[#0A2342]/10 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:border-[#C9A227] hover:shadow-lg"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#C9A227]/10 text-lg font-semibold text-[#C9A227]">
-                0{index + 1}
-              </div>
-              <h3 className="mt-6 text-xl font-semibold">{service}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#0A2342]/70">
-                현장 경험을 바탕으로 매물 확인부터 계약까지 꼼꼼하게 안내합니다.
-              </p>
+            <motion.article key={service} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.5, delay: index * 0.06 }} className="rounded-3xl border border-[#0A2342]/10 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:border-[#C9A227] hover:shadow-lg">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#C9A227]/10 text-lg font-semibold text-[#C9A227]">0{index + 1}</div><h3 className="mt-6 text-xl font-semibold">{service}</h3><p className="mt-3 text-sm leading-7 text-[#0A2342]/70">현장 경험을 바탕으로 매물 확인부터 계약까지 꼼꼼하게 안내합니다.</p>
             </motion.article>
           ))}
         </div>
@@ -222,18 +159,8 @@ export default function Home() {
       <Footer />
 
       <div className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-2 border-t border-[#0A2342]/10 bg-white shadow-[0_-6px_24px_rgba(0,0,0,0.08)] md:hidden">
-        <a
-          href="tel:01077750014"
-          className="flex items-center justify-center bg-[#0A2342] px-4 py-4 text-sm font-bold text-white"
-        >
-          전화 상담
-        </a>
-        <Link
-          href="/contact"
-          className="flex items-center justify-center bg-[#C9A227] px-4 py-4 text-sm font-bold text-[#0A2342]"
-        >
-          매물 문의
-        </Link>
+        <a href="tel:01077750014" className="flex items-center justify-center bg-[#0A2342] px-4 py-4 text-sm font-bold text-white">전화 상담</a>
+        <Link href="/contact" className="flex items-center justify-center bg-[#C9A227] px-4 py-4 text-sm font-bold text-[#0A2342]">매물 문의</Link>
       </div>
     </main>
   );
