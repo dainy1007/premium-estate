@@ -11,6 +11,18 @@ export function sanitizePropertyArea(value: unknown) {
     .replace(/전용(\d+(?:\.\d+)?)㎡/g, "전용 $1㎡");
 }
 
+export function deriveLocationFromAddress(value: unknown) {
+  const address = clean(value);
+  if (!address) return "";
+
+  const parts = address.split(" ").filter(Boolean);
+  const province = parts.find((part) => /(?:특별시|광역시|특별자치시|도)$/.test(part)) || "";
+  const cityCounty = parts.find((part) => /(?:시|군|구)$/.test(part) && part !== province) || "";
+  const town = parts.find((part) => /(?:읍|면|동)$/.test(part)) || "";
+
+  return [province, cityCounty, town].filter(Boolean).join(" ");
+}
+
 export function detectPropertyDisplayType(input: {
   type?: string | null;
   title?: string | null;
@@ -64,36 +76,49 @@ function normalizeTitleByType(title: string, type: string) {
   if (type === "상가주택") return rawTitle.replace(/상가(?!주택)|토지|원룸|투룸|미니투룸/g, "상가주택");
   if (type === "아파트") {
     const corrected = rawTitle.replace(/미니투룸|쓰리룸|투룸|원룸|상가주택|상가|창고|공장|토지|오피스텔|다가구|단독주택/g, "아파트");
-    if (/남해\s*오네뜨|남해오네뜨/i.test(rawTitle) && !corrected.includes("아파트")) {
-      return `${corrected} 아파트`;
-    }
-    if (/하나리움\s*퀸즈\s*파크|하나리움퀸즈파크|하나리움퀸즈/i.test(rawTitle) && !corrected.includes("아파트")) {
-      return `${corrected} 아파트`;
-    }
+    if (/남해\s*오네뜨|남해오네뜨/i.test(rawTitle) && !corrected.includes("아파트")) return `${corrected} 아파트`;
+    if (/하나리움\s*퀸즈\s*파크|하나리움퀸즈파크|하나리움퀸즈/i.test(rawTitle) && !corrected.includes("아파트")) return `${corrected} 아파트`;
     return corrected;
   }
 
   const replaceableTypes = /미니투룸|쓰리룸|투룸|원룸|상가주택|상가|창고|공장|토지|오피스텔|아파트|다가구|단독주택/;
-  if (replaceableTypes.test(rawTitle) && !rawTitle.includes(type)) {
-    return rawTitle.replace(replaceableTypes, type);
+  if (replaceableTypes.test(rawTitle) && !rawTitle.includes(type)) return rawTitle.replace(replaceableTypes, type);
+  return rawTitle;
+}
+
+function normalizeDescriptionGeography(description: unknown, address: unknown, type: string, dealType: unknown) {
+  let text = clean(description)
+    .replace(/(\d+(?:\.\d+)?)F㎡/g, "$1㎡")
+    .replace(/전용\s*(\d+(?:\.\d+)?)F\b/g, "전용 $1㎡");
+
+  const geographicLocation = deriveLocationFromAddress(address);
+  if (!text || !geographicLocation) return text;
+
+  const deal = clean(dealType);
+  const correctOpening = deal ? `${geographicLocation}에 위치한 ${type} ${deal} 매물입니다.` : `${geographicLocation}에 위치한 ${type} 매물입니다.`;
+
+  if (/^[^\n.]{1,50}에 위치한 [^\n.]{1,30} 매물입니다\./.test(text)) {
+    text = text.replace(/^[^\n.]{1,50}에 위치한 [^\n.]{1,30} 매물입니다\./, correctOpening);
+  } else if (/^[^\n.]{1,30}에 위치한 매물 [^\n.]{1,20} 매물입니다\./.test(text)) {
+    text = text.replace(/^[^\n.]{1,30}에 위치한 매물 [^\n.]{1,20} 매물입니다\./, correctOpening);
   }
 
-  return rawTitle;
+  return text;
 }
 
 export function normalizePropertyForDisplay<T extends Property>(property: T): T {
   const type = detectPropertyDisplayType(property);
   const title = normalizeTitleByType(property.title, type);
+  const geographicLocation = deriveLocationFromAddress(property.address);
 
   return {
     ...property,
     type,
     title,
+    location: geographicLocation || property.location,
     area: sanitizePropertyArea(property.area),
     contract_area: sanitizePropertyArea(property.contract_area),
     exclusive_area: sanitizePropertyArea(property.exclusive_area),
-    description: clean(property.description)
-      .replace(/(\d+(?:\.\d+)?)F㎡/g, "$1㎡")
-      .replace(/전용\s*(\d+(?:\.\d+)?)F\b/g, "전용 $1㎡"),
+    description: normalizeDescriptionGeography(property.description, property.address, type, property.deal_type),
   };
 }
