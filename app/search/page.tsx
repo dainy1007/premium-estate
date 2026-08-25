@@ -85,15 +85,17 @@ function PropertySearchContent() {
 
   const results = useMemo(() => {
     const normalizedKeyword = keyword.toLowerCase();
-    const typeTerms = TYPE_GROUPS[type] || (type ? type.split("·") : []);
+    const allowedTypes = TYPE_GROUPS[type] || (type ? [type] : []);
     const filtered = properties.filter((property) => {
       const searchable = [property.title, property.location, property.address, property.description, property.type, property.deal_type]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
+      const propertyType = String(property.type || "").trim();
+      const typeMatches = allowedTypes.length === 0 || allowedTypes.includes(propertyType);
       return (
         (!normalizedKeyword || searchable.includes(normalizedKeyword)) &&
-        (typeTerms.length === 0 || typeTerms.some((term) => searchable.includes(term.toLowerCase()))) &&
+        typeMatches &&
         (dealType === "전체" || property.deal_type === dealType) &&
         (!featuredOnly || property.is_featured === true)
       );
