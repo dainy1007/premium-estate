@@ -19,9 +19,22 @@ function includesAny(text: string, terms: string[]) {
 }
 
 function detectPropertyType(input: SeoPropertyInput) {
-  const titleAndDescription = [input.title, input.description].map(clean).join(" ");
+  // 등록된 매물유형(type)을 최우선으로 사용한다.
+  // 설명의 '대지면적', '토지' 같은 보조 문구가 원룸을 토지로 오분류하는 것을 방지한다.
   const explicitType = clean(input.type);
-  return normalizePropertyType(titleAndDescription || explicitType);
+  if (explicitType) {
+    const normalizedExplicitType = normalizePropertyType(explicitType);
+    if (normalizedExplicitType && normalizedExplicitType !== "부동산") return normalizedExplicitType;
+  }
+
+  const title = clean(input.title);
+  if (title) {
+    const normalizedTitleType = normalizePropertyType(title);
+    const knownTypes = ["미니투룸", "쓰리룸", "투룸", "원룸", "창고", "공장", "상가", "오피스텔", "아파트", "토지", "다가구", "단독주택"];
+    if (knownTypes.includes(normalizedTitleType)) return normalizedTitleType;
+  }
+
+  return normalizePropertyType(clean(input.description));
 }
 
 export function normalizePropertyType(value: string) {
