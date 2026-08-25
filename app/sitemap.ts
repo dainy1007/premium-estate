@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { siteConfig } from "@/lib/site-config";
+import { seoLandings } from "@/lib/seo-landings";
 
 export const revalidate = 3600;
 
@@ -31,6 +32,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.6,
     },
+    ...seoLandings.map((landing) => ({
+      url: `${siteConfig.url}/real-estate/${landing.slug}`,
+      lastModified: now,
+      changeFrequency: "daily" as const,
+      priority: 0.85,
+    })),
   ];
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
