@@ -1,9 +1,23 @@
 import { supabase } from "@/lib/supabase";
 import { normalizePropertyForDisplay } from "@/lib/property-normalize";
+import { getVerifiedSaleInfo } from "@/lib/sale-property-verification";
 import type { Property } from "@/types/property";
 
 function isPublicProperty(property: Property | null | undefined) {
   return Boolean(property) && property?.is_hidden !== true;
+}
+
+function applyVerifiedSaleInfo(property: Property): Property {
+  const normalized = normalizePropertyForDisplay(property);
+  const verified = getVerifiedSaleInfo(normalized);
+  if (!verified) return normalized;
+
+  return {
+    ...normalized,
+    area: verified.area || normalized.area,
+    floor: verified.floor || normalized.floor,
+    description: verified.description || normalized.description,
+  };
 }
 
 export async function getProperty(id: number) {
@@ -17,7 +31,7 @@ export async function getProperty(id: number) {
     return null;
   }
 
-  return normalizePropertyForDisplay(data as Property);
+  return applyVerifiedSaleInfo(data as Property);
 }
 
 export async function getLatestProperties(limit = 6) {
@@ -29,7 +43,7 @@ export async function getLatestProperties(limit = 6) {
 
   return ((data ?? []) as Property[])
     .filter(isPublicProperty)
-    .map(normalizePropertyForDisplay)
+    .map(applyVerifiedSaleInfo)
     .slice(0, limit);
 }
 
@@ -44,7 +58,7 @@ export async function getRelatedProperties(id: number, type: string) {
 
   return ((data ?? []) as Property[])
     .filter(isPublicProperty)
-    .map(normalizePropertyForDisplay)
+    .map(applyVerifiedSaleInfo)
     .sort((a, b) => {
       const featuredDifference = Number(b.is_featured) - Number(a.is_featured);
       if (featuredDifference !== 0) return featuredDifference;
