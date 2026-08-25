@@ -23,13 +23,13 @@ export async function generateMetadata({ params }: PropertyDetailPageProps): Pro
   const propertyId = Number(id);
 
   if (!Number.isInteger(propertyId) || propertyId <= 0) {
-    return { title: "매물을 찾을 수 없습니다 | 백조현대부동산중개", robots: { index: false, follow: false } };
+    return { title: "매물을 찾을 수 없습니다", robots: { index: false, follow: false } };
   }
 
   const property = await getProperty(propertyId);
   if (!property) {
     return {
-      title: "매물을 찾을 수 없습니다 | 백조현대부동산중개",
+      title: "매물을 찾을 수 없습니다",
       description: "요청하신 매물 정보를 찾을 수 없습니다.",
       robots: { index: false, follow: false },
     };
@@ -39,20 +39,20 @@ export async function generateMetadata({ params }: PropertyDetailPageProps): Pro
   const dealType = property.deal_type || property.type || "부동산 매물";
   const location = property.location || "대구 달성군";
   const price = property.price || "가격 문의";
-  const title = `${seoTitle} | 백조현대부동산중개`;
   const description = property.description
     ? property.description.replace(/\s+/g, " ").trim().slice(0, 160)
     : `${location} ${dealType}, ${price}. 백조현대부동산중개 매물 정보입니다.`;
   const canonicalUrl = `${SITE_URL}/properties/${propertyId}`;
   const imageUrl = property.image_url || `${SITE_URL}/opengraph-image`;
+  const socialTitle = `${seoTitle} | 백조현대부동산중개`;
 
   return {
-    title,
+    title: seoTitle,
     description,
     keywords: buildSeoKeywords(property),
     alternates: { canonical: canonicalUrl },
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       url: canonicalUrl,
       siteName: "백조현대부동산중개",
@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: PropertyDetailPageProps): Pro
       type: "website",
       images: [{ url: imageUrl, alt: buildImageAlt(property, 1) }],
     },
-    twitter: { card: "summary_large_image", title, description, images: [imageUrl] },
+    twitter: { card: "summary_large_image", title: socialTitle, description, images: [imageUrl] },
     robots: {
       index: true,
       follow: true,
