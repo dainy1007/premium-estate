@@ -16,12 +16,18 @@ function includesAny(text: string, terms: string[]) {
   return terms.some((term) => haystack.includes(term.toLowerCase()));
 }
 
+function detectPropertyType(input: SeoPropertyInput) {
+  const titleAndDescription = [input.title, input.description].map(clean).join(" ");
+  const explicitType = clean(input.type);
+  return normalizePropertyType(titleAndDescription || explicitType);
+}
+
 export function normalizePropertyType(value: string) {
   const text = clean(value);
   if (!text) return "부동산";
   if (/미니\s*투룸/i.test(text)) return "미니투룸";
-  if (/투룸|2룸/i.test(text)) return "투룸";
   if (/쓰리룸|3룸/i.test(text)) return "쓰리룸";
+  if (/투룸|2룸/i.test(text)) return "투룸";
   if (/원룸/i.test(text)) return "원룸";
   if (/상가|근린생활시설|근생/i.test(text)) return "상가";
   if (/창고/i.test(text)) return "창고";
@@ -31,7 +37,11 @@ export function normalizePropertyType(value: string) {
   if (/토지|대지|전|답|임야/i.test(text)) return "토지";
   if (/다가구/i.test(text)) return "다가구";
   if (/단독/i.test(text)) return "단독주택";
-  return text;
+  return explicitFallback(text);
+}
+
+function explicitFallback(text: string) {
+  return text || "부동산";
 }
 
 export function normalizeDealType(value: string) {
@@ -70,7 +80,7 @@ export function detectLandmark(input: SeoPropertyInput) {
 
 export function buildSeoTitle(input: SeoPropertyInput) {
   const area = detectSeoArea(input);
-  const propertyType = normalizePropertyType(clean(input.type) || clean(input.title));
+  const propertyType = detectPropertyType(input);
   const dealType = normalizeDealType(clean(input.deal_type));
   const landmark = detectLandmark(input);
   const base = [area, propertyType, dealType].filter(Boolean).join(" ");
@@ -82,7 +92,7 @@ export function buildSeoTitle(input: SeoPropertyInput) {
 
 export function buildSeoKeywords(input: SeoPropertyInput) {
   const area = detectSeoArea(input);
-  const propertyType = normalizePropertyType(clean(input.type) || clean(input.title));
+  const propertyType = detectPropertyType(input);
   const dealType = normalizeDealType(clean(input.deal_type));
   const landmark = detectLandmark(input);
 
@@ -108,6 +118,9 @@ export function buildImageAlt(input: SeoPropertyInput, index = 1) {
 }
 
 export function getRelatedSeoLandings(input: SeoPropertyInput) {
+  const area = detectSeoArea(input);
+  const propertyType = detectPropertyType(input);
+  const landmark = detectLandmark(input);
   const searchable = [
     input.title,
     input.location,
@@ -115,21 +128,30 @@ export function getRelatedSeoLandings(input: SeoPropertyInput) {
     input.type,
     input.deal_type,
     input.description,
-    detectSeoArea(input),
-    normalizePropertyType(clean(input.type) || clean(input.title)),
-    detectLandmark(input),
+    area,
+    propertyType,
+    landmark,
   ]
     .map(clean)
     .join(" ");
 
   return seoLandings
     .map((landing) => {
+      const slug = landing.slug;
+      const areaCompatible =
+        (area === "현풍읍" && slug.startsWith("hyunpung-")) ||
+        (area === "유가읍" && slug.startsWith("yuga-")) ||
+        (area === "구지면" && slug.startsWith("guji-")) ||
+        (slug.startsWith("techno-") && /테크노폴리스/i.test(landmark)) ||
+        (slug.startsWith("dgist-") && /디지스트/i.test(landmark));
+
       const locationScore = includesAny(searchable, landing.locationTerms) ? 2 : 0;
-      const propertyScore = includesAny(searchable, landing.propertyTerms) ? 3 : 0;
+      const propertyScore = includesAny(searchable, landing.propertyTerms) ? 4 : 0;
       const keywordScore = includesAny(searchable, landing.keywords) ? 1 : 0;
-      return { landing, score: locationScore + propertyScore + keywordScore };
+      const score = (areaCompatible ? 4 : 0) + locationScore + propertyScore + keywordScore;
+      return { landing, score, areaCompatible };
     })
-    .filter(({ score }) => score >= 3)
+    .filter(({ score, areaCompatible }) => areaCompatible && score >= 8)
     .sort((a, b) => b.score - a.score)
     .slice(0, 4)
     .map(({ landing }) => ({
