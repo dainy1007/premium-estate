@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
+import { normalizePropertyForDisplay } from "@/lib/property-normalize";
 import {
   MAX_PROPERTY_IMAGES,
   PROPERTY_IMAGES_BUCKET,
@@ -54,15 +55,17 @@ export default function PropertyEditPage() {
         return;
       }
 
+      const normalized = normalizePropertyForDisplay(data);
+
       setForm({
-        title: data.title || "",
-        price: data.price || "",
-        type: data.type || "",
-        deal_type: data.deal_type || "",
-        address: data.address || "",
-        location: data.location || data.address || "",
-        area: data.area || "",
-        description: data.description || "",
+        title: normalized.title || "",
+        price: normalized.price || "",
+        type: normalized.type || "",
+        deal_type: normalized.deal_type || "",
+        address: normalized.address || "",
+        location: normalized.location || normalized.address || "",
+        area: normalized.area || "",
+        description: normalized.description || "",
       });
 
       const sorted = (data.property_images || []).sort(
