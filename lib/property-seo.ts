@@ -1,4 +1,5 @@
 import { seoLandings } from "@/lib/seo-landings";
+import { seoExtraLandings } from "@/lib/seo-extra-landings";
 
 type SeoPropertyInput = {
   title?: string | null;
@@ -10,6 +11,7 @@ type SeoPropertyInput = {
 };
 
 const clean = (value: unknown) => String(value ?? "").replace(/\s+/g, " ").trim();
+const allSeoLandings = [...seoLandings, ...seoExtraLandings];
 
 function includesAny(text: string, terms: string[]) {
   const haystack = text.toLowerCase();
@@ -135,7 +137,7 @@ export function getRelatedSeoLandings(input: SeoPropertyInput) {
     .map(clean)
     .join(" ");
 
-  return seoLandings
+  return allSeoLandings
     .map((landing) => {
       const slug = landing.slug;
       const areaCompatible =
