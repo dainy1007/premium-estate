@@ -2,14 +2,20 @@ import Link from "next/link";
 
 const seoLinks = [
   ["현풍 원룸", "/real-estate/hyunpung-one-room"],
+  ["현풍 미니투룸", "/real-estate/hyunpung-mini-two-room"],
+  ["현풍 투룸", "/real-estate/hyunpung-two-room"],
   ["유가읍 원룸", "/real-estate/yuga-one-room"],
   ["유가읍 미니투룸", "/real-estate/yuga-mini-two-room"],
-  ["현풍 투룸", "/real-estate/hyunpung-two-room"],
+  ["유가읍 투룸", "/real-estate/yuga-two-room"],
   ["테크노폴리스 원룸", "/real-estate/techno-one-room"],
+  ["테크노폴리스 미니투룸", "/real-estate/techno-mini-two-room"],
   ["디지스트 원룸", "/real-estate/dgist-one-room"],
+  ["디지스트 미니투룸", "/real-estate/dgist-mini-two-room"],
   ["테크노폴리스 상가", "/real-estate/techno-commercial"],
   ["현풍 상가", "/real-estate/hyunpung-commercial"],
+  ["유가읍 상가", "/real-estate/yuga-commercial"],
   ["구지 원룸", "/real-estate/guji-one-room"],
+  ["구지 상가", "/real-estate/guji-commercial"],
 ] as const;
 
 export default function Footer() {
