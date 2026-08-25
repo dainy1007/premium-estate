@@ -27,6 +27,9 @@ export function detectPropertyDisplayType(input: {
   // 주거형 원룸 표현이 포함되어도 건축물 유형은 오피스텔로 표시한다.
   if (/중리\s*505-2|테크노대로\s*73|줌시티/i.test(text)) return "오피스텔";
   if (/오피스텔/i.test(explicitType) || /오피스텔/i.test(text)) return "오피스텔";
+
+  // 현풍읍 중리 462-4는 상가주택 매매 매물이다.
+  if (/현풍읍.*중리\s*462-4|중리\s*462-4/i.test(text)) return "상가주택";
   if (/상가\s*주택|상가주택/i.test(explicitType) || /상가\s*주택|상가주택/i.test(text)) return "상가주택";
 
   return explicitType || "매물";
