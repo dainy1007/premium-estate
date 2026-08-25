@@ -175,7 +175,6 @@ export async function POST(request: NextRequest) {
       area: sanitizePropertyArea(raw.area),
       floor: normalized(raw.floor),
       description: descriptionParts.join("\n"),
-      image_url: "",
       admin_memo: marker,
       listing_status: "active",
       is_hidden: false,
@@ -203,7 +202,7 @@ export async function POST(request: NextRequest) {
     } else {
       const { data, error } = await supabase
         .from("properties")
-        .insert(payload)
+        .insert({ ...payload, image_url: "" })
         .select("id")
         .single();
 
