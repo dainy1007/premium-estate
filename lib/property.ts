@@ -7,8 +7,18 @@ function isPublicProperty(property: Property | null | undefined) {
   return Boolean(property) && property?.is_hidden !== true;
 }
 
+function hasAdminLockedData(property: Property) {
+  const description = String(property.description ?? "");
+  return description.includes("<!--PROPERTY_ADMIN_META:") || description.includes("<!--PROPERTY_OPTIONS:");
+}
+
 function applyVerifiedSaleInfo(property: Property): Property {
   const normalized = normalizePropertyForDisplay(property);
+
+  // 관리자가 매물정보/옵션/설명을 한 번 저장한 매물은 관리자 입력을 최우선으로 유지한다.
+  // 과거 주소별 검증 기본값이 이후 관리자 수정값을 다시 덮어쓰지 않게 한다.
+  if (hasAdminLockedData(property)) return normalized;
+
   const verified = getVerifiedSaleInfo(normalized);
   if (!verified) return normalized;
 
