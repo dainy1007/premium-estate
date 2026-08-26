@@ -36,11 +36,61 @@ function completeFeatureSentence(value:string){
   if(/살아보기$/.test(item))return `${item.replace(/살아보기$/,'생활을 원하는 분께 추천합니다')}.`;
   return `${item}입니다.`;
 }
-function listItems(value:string){return value.split(/\n+|\s*•\s*|\s*·\s*/).map(i=>i.replace(/^[-•]\s*/,"").trim()).filter(Boolean);}
+function listItems(value:string){return value.split(/\n+|\s*•\s*/).map(i=>i.replace(/^[-•]\s*/,"").trim()).filter(Boolean);}
+function optionItems(value:string){return value.split(/\n+|\s*•\s*|\s*·\s*/).map(i=>i.replace(/^[-•]\s*/,"").trim()).filter(Boolean);}
 function splitSentences(value:string){return value.split(/(?<=[.!?])\s+/).map(i=>i.trim()).filter(Boolean);}
 function isResidentialOnlyCommercialPhrase(value:string){return /창문이?\s*확인|환기\s*구조|채광|수납공간|생활용품|의류를?\s*정리|우드톤\s*바닥|바닥\s*마감으로\s*편안|편안한\s*분위기|빨래\s*건조|천장형\s*건조대/.test(value);}
 function isCommercialFeature(value:string){return !isResidentialOnlyCommercialPhrase(value)&&!/급배수|배기시설|전력용량|소방시설|관계기관|인허가|현장에서 확인|상세 조건 및 현재 매물 상태/.test(value);}
-function isVerifiedOption(value:string){return !/^(냉장고|붙박이장|옷장)$/.test(value.trim());}
+function isVerifiedOption(value:string){return Boolean(value.trim());}
+function optionIcon(value:string){
+  const item=value.trim();
+  if(/에어컨/.test(item))return "❄️";
+  if(/세탁기/.test(item))return "🧺";
+  if(/^TV$|티비|텔레비전/i.test(item))return "📺";
+  if(/신발장/.test(item))return "👟";
+  if(/냉장고/.test(item))return "🧊";
+  if(/가스레인지|인덕션/.test(item))return "🔥";
+  if(/싱크대/.test(item))return "🚰";
+  if(/CCTV/i.test(item))return "📹";
+  if(/도어락|현관보안/.test(item))return "🔐";
+  if(/인터폰/.test(item))return "📞";
+  if(/인터넷|와이파이/.test(item))return "🌐";
+  if(/건조대/.test(item))return "👕";
+  return "✓";
+}
+function normalizeResidentialFeatureItems(items:string[]){
+  const result:string[]=[];
+  for(let i=0;i<items.length;i+=1){
+    const current=items[i].trim();
+    const next=(items[i+1]||"").trim();
+    if(/^(?:디지스트|DGIST)\s*학생입니다\.?$/i.test(current)&&/^직원(?:과|및)\s*인근\s*직장인이\s*생활하기\s*편리한\s*위치입니다\.?$/.test(next)){
+      result.push("디지스트 학생·직원과 인근 직장인이 생활하기 편리한 위치입니다.");
+      i+=1;
+      continue;
+    }
+    if(/^(편의점|마트|음식점|카페|병원|약국|은행|세탁소)입니다\.?$/.test(current)){
+      const nouns:string[]=[];
+      let cursor=i;
+      while(cursor<items.length){
+        const match=items[cursor].trim().match(/^(편의점|마트|음식점|카페|병원|약국|은행|세탁소)입니다\.?$/);
+        if(!match)break;
+        nouns.push(match[1]);
+        cursor+=1;
+      }
+      const following=(items[cursor]||"").trim();
+      if(following&&/(생활편의시설|상권)/.test(following)){
+        const prefix=nouns.length?`${[...new Set(nouns)].join("·")}·`:"";
+        result.push(`${prefix}${following}`.replace(/^([^ ]+)(음식점 등)/,"$1$2"));
+        i=cursor;
+      }else{
+        i=cursor-1;
+      }
+      continue;
+    }
+    result.push(current);
+  }
+  return result;
+}
 
 function formatPropertyDescription(description:string,propertyType="",dealType=""){
  const isCommercial=/상가|창고|공장/.test(propertyType);
@@ -56,8 +106,8 @@ function formatPropertyDescription(description:string,propertyType="",dealType="
  let commercialOverflow:string[]=[];
  if(isCommercial){const lines=text.split("\n").map(l=>l.trim()).filter(Boolean);const kept:string[]=[];let afterParking=false;for(const line of lines){if(afterParking&&!/^(매물 정보)$/.test(line)){commercialOverflow.push(...splitSentences(line));continue;}kept.push(line);if(/^주차\s*:/.test(line))afterParking=true;}text=kept.join("\n");}
  text=text.split("\n").map(l=>l.trim()).filter(Boolean).join("\n").replace(/\n{2,}/g,"\n").trim();const sections=[text];
- if(optionText&&!isCommercial){const items=listItems(optionText).filter(isVerifiedOption),ls:string[]=[];for(let i=0;i<items.length;i+=3)ls.push(`• ${items.slice(i,i+3).join(" · ")}`);if(ls.length)sections.push(`옵션\n${ls.join("\n")}`);}
- let featureItems=[...commercialOverflow,...listItems(featureText).flatMap(splitSentences)];if(isCommercial)featureItems=featureItems.filter(isCommercialFeature);featureItems=featureItems.map(completeFeatureSentence).filter((v,i,a)=>a.indexOf(v)===i).slice(0,isCommercial?5:6);if(featureItems.length)sections.push(`매물 특징\n${featureItems.map(i=>`• ${i}`).join("\n")}`);
+ if(optionText&&!isCommercial){const items=optionItems(optionText).filter(isVerifiedOption),ls:string[]=[];for(let i=0;i<items.length;i+=3)ls.push(`• ${items.slice(i,i+3).map(item=>`${optionIcon(item)} ${item}`).join("   ")}`);if(ls.length)sections.push(`옵션\n${ls.join("\n")}`);}
+ let featureItems=[...commercialOverflow,...listItems(featureText).flatMap(splitSentences)];if(!isCommercial)featureItems=normalizeResidentialFeatureItems(featureItems);if(isCommercial)featureItems=featureItems.filter(isCommercialFeature);featureItems=featureItems.map(completeFeatureSentence).filter((v,i,a)=>a.indexOf(v)===i).slice(0,isCommercial?5:6);if(featureItems.length)sections.push(`매물 특징\n${featureItems.map(i=>`• ${i}`).join("\n")}`);
  if(usageText&&isCommercial){const items=listItems(usageText).flatMap(splitSentences).filter(i=>!/^(추천 활용|추천 업종|현장 확인 포인트)$/.test(i.trim())).filter(isCommercialFeature);const unique=items.filter((v,i,a)=>a.findIndex(c=>c.trim()===v.trim())===i).slice(0,4);if(unique.length)sections.push(`추천 활용\n${unique.map(i=>`• ${i}`).join("\n")}`);}
  return sections.filter(Boolean).join("\n\n").replace(/\n{3,}/g,"\n\n").trim();
 }
