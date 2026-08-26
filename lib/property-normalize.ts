@@ -102,7 +102,7 @@ function addSmallHomeConvenience(description: string, type: string, context: str
 }
 
 function normalizeDescriptionGeography(description: unknown, address: unknown, type: string, dealType: unknown) {
-  let text = clean(description).replace(/(\d+(?:\.\d+)?)F㎡/g, "$1㎡").replace(/전용\s*(\d+(?:\.\d+)?)F\b/g, "전용 $1㎡");
+  let text = String(description ?? "").replace(/\r\n/g, "\n").trim().replace(/(\d+(?:\.\d+)?)F㎡/g, "$1㎡").replace(/전용\s*(\d+(?:\.\d+)?)F\b/g, "전용 $1㎡");
   const geographicLocation = deriveLocationFromAddress(address);
   if (!text || !geographicLocation) return text;
   const deal = clean(dealType);
@@ -117,7 +117,9 @@ export function normalizePropertyForDisplay<T extends Property>(property: T): T 
   const typedTitle = normalizeTitleByType(property.title, type);
   const title = normalizeTitleGeography(typedTitle, property.address);
   const geographicLocation = deriveLocationFromAddress(property.address);
-  const normalizedDescription = normalizeDescriptionGeography(property.description, property.address, type, property.deal_type);
-  const description = addSmallHomeConvenience(normalizedDescription, type, [property.title, property.address, property.location, property.description].filter(Boolean).join(" "));
+  const rawDescription = String(property.description ?? "");
+  const isAdminEdited = rawDescription.includes("<!--PROPERTY_ADMIN_META:");
+  const normalizedDescription = isAdminEdited ? rawDescription : normalizeDescriptionGeography(rawDescription, property.address, type, property.deal_type);
+  const description = isAdminEdited ? normalizedDescription : addSmallHomeConvenience(normalizedDescription, type, [property.title, property.address, property.location, property.description].filter(Boolean).join(" "));
   return {...property,type,title,location: geographicLocation || property.location,area:sanitizePropertyArea(property.area),contract_area:sanitizePropertyArea(property.contract_area),exclusive_area:sanitizePropertyArea(property.exclusive_area),description};
 }
