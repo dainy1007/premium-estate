@@ -18,7 +18,9 @@ interface PropertyDetailPageProps {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.baekjohd.com";
 
-function formatPropertyDescription(description: string) {
+function formatPropertyDescription(description: string, propertyType = "") {
+  const isCommercial = /상가/.test(propertyType);
+
   let text = description
     .replace(/\r\n/g, "\n")
     .replace(/[ \t]+/g, " ")
@@ -47,7 +49,7 @@ function formatPropertyDescription(description: string) {
 
   const sections = [text];
 
-  if (optionText) {
+  if (optionText && !isCommercial) {
     const optionItems = optionText
       .split(/\s*·\s*/)
       .map((item) => item.replace(/^•\s*/, "").trim())
@@ -140,7 +142,7 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
   const seoKeywords = buildSeoKeywords(property);
   const relatedSeoLandings = getRelatedSeoLandings(property);
   const formattedDescription = property.description
-    ? formatPropertyDescription(property.description)
+    ? formatPropertyDescription(property.description, `${property.type || ""} ${property.title || ""}`)
     : "";
 
   const detailItems = [
