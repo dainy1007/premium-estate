@@ -37,7 +37,10 @@ export async function getProperty(id: number) {
     .eq("id", id)
     .single();
 
-  if (error || !data || !isPublicProperty(data as Property)) {
+  // 숨김 매물도 직접 상세 URL에서는 확인할 수 있게 유지한다.
+  // is_hidden은 홈/검색/관련 매물 목록 노출만 제어한다.
+  // 이렇게 하면 관리자 수정 후 기존 매물번호 상세 페이지가 404로 바뀌지 않는다.
+  if (error || !data) {
     return null;
   }
 
