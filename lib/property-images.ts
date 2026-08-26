@@ -118,7 +118,6 @@ async function preparePropertyImage(file: File) {
   const sourceWidth = source.width;
   const sourceHeight = source.height;
 
-  // 자동화 프로그램과 같은 순서: 원본 크기에 워터마크 적용 후 홈페이지용 1800px 최적화.
   const watermarkedCanvas = document.createElement("canvas");
   watermarkedCanvas.width = sourceWidth;
   watermarkedCanvas.height = sourceHeight;
@@ -223,27 +222,30 @@ export async function syncCoverImage(propertyId: number) {
     .order("display_order", { ascending: true });
 
   if (error) throw error;
-  const coverImage = images?.[0];
 
-  if (images && images.length > 0) {
-    const { error: resetError } = await supabase
-      .from("property_images")
-      .update({ is_cover: false })
-      .eq("property_id", propertyId);
-    if (resetError) throw resetError;
+  // 과거 매물 중 property_images 테이블 없이 properties.image_url만 가진 매물이 있다.
+  // 관리자에서 텍스트만 수정할 때 이 기존 대표 이미지를 빈 값으로 지우지 않는다.
+  if (!images || images.length === 0) return null;
 
-    const { error: coverError } = await supabase
-      .from("property_images")
-      .update({ is_cover: true, display_order: 0 })
-      .eq("id", coverImage.id);
-    if (coverError) throw coverError;
-  }
+  const coverImage = images[0];
+
+  const { error: resetError } = await supabase
+    .from("property_images")
+    .update({ is_cover: false })
+    .eq("property_id", propertyId);
+  if (resetError) throw resetError;
+
+  const { error: coverError } = await supabase
+    .from("property_images")
+    .update({ is_cover: true, display_order: 0 })
+    .eq("id", coverImage.id);
+  if (coverError) throw coverError;
 
   const { error: propertyError } = await supabase
     .from("properties")
-    .update({ image_url: coverImage?.image_url || "" })
+    .update({ image_url: coverImage.image_url })
     .eq("id", propertyId);
   if (propertyError) throw propertyError;
 
-  return coverImage || null;
+  return coverImage;
 }
