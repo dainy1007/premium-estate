@@ -1,10 +1,12 @@
+import type { ReactNode } from "react";
+
 type OptionLineIconProps = { name: string; className?: string };
 
 const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
 export default function OptionLineIcon({ name, className = "h-9 w-9" }: OptionLineIconProps) {
   const n = name.trim();
-  const wrap = (children: React.ReactNode) => <svg viewBox="0 0 48 48" aria-hidden="true" className={className} {...common}>{children}</svg>;
+  const wrap = (children: ReactNode) => <svg viewBox="0 0 48 48" aria-hidden="true" className={className} {...common}>{children}</svg>;
   if (/에어컨/.test(n)) return wrap(<><rect x="7" y="10" width="34" height="17" rx="3"/><path d="M11 22h26M15 31c0 3-2 4-2 7M24 31c0 3-2 4-2 7M33 31c0 3-2 4-2 7"/></>);
   if (/세탁기/.test(n)) return wrap(<><rect x="10" y="5" width="28" height="38" rx="3"/><path d="M10 13h28"/><circle cx="24" cy="28" r="9"/><circle cx="24" cy="28" r="6"/><circle cx="32" cy="9" r="1"/></>);
   if (/^TV$|티비|텔레비전/i.test(n)) return wrap(<><rect x="7" y="10" width="34" height="25" rx="2"/><path d="M18 40h12M24 35v5M19 6l5 4 5-4"/></>);
