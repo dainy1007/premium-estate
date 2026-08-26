@@ -19,15 +19,55 @@ interface PropertyDetailPageProps {
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.baekjohd.com";
 
 function formatPropertyDescription(description: string) {
-  return description
+  let text = description
     .replace(/\r\n/g, "\n")
     .replace(/[ \t]+/g, " ")
-    .replace(/\s*매물 정보\s*/g, "\n\n매물 정보\n")
-    .replace(/\s*(거래조건|면적|총층|층수|방\/욕실|방향|관리비|난방|주차|옵션)\s*:\s*/g, "\n$1 : ")
-    .replace(/\s*매물 특징\s*/g, "\n\n매물 특징\n")
-    .replace(/\s*·\s*/g, "\n• ")
+    .replace(/[ \t]*매물 정보[ \t]*/g, "\n\n매물 정보\n")
+    .replace(/[ \t]*매물 특징[ \t]*/g, "\n\n매물 특징\n")
+    .replace(/[ \t]*옵션[ \t]*:?[ \t]*/g, "\n옵션\n")
+    .replace(/[ \t]*(거래조건|면적|총층|층수|방\/욕실|방향|관리비|난방|주차)[ \t]*:[ \t]*/g, "\n$1 : ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+
+  const featureMarker = "\n\n매물 특징\n";
+  let featureText = "";
+  const featureIndex = text.indexOf(featureMarker);
+  if (featureIndex >= 0) {
+    featureText = text.slice(featureIndex + featureMarker.length).trim();
+    text = text.slice(0, featureIndex).trim();
+  }
+
+  const optionMarker = "\n옵션\n";
+  let optionText = "";
+  const optionIndex = text.indexOf(optionMarker);
+  if (optionIndex >= 0) {
+    optionText = text.slice(optionIndex + optionMarker.length).trim();
+    text = text.slice(0, optionIndex).trim();
+  }
+
+  const sections = [text];
+
+  if (optionText) {
+    const optionItems = optionText
+      .split(/\s*·\s*/)
+      .map((item) => item.replace(/^•\s*/, "").trim())
+      .filter(Boolean);
+    const optionLines: string[] = [];
+    for (let i = 0; i < optionItems.length; i += 3) {
+      optionLines.push(`• ${optionItems.slice(i, i + 3).join(" · ")}`);
+    }
+    sections.push(`옵션\n${optionLines.join("\n")}`);
+  }
+
+  if (featureText) {
+    const featureItems = featureText
+      .split(/\s*·\s*/)
+      .map((item) => item.replace(/^•\s*/, "").trim())
+      .filter(Boolean);
+    sections.push(`매물 특징\n${featureItems.map((item) => `• ${item}`).join("\n")}`);
+  }
+
+  return sections.filter(Boolean).join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 export async function generateMetadata({ params }: PropertyDetailPageProps): Promise<Metadata> {
