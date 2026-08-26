@@ -72,13 +72,11 @@ function sanitizeDescription(listing: NaverListing) {
   if (descriptionRegion && propertyType && propertyType !== "매물" && tradeType) {
     const correctOpening = `${descriptionRegion}에 위치한 ${propertyType} ${tradeType} 매물입니다.`;
 
-    // 기존 자동문구의 지역명이 틀려 있어도 첫 문장을 실제 주소 기준으로 강제 교정한다.
     description = description.replace(
       /^[^\n.]*에 위치한\s+(?:매물\s+)?[^\n.]*매물입니다\.?/,
       correctOpening,
     );
 
-    // 첫 문장이 자동문구가 아니거나 누락된 경우 주소 기반 안내문을 앞에 붙인다.
     if (!description.startsWith(correctOpening)) {
       description = `${correctOpening}\n${description}`;
     }
@@ -181,15 +179,15 @@ export async function POST(request: NextRequest) {
     }
 
     const marker = `naver:${articleNo}`;
-    const { address, shortRegion } = deriveGeography(raw);
+    const { address, shortRegion, descriptionRegion } = deriveGeography(raw);
     const propertyType = getListingType(raw);
     const descriptionParts = [sanitizeDescription(raw)].filter(Boolean);
 
     const payload = {
       title: makeTitle(raw),
-      type: propertyType || normalized(raw.trade_type) || null,
+      type: propertyType !== "매물" ? propertyType : (normalized(raw.property_type) || null),
       deal_type: normalized(raw.trade_type) || null,
-      location: shortRegion,
+      location: descriptionRegion || shortRegion || address,
       address,
       price: normalized(raw.price),
       area: sanitizePropertyArea(raw.area),
