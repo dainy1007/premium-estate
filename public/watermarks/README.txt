@@ -1,0 +1,1 @@
+Watermark assets are stored in this folder. Use baekjo-watermark-center.png for the centered swan logo and baekjo-watermark-corner.png for the bottom-right contact mark.
