@@ -12,6 +12,11 @@ const SUPPORTED_IMAGE_TYPES = new Set([
   "image/gif",
 ]);
 
+const OUTPUT_LONG_EDGE = 1800;
+const OUTPUT_JPEG_QUALITY = 0.84;
+const CENTER_WATERMARK_ALPHA = 0.38;
+const CORNER_WATERMARK_ALPHA = 0.95;
+
 export type NewPropertyImage = {
   file: File;
   previewUrl: string;
@@ -19,14 +24,13 @@ export type NewPropertyImage = {
 };
 
 export function sanitizeFileName(fileName: string) {
-  const extension = fileName.split(".").pop()?.toLowerCase() || "jpg";
   const baseName = fileName
     .replace(/\.[^/.]+$/, "")
     .replace(/[^a-zA-Z0-9-_]/g, "-")
     .replace(/-+/g, "-")
     .slice(0, 48);
 
-  return `${baseName || "property"}.${extension}`;
+  return `${baseName || "property"}.jpg`;
 }
 
 export function validatePropertyImage(file: File) {
@@ -54,6 +58,103 @@ export function getValidPropertyImages(files: File[]) {
   return { validFiles, errors };
 }
 
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("이미지 변환에 실패했습니다."));
+    }, type, quality);
+  });
+}
+
+async function loadImageBitmap(file: File) {
+  if (typeof createImageBitmap === "function") {
+    return createImageBitmap(file, { imageOrientation: "from-image" });
+  }
+
+  const url = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`${file.name}: 이미지를 읽을 수 없습니다.`));
+      img.src = url;
+    });
+    return image;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function drawCenteredWatermark(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const fontSize = Math.max(34, Math.round(width * 0.055));
+  ctx.save();
+  ctx.globalAlpha = CENTER_WATERMARK_ALPHA;
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "rgba(10,35,66,0.28)";
+  ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.06));
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `700 ${fontSize}px sans-serif`;
+  const text = "백조현대부동산";
+  const y = height * 0.60;
+  ctx.strokeText(text, width / 2, y);
+  ctx.fillText(text, width / 2, y);
+  ctx.restore();
+}
+
+function drawCornerWatermark(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const fontSize = Math.max(18, Math.round(width * 0.021));
+  const paddingX = Math.max(20, Math.round(width * 0.025));
+  const paddingY = Math.max(18, Math.round(height * 0.03));
+
+  ctx.save();
+  ctx.globalAlpha = CORNER_WATERMARK_ALPHA;
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "rgba(10,35,66,0.5)";
+  ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.08));
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+  ctx.font = `700 ${fontSize}px sans-serif`;
+  const text = "백조현대부동산";
+  ctx.strokeText(text, width - paddingX, height - paddingY);
+  ctx.fillText(text, width - paddingX, height - paddingY);
+  ctx.restore();
+}
+
+async function preparePropertyImage(file: File) {
+  if (typeof document === "undefined") return file;
+
+  const source = await loadImageBitmap(file);
+  const sourceWidth = source.width;
+  const sourceHeight = source.height;
+  const scale = Math.min(1, OUTPUT_LONG_EDGE / Math.max(sourceWidth, sourceHeight));
+  const width = Math.max(1, Math.round(sourceWidth * scale));
+  const height = Math.max(1, Math.round(sourceHeight * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) throw new Error(`${file.name}: 이미지 처리 기능을 사용할 수 없습니다.`);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(source, 0, 0, width, height);
+
+  drawCenteredWatermark(ctx, width, height);
+  drawCornerWatermark(ctx, width, height);
+
+  if ("close" in source && typeof source.close === "function") source.close();
+
+  const blob = await canvasToBlob(canvas, "image/jpeg", OUTPUT_JPEG_QUALITY);
+  const outputName = sanitizeFileName(file.name);
+  return new File([blob], outputName, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+}
+
 export async function uploadPropertyImages(
   propertyId: number,
   files: File[],
@@ -70,7 +171,8 @@ export async function uploadPropertyImages(
   const uploadedStoragePaths: string[] = [];
 
   try {
-    for (const [index, file] of validFiles.entries()) {
+    for (const [index, originalFile] of validFiles.entries()) {
+      const file = await preparePropertyImage(originalFile);
       const uniqueId = crypto.randomUUID();
       const storagePath = `${propertyId}/${Date.now()}-${uniqueId}-${sanitizeFileName(file.name)}`;
 
@@ -79,7 +181,7 @@ export async function uploadPropertyImages(
         .upload(storagePath, file, {
           cacheControl: "31536000",
           upsert: false,
-          contentType: file.type,
+          contentType: "image/jpeg",
         });
 
       if (uploadError) throw uploadError;
