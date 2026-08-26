@@ -7,12 +7,12 @@ export const MAX_PROPERTY_IMAGE_SIZE = 15 * 1024 * 1024;
 
 const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const OUTPUT_LONG_EDGE = 1800;
-const OUTPUT_JPEG_QUALITY = 0.96;
-const CENTER_SCALE = 0.46;
-const CENTER_ALPHA = 0.15;
-const CENTER_Y_RATIO = 0.57;
-const CORNER_SCALE = 0.18;
-const CORNER_ALPHA = 0.34;
+const OUTPUT_JPEG_QUALITY = 0.84;
+const CENTER_SCALE = 0.52;
+const CENTER_ALPHA = 0.38;
+const CENTER_Y_RATIO = 0.60;
+const CORNER_SCALE = 0.27;
+const CORNER_ALPHA = 1.0;
 const CORNER_RIGHT_MARGIN = 30;
 const CORNER_BOTTOM_MARGIN = 30;
 const CENTER_WATERMARK_SRC = "/watermarks/baekjo-watermark-center.webp";
@@ -86,9 +86,9 @@ function drawWatermarkImage(
   alpha: number,
   mode: "center" | "corner"
 ) {
-  const targetWidth = Math.round(width * scale);
+  const targetWidth = Math.max(1, Math.round(width * scale));
   const ratio = image.naturalHeight / Math.max(1, image.naturalWidth);
-  const targetHeight = Math.round(targetWidth * ratio);
+  const targetHeight = Math.max(1, Math.round(targetWidth * ratio));
 
   let x = Math.round((width - targetWidth) / 2);
   let y = Math.round(height * CENTER_Y_RATIO - targetHeight / 2);
@@ -117,28 +117,42 @@ async function preparePropertyImage(file: File) {
 
   const sourceWidth = source.width;
   const sourceHeight = source.height;
-  const scale = Math.min(1, OUTPUT_LONG_EDGE / Math.max(sourceWidth, sourceHeight));
-  const width = Math.max(1, Math.round(sourceWidth * scale));
-  const height = Math.max(1, Math.round(sourceHeight * scale));
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d", { alpha: false });
-  if (!ctx) throw new Error(`${file.name}: 이미지 처리 기능을 사용할 수 없습니다.`);
+  // 자동화 프로그램과 같은 순서: 원본 크기에 워터마크 적용 후 홈페이지용 1800px 최적화.
+  const watermarkedCanvas = document.createElement("canvas");
+  watermarkedCanvas.width = sourceWidth;
+  watermarkedCanvas.height = sourceHeight;
+  const watermarkCtx = watermarkedCanvas.getContext("2d", { alpha: false });
+  if (!watermarkCtx) throw new Error(`${file.name}: 이미지 처리 기능을 사용할 수 없습니다.`);
 
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, width, height);
-  ctx.drawImage(source, 0, 0, width, height);
+  watermarkCtx.imageSmoothingEnabled = true;
+  watermarkCtx.imageSmoothingQuality = "high";
+  watermarkCtx.fillStyle = "#ffffff";
+  watermarkCtx.fillRect(0, 0, sourceWidth, sourceHeight);
+  watermarkCtx.drawImage(source, 0, 0, sourceWidth, sourceHeight);
 
-  drawWatermarkImage(ctx, centerWatermark, width, height, CENTER_SCALE, CENTER_ALPHA, "center");
-  drawWatermarkImage(ctx, cornerWatermark, width, height, CORNER_SCALE, CORNER_ALPHA, "corner");
+  drawWatermarkImage(watermarkCtx, centerWatermark, sourceWidth, sourceHeight, CENTER_SCALE, CENTER_ALPHA, "center");
+  drawWatermarkImage(watermarkCtx, cornerWatermark, sourceWidth, sourceHeight, CORNER_SCALE, CORNER_ALPHA, "corner");
+
+  const outputScale = Math.min(1, OUTPUT_LONG_EDGE / Math.max(sourceWidth, sourceHeight));
+  const outputWidth = Math.max(1, Math.round(sourceWidth * outputScale));
+  const outputHeight = Math.max(1, Math.round(sourceHeight * outputScale));
+
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = outputWidth;
+  outputCanvas.height = outputHeight;
+  const outputCtx = outputCanvas.getContext("2d", { alpha: false });
+  if (!outputCtx) throw new Error(`${file.name}: 이미지 최적화 기능을 사용할 수 없습니다.`);
+
+  outputCtx.imageSmoothingEnabled = true;
+  outputCtx.imageSmoothingQuality = "high";
+  outputCtx.fillStyle = "#ffffff";
+  outputCtx.fillRect(0, 0, outputWidth, outputHeight);
+  outputCtx.drawImage(watermarkedCanvas, 0, 0, outputWidth, outputHeight);
 
   if ("close" in source && typeof source.close === "function") source.close();
 
-  const blob = await canvasToBlob(canvas, "image/jpeg", OUTPUT_JPEG_QUALITY);
+  const blob = await canvasToBlob(outputCanvas, "image/jpeg", OUTPUT_JPEG_QUALITY);
   return new File([blob], sanitizeFileName(file.name), {
     type: "image/jpeg",
     lastModified: Date.now(),
