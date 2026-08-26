@@ -40,6 +40,7 @@ function listItems(value:string){return value.split(/\n+|\s*•\s*|\s*·\s*/).ma
 function splitSentences(value:string){return value.split(/(?<=[.!?])\s+/).map(i=>i.trim()).filter(Boolean);}
 function isResidentialOnlyCommercialPhrase(value:string){return /창문이?\s*확인|환기\s*구조|채광|수납공간|생활용품|의류를?\s*정리|우드톤\s*바닥|바닥\s*마감으로\s*편안|편안한\s*분위기|빨래\s*건조|천장형\s*건조대/.test(value);}
 function isCommercialFeature(value:string){return !isResidentialOnlyCommercialPhrase(value)&&!/급배수|배기시설|전력용량|소방시설|관계기관|인허가|현장에서 확인|상세 조건 및 현재 매물 상태/.test(value);}
+function isVerifiedOption(value:string){return !/^(냉장고|붙박이장|옷장)$/.test(value.trim());}
 
 function formatPropertyDescription(description:string,propertyType="",dealType=""){
  const isCommercial=/상가|창고|공장/.test(propertyType);
@@ -55,7 +56,7 @@ function formatPropertyDescription(description:string,propertyType="",dealType="
  let commercialOverflow:string[]=[];
  if(isCommercial){const lines=text.split("\n").map(l=>l.trim()).filter(Boolean);const kept:string[]=[];let afterParking=false;for(const line of lines){if(afterParking&&!/^(매물 정보)$/.test(line)){commercialOverflow.push(...splitSentences(line));continue;}kept.push(line);if(/^주차\s*:/.test(line))afterParking=true;}text=kept.join("\n");}
  text=text.split("\n").map(l=>l.trim()).filter(Boolean).join("\n").replace(/\n{2,}/g,"\n").trim();const sections=[text];
- if(optionText&&!isCommercial){const items=listItems(optionText),ls:string[]=[];for(let i=0;i<items.length;i+=3)ls.push(`• ${items.slice(i,i+3).join(" · ")}`);if(ls.length)sections.push(`옵션\n${ls.join("\n")}`);}
+ if(optionText&&!isCommercial){const items=listItems(optionText).filter(isVerifiedOption),ls:string[]=[];for(let i=0;i<items.length;i+=3)ls.push(`• ${items.slice(i,i+3).join(" · ")}`);if(ls.length)sections.push(`옵션\n${ls.join("\n")}`);}
  let featureItems=[...commercialOverflow,...listItems(featureText).flatMap(splitSentences)];if(isCommercial)featureItems=featureItems.filter(isCommercialFeature);featureItems=featureItems.map(completeFeatureSentence).filter((v,i,a)=>a.indexOf(v)===i).slice(0,isCommercial?5:6);if(featureItems.length)sections.push(`매물 특징\n${featureItems.map(i=>`• ${i}`).join("\n")}`);
  if(usageText&&isCommercial){const items=listItems(usageText).flatMap(splitSentences).filter(i=>!/^(추천 활용|추천 업종|현장 확인 포인트)$/.test(i.trim())).filter(isCommercialFeature);const unique=items.filter((v,i,a)=>a.findIndex(c=>c.trim()===v.trim())===i).slice(0,4);if(unique.length)sections.push(`추천 활용\n${unique.map(i=>`• ${i}`).join("\n")}`);}
  return sections.filter(Boolean).join("\n\n").replace(/\n{3,}/g,"\n\n").trim();
