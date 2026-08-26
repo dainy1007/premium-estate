@@ -24,36 +24,96 @@ function deriveGeography(listing:NaverListing){
 
 function getListingType(listing:NaverListing){const {address,shortRegion}=deriveGeography(listing);return detectPropertyDisplayType({type:normalized(listing.property_type),address,location:shortRegion,description:normalized(listing.description)});}
 
-const OPTION_ICONS:Record<string,string>={
- "에어컨":"❄️","세탁기":"🧺","TV":"📺","티비":"📺","신발장":"👟","냉장고":"🧊","가스레인지":"🔥","싱크대":"🚰","CCTV":"📹","도어락":"🔐","현관보안":"🔐","인터폰":"📞","인터넷":"🌐","유선":"📺","천장형 건조대":"👕","건조대":"👕"
-};
+const COMMON_RESIDENTIAL_OPTIONS = ["CCTV", "도어락", "신발장", "인터폰", "싱크대", "가스레인지"];
+const DIFFERENTIAL_OPTION_PATTERN = /에어컨|세탁기|냉장고|TV|티비|텔레비전|장롱|옷장|붙박이장|수납장|인터넷|와이파이|유선|건조대|인덕션/i;
 
-function addOptionIcons(description:string){
- const lines=description.split(/\r?\n/); let inOptions=false;
- return lines.map((line)=>{
-   const t=line.trim();
-   if(/^옵션\s*:??\s*$/.test(t)){inOptions=true;return "옵션";}
-   if(inOptions&&t&&/^(?:매물\s*특징|매물\s*정보|상세\s*정보|교통|입지|추천)/.test(t)){inOptions=false;}
-   if(!inOptions||!t)return line;
-   const prefix=/^[•·\-]/.test(t)?"• ":""; const body=t.replace(/^[•·\-]\s*/,"");
-   const parts=body.split(/\s*[·,/]\s*/).filter(Boolean).map((part)=>{
-     const clean=part.replace(/^[^가-힣A-Za-z0-9]+/,"").trim();
-     const key=Object.keys(OPTION_ICONS).find((k)=>clean.toLowerCase()===k.toLowerCase());
-     return key?`${OPTION_ICONS[key]} ${clean}`:part.trim();
-   });
-   return `${prefix}${parts.join(" · ")}`;
- }).join("\n");
+function shouldApplyCommonResidentialOptions(propertyType:string){
+ const type=propertyType.trim();
+ if(!type)return false;
+ if(/아파트|오피스텔|단독주택/.test(type))return false;
+ if(/상가|창고|공장|토지|사무실|빌딩|건물|숙박|펜션/.test(type))return false;
+ return /원룸|미니투룸|투룸|쓰리룸|다가구|다세대|연립|빌라|주택/.test(type);
+}
+
+function normalizeOptionName(value:string){
+ return value
+   .replace(/^[•·\-]\s*/,"")
+   .replace(/^[^가-힣A-Za-z0-9]+/,"")
+   .replace(/\s+/g," ")
+   .trim();
+}
+
+function parseOptionItems(optionText:string){
+ return optionText
+   .split(/\r?\n+|\s*[·,/]\s*/)
+   .map(normalizeOptionName)
+   .filter(Boolean);
+}
+
+function canonicalOptionName(value:string){
+ const item=normalizeOptionName(value);
+ if(/CCTV|현관\s*보안/i.test(item))return "CCTV";
+ if(/도어락/.test(item))return "도어락";
+ if(/신발장/.test(item))return "신발장";
+ if(/인터폰/.test(item))return "인터폰";
+ if(/싱크대/.test(item))return "싱크대";
+ if(/가스레인지/.test(item))return "가스레인지";
+ if(/에어컨/.test(item))return "에어컨";
+ if(/세탁기/.test(item))return "세탁기";
+ if(/냉장고/.test(item))return "냉장고";
+ if(/^TV$|티비|텔레비전/i.test(item))return "TV";
+ if(/붙박이장/.test(item))return "붙박이장";
+ if(/장롱/.test(item))return "장롱";
+ if(/옷장/.test(item))return "옷장";
+ if(/수납장/.test(item))return "수납장";
+ if(/인터넷|와이파이/.test(item))return "인터넷";
+ if(/유선/.test(item))return "유선";
+ if(/건조대/.test(item))return "건조대";
+ if(/인덕션/.test(item))return "인덕션";
+ return item;
+}
+
+function applyResidentialOptionPolicy(description:string,propertyType:string){
+ if(!shouldApplyCommonResidentialOptions(propertyType))return description;
+
+ const lines=description.split(/\r?\n/);
+ let optionStart=-1;
+ let optionEnd=lines.length;
+ for(let i=0;i<lines.length;i+=1){
+   if(/^옵션\s*:??\s*$/.test(lines[i].trim())){optionStart=i;break;}
+ }
+ if(optionStart>=0){
+   for(let i=optionStart+1;i<lines.length;i+=1){
+     const t=lines[i].trim();
+     if(t&&/^(?:매물\s*특징|매물\s*정보|상세\s*정보|교통|입지|추천)/.test(t)){optionEnd=i;break;}
+   }
+ }
+
+ const sourceOptions = optionStart>=0 ? parseOptionItems(lines.slice(optionStart+1,optionEnd).join("\n")) : [];
+ const sourceDifferential = sourceOptions.filter((item)=>DIFFERENTIAL_OPTION_PATTERN.test(item));
+ const merged = [...COMMON_RESIDENTIAL_OPTIONS, ...sourceDifferential]
+   .map(canonicalOptionName)
+   .filter((v,i,a)=>v&&a.indexOf(v)===i);
+
+ const optionLines=["옵션", ...merged.map((item)=>`• ${item}`)];
+ if(optionStart>=0){
+   return [...lines.slice(0,optionStart), ...optionLines, ...lines.slice(optionEnd)].join("\n");
+ }
+
+ const featureIndex=lines.findIndex((line)=>/^매물\s*특징\s*$/.test(line.trim()));
+ if(featureIndex>=0){
+   return [...lines.slice(0,featureIndex), ...optionLines, "", ...lines.slice(featureIndex)].join("\n");
+ }
+ return [...lines, "", ...optionLines].join("\n");
 }
 
 function preserveSourceFeatures(description:string){
- // 원본 상세설명 우선: 특징을 새로 만들지 않고, 명백히 잘려 저장된 문장만 복원합니다.
  const lines=description.split(/\r?\n/); const out:string[]=[];
  for(let i=0;i<lines.length;i++){
    const t=lines[i].trim(); const next=(lines[i+1]??"").trim();
    if(/^[•·\-]\s*(?:디지스트|DGIST)\s*학생입니다\.?$/i.test(t)&&/^[•·\-]\s*직원(?:과|및)/.test(next)){
      out.push("• 디지스트 학생 및 직원, 인근 직장인이 생활하기 편리한 위치입니다."); i+=1; continue;
    }
-   // 편의점/마트처럼 원문 맥락이 사라진 단독 명사 문장은 임의 확장하지 않고 제거합니다.
    if(/^[•·\-]\s*(?:편의점|마트)입니다\.?$/.test(t)) continue;
    out.push(lines[i]);
  }
@@ -69,7 +129,8 @@ function sanitizeDescription(listing:NaverListing){
    if(!description.startsWith(opening))description=`${opening}\n${description}`;
  }
  description=description.replace(/(\d+(?:\.\d+)?)F㎡/g,"$1㎡").replace(/전용\s*(\d+(?:\.\d+)?)F\b/g,"전용 $1㎡").replace(/전용(\d+(?:\.\d+)?)㎡/g,"전용 $1㎡");
- return addOptionIcons(preserveSourceFeatures(description));
+ description=preserveSourceFeatures(description);
+ return applyResidentialOptionPolicy(description,propertyType);
 }
 
 function makeTitle(listing:NaverListing){const {address,shortRegion}=deriveGeography(listing);return buildSeoTitle({location:shortRegion,address,type:getListingType(listing),deal_type:normalized(listing.trade_type),description:normalized(listing.description)})||`네이버 매물 ${listing.article_no}`;}
