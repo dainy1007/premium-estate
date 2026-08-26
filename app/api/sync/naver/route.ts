@@ -61,6 +61,80 @@ function getListingType(listing: NaverListing) {
   });
 }
 
+function normalizeFeatureBullets(description: string) {
+  const lines = description.split(/\r?\n/);
+  const result: string[] = [];
+  let inFeatures = false;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    let line = lines[i].trimEnd();
+    const trimmed = line.trim();
+
+    if (/^매물\s*특징\s*$/.test(trimmed)) {
+      inFeatures = true;
+      result.push(line);
+      continue;
+    }
+
+    if (inFeatures && trimmed && !/^[•·\-]/.test(trimmed) && /^(?:매물\s*정보|옵션|상세\s*정보|교통|입지|추천)/.test(trimmed)) {
+      inFeatures = false;
+    }
+
+    if (!inFeatures || !/^[•·\-]/.test(trimmed)) {
+      result.push(line);
+      continue;
+    }
+
+    const bullet = trimmed.replace(/^[•·\-]\s*/, "").trim();
+    const next = (lines[i + 1] ?? "").trim();
+    const nextBullet = next.replace(/^[•·\-]\s*/, "").trim();
+
+    // 잘못 잘린 "디지스트 학생입니다." + "직원과 ..." 문장을 하나로 복원합니다.
+    if (/^(?:디지스트|DGIST)\s*학생입니다\.?$/.test(bullet) && /^[•·\-]\s*직원(?:과|및)\b/.test(next)) {
+      result.push(`• ${bullet.replace(/학생입니다\.?$/, "학생·")}${nextBullet}`);
+      i += 1;
+      continue;
+    }
+
+    // "편의점입니다.", "마트입니다." 같은 단독 명사 문장을 제거하고
+    // 다음 생활편의 문장에 자연스럽게 합칩니다.
+    const convenienceWords: string[] = [];
+    let cursor = i;
+    while (cursor < lines.length) {
+      const candidate = lines[cursor].trim().replace(/^[•·\-]\s*/, "").trim();
+      const match = candidate.match(/^(편의점|마트|음식점|카페|병원|약국|은행|세탁소)입니다\.?$/);
+      if (!match) break;
+      convenienceWords.push(match[1]);
+      cursor += 1;
+    }
+
+    if (convenienceWords.length > 0) {
+      const following = (lines[cursor] ?? "").trim();
+      const followingBullet = following.replace(/^[•·\-]\s*/, "").trim();
+      const uniqueWords = [...new Set(convenienceWords)];
+      const joined = uniqueWords.join("·");
+
+      if (/^[•·\-]/.test(following) && /(생활편의|상권|이용|주변)/.test(followingBullet)) {
+        result.push(`• ${joined} 등 ${followingBullet.replace(/^주변\s*/, "주변 ")}`);
+        i = cursor;
+      } else {
+        result.push(`• ${joined} 등 주변 생활편의시설을 이용하기 좋습니다.`);
+        i = cursor - 1;
+      }
+      continue;
+    }
+
+    // 의미 없는 한두 단어짜리 "OO입니다." 형태는 특징 문장에서 제외합니다.
+    if (/^[가-힣A-Za-z0-9\s]{1,12}입니다\.?$/.test(bullet)) {
+      continue;
+    }
+
+    result.push(`• ${bullet}`);
+  }
+
+  return result.join("\n");
+}
+
 function sanitizeDescription(listing: NaverListing) {
   let description = normalized(listing.description);
   if (!description) return "";
@@ -87,7 +161,7 @@ function sanitizeDescription(listing: NaverListing) {
     .replace(/전용\s*(\d+(?:\.\d+)?)F\b/g, "전용 $1㎡")
     .replace(/전용(\d+(?:\.\d+)?)㎡/g, "전용 $1㎡");
 
-  return description;
+  return normalizeFeatureBullets(description);
 }
 
 function makeTitle(listing: NaverListing) {
