@@ -25,8 +25,8 @@ function completeFeatureSentence(value:string){
   if(!item)return item;
   if(/남해에서 살아보기/.test(item))return "남해에서 전원생활을 원하는 분께 추천하는 주택입니다.";
   if(/전원 주택에서 살아보기|전원주택에서 살아보기/.test(item))return "전원생활을 원하는 분께 추천하는 주택입니다.";
-  if(/^보증금$/.test(item))return "보증금 조건은 협의 가능합니다.";
-  if(/^월세 조율$/.test(item))return "월세 조건은 협의 가능합니다.";
+  if(/^보증금$/.test(item))return "보증금, 월세 조건 협의 가능합니다.";
+  if(/^월세 조율$/.test(item))return "보증금, 월세 조건 협의 가능합니다.";
   if(/(입니다|합니다|있습니다|없습니다|가능합니다|좋습니다|편리합니다|적합합니다|용이합니다|추천합니다|확인됩니다)$/.test(item))return `${item}.`;
   if(/가능$/.test(item))return `${item}합니다.`;
   if(/협의$/.test(item))return `${item} 가능합니다.`;
