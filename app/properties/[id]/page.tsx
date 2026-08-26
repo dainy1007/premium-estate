@@ -18,16 +18,29 @@ interface PropertyDetailPageProps {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.baekjohd.com";
 
-function formatPropertyDescription(description: string, propertyType = "") {
+function formatMoneyAmount(value: string) {
+  const cleaned = value
+    .replace(/(\d)\s*,\s*(?=\d)/g, "$1,")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return cleaned;
+  if (/(?:원|만원)$/.test(cleaned)) return cleaned;
+  if (/억\s*$/.test(cleaned)) return `${cleaned}원`;
+  return `${cleaned}만원`;
+}
+
+function formatPropertyDescription(description: string, propertyType = "", dealType = "") {
   const isCommercial = /상가/.test(propertyType);
 
   let text = description
     .replace(/\r\n/g, "\n")
+    .replace(/(\d)\s*,\s*(?=\d)/g, "$1,")
     .replace(/[ \t]+/g, " ")
     .replace(/[ \t]*매물 정보[ \t]*/g, "\n\n매물 정보\n")
     .replace(/[ \t]*매물 특징[ \t]*/g, "\n\n매물 특징\n")
     .replace(/[ \t]*옵션[ \t]*:?[ \t]*/g, "\n옵션\n")
-    .replace(/[ \t]*(거래조건|매매가|공급\/전용 면적|면적|해당층\/총층|총층|층수|방\/욕실|방향|관리비|난방|총주차대수|주차|건축물 용도)[ \t]*:[ \t]*/g, "\n$1 : ")
+    .replace(/[ \t]*(거래조건|매매가|전세가|공급\/전용 면적|면적|해당층\/총층|총층|층수|방\/욕실|방향|관리비|난방|총주차대수|주차|건축물 용도)[ \t]*:[ \t]*/g, "\n$1 : ")
     .replace(/공급\/전용\s*\n\s*면적\s*:/g, "공급/전용 면적 :")
     .replace(/해당층\/\s*\n\s*총층\s*:/g, "해당층/총층 :")
     .replace(/대지\s*\n\s*면적\s*:/g, "대지면적 :")
@@ -35,6 +48,43 @@ function formatPropertyDescription(description: string, propertyType = "") {
     .replace(/\n관리비\s*:\s*확인 어려움(?:,?\s*도움말 보기)?/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+
+  const normalizedDealType = dealType.trim();
+  text = text
+    .split("\n")
+    .map((line) => {
+      const trimmed = line.trim();
+      const conditionMatch = trimmed.match(/^거래조건\s*:\s*(.+)$/);
+      if (conditionMatch) {
+        const raw = conditionMatch[1]
+          .replace(/(\d)\s*,\s*(?=\d)/g, "$1,")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        if (/월세/.test(normalizedDealType) && !/보증금|월세/.test(raw)) {
+          const pair = raw.match(/^(.+?)\s*\/\s*(.+)$/);
+          if (pair) {
+            return `거래조건 : 보증금 ${formatMoneyAmount(pair[1])} / 월세 ${formatMoneyAmount(pair[2])}`;
+          }
+        }
+        if (/전세/.test(normalizedDealType) && !/전세가/.test(raw)) {
+          return `전세가 : ${formatMoneyAmount(raw)}`;
+        }
+        if (/매매/.test(normalizedDealType) && !/매매가/.test(raw)) {
+          return `매매가 : ${formatMoneyAmount(raw)}`;
+        }
+        return `거래조건 : ${raw}`;
+      }
+
+      const saleMatch = trimmed.match(/^매매가\s*:\s*(.+)$/);
+      if (saleMatch) return `매매가 : ${formatMoneyAmount(saleMatch[1])}`;
+
+      const jeonseMatch = trimmed.match(/^전세가\s*:\s*(.+)$/);
+      if (jeonseMatch) return `전세가 : ${formatMoneyAmount(jeonseMatch[1])}`;
+
+      return line;
+    })
+    .join("\n");
 
   const featureMarker = "\n\n매물 특징\n";
   let featureText = "";
@@ -52,7 +102,6 @@ function formatPropertyDescription(description: string, propertyType = "") {
     text = text.slice(0, optionIndex).trim();
   }
 
-  // 매물 정보는 항목 사이의 불필요한 빈 줄을 제거해 한눈에 보이게 표시한다.
   text = text
     .split("\n")
     .map((line) => line.trim())
@@ -157,7 +206,11 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
   const seoKeywords = buildSeoKeywords(property);
   const relatedSeoLandings = getRelatedSeoLandings(property);
   const formattedDescription = property.description
-    ? formatPropertyDescription(property.description, `${property.type || ""} ${property.title || ""}`)
+    ? formatPropertyDescription(
+        property.description,
+        `${property.type || ""} ${property.title || ""}`,
+        property.deal_type || "",
+      )
     : "";
 
   const detailItems = [
