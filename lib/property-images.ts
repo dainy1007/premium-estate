@@ -7,7 +7,7 @@ export const MAX_PROPERTY_IMAGE_SIZE = 15 * 1024 * 1024;
 
 const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const OUTPUT_LONG_EDGE = 1800;
-const OUTPUT_JPEG_QUALITY = 0.84;
+const OUTPUT_JPEG_QUALITY = 0.90;
 const CENTER_SCALE = 0.52;
 const CENTER_ALPHA = 0.38;
 const CENTER_Y_RATIO = 0.60;
@@ -15,8 +15,8 @@ const CORNER_SCALE = 0.27;
 const CORNER_ALPHA = 1.0;
 const CORNER_RIGHT_MARGIN = 30;
 const CORNER_BOTTOM_MARGIN = 30;
-const CENTER_WATERMARK_SRC = "/watermarks/baekjo-watermark-center.webp";
-const CORNER_WATERMARK_SRC = "/watermarks/baekjo-watermark-corner.webp";
+const CENTER_WATERMARK_SRC = "/watermarks/baekjo_center.png";
+const CORNER_WATERMARK_SRC = "/watermarks/baekjo_corner.png";
 
 export type NewPropertyImage = { file: File; previewUrl: string; id: string };
 
