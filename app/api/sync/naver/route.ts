@@ -61,13 +61,41 @@ function getListingType(listing: NaverListing) {
   });
 }
 
+function polishFeatureSentence(value: string) {
+  const text = value.trim().replace(/^[•·\-]\s*/, "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+
+  if (/^(?:디지스트|DGIST)\s*학생(?:입니다)?\.?$/i.test(text)) return "";
+  if (/^직원(?:과|및)\s*인근\s*직장인이\s*생활하기\s*편리한\s*위치입니다\.?$/.test(text)) {
+    return "디지스트 학생 및 직원, 인근 직장인이 생활하기 편리한 위치입니다.";
+  }
+  if (/(?:디지스트|DGIST).*후문\s*방향/i.test(text)) {
+    return "디지스트 후문 방향으로 통학과 출퇴근이 편리한 위치입니다.";
+  }
+  if (/^편의점입니다\.?$/.test(text) || /^마트입니다\.?$/.test(text)) return "";
+  if (/음식점.*주변\s*생활편의시설.*상권.*이용하기\s*좋습니다\.?/.test(text)) {
+    return "편의점, 마트, 음식점 등 주변 생활편의시설과 상권을 이용하기 좋습니다.";
+  }
+  if (/화이트\s*톤.*깔끔한\s*원룸/.test(text)) {
+    return "화이트 톤으로 깔끔하게 관리된 원룸입니다.";
+  }
+  if (/주차.*(?:넓|여유|편리)/.test(text)) {
+    return "주차 공간이 넉넉해 차량 이용이 편리합니다.";
+  }
+  if (/조용한\s*원룸/.test(text)) {
+    return "조용하게 거주하기 좋은 원룸입니다.";
+  }
+
+  return text;
+}
+
 function normalizeFeatureBullets(description: string) {
   const lines = description.split(/\r?\n/);
   const result: string[] = [];
   let inFeatures = false;
 
   for (let i = 0; i < lines.length; i += 1) {
-    let line = lines[i].trimEnd();
+    const line = lines[i].trimEnd();
     const trimmed = line.trim();
 
     if (/^매물\s*특징\s*$/.test(trimmed)) {
@@ -89,15 +117,12 @@ function normalizeFeatureBullets(description: string) {
     const next = (lines[i + 1] ?? "").trim();
     const nextBullet = next.replace(/^[•·\-]\s*/, "").trim();
 
-    // 잘못 잘린 "디지스트 학생입니다." + "직원과 ..." 문장을 하나로 복원합니다.
-    if (/^(?:디지스트|DGIST)\s*학생입니다\.?$/.test(bullet) && /^[•·\-]\s*직원(?:과|및)\b/.test(next)) {
-      result.push(`• ${bullet.replace(/학생입니다\.?$/, "학생·")}${nextBullet}`);
+    if (/^(?:디지스트|DGIST)\s*학생입니다\.?$/i.test(bullet) && /^[•·\-]\s*직원(?:과|및)\b/.test(next)) {
+      result.push("• 디지스트 학생 및 직원, 인근 직장인이 생활하기 편리한 위치입니다.");
       i += 1;
       continue;
     }
 
-    // "편의점입니다.", "마트입니다." 같은 단독 명사 문장을 제거하고
-    // 다음 생활편의 문장에 자연스럽게 합칩니다.
     const convenienceWords: string[] = [];
     let cursor = i;
     while (cursor < lines.length) {
@@ -111,25 +136,25 @@ function normalizeFeatureBullets(description: string) {
     if (convenienceWords.length > 0) {
       const following = (lines[cursor] ?? "").trim();
       const followingBullet = following.replace(/^[•·\-]\s*/, "").trim();
-      const uniqueWords = [...new Set(convenienceWords)];
-      const joined = uniqueWords.join("·");
 
       if (/^[•·\-]/.test(following) && /(생활편의|상권|이용|주변)/.test(followingBullet)) {
-        result.push(`• ${joined} 등 ${followingBullet.replace(/^주변\s*/, "주변 ")}`);
+        result.push("• 편의점, 마트, 음식점 등 주변 생활편의시설과 상권을 이용하기 좋습니다.");
         i = cursor;
       } else {
-        result.push(`• ${joined} 등 주변 생활편의시설을 이용하기 좋습니다.`);
+        result.push("• 편의점과 마트 등 생활편의시설을 이용하기 좋습니다.");
         i = cursor - 1;
       }
       continue;
     }
 
-    // 의미 없는 한두 단어짜리 "OO입니다." 형태는 특징 문장에서 제외합니다.
-    if (/^[가-힣A-Za-z0-9\s]{1,12}입니다\.?$/.test(bullet)) {
+    const polished = polishFeatureSentence(bullet);
+    if (!polished) continue;
+
+    if (/^[가-힣A-Za-z0-9\s]{1,12}입니다\.?$/.test(polished)) {
       continue;
     }
 
-    result.push(`• ${bullet}`);
+    result.push(`• ${polished}`);
   }
 
   return result.join("\n");
