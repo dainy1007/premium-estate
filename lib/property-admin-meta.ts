@@ -20,23 +20,35 @@ export const DESCRIPTION_PRESETS=[
 ] as const;
 export const ELIGIBLE_RESIDENTIAL=/원룸|미니투룸|투룸|쓰리룸|다가구|다세대|연립|빌라|상가주택/;
 
-type AdminMeta={
+export type PropertyInfoOverrides={
+  elevator:string;
+  parking:string;
+  moveIn:string;
+  heating:string;
+  direction:string;
+  buildingUse:string;
+  approvalDate:string;
+};
+
+export type AdminMeta={
   options:string[];
   maintenanceFee:string;
   maintenanceItems:string[];
   waterFeeSeparate:boolean;
   descriptionPresets:string[];
+  infoOverrides:PropertyInfoOverrides;
 };
 
 const META_RE=/\n?<!--PROPERTY_ADMIN_META:([\s\S]*?)-->/g;
 const LEGACY_OPTIONS_RE=/\n?<!--PROPERTY_OPTIONS:([\s\S]*?)-->/g;
 
-export function emptyAdminMeta():AdminMeta{return{options:[],maintenanceFee:"",maintenanceItems:[],waterFeeSeparate:false,descriptionPresets:[]};}
+export function emptyInfoOverrides():PropertyInfoOverrides{return{elevator:"",parking:"",moveIn:"",heating:"",direction:"",buildingUse:"",approvalDate:""};}
+export function emptyAdminMeta():AdminMeta{return{options:[],maintenanceFee:"",maintenanceItems:[],waterFeeSeparate:false,descriptionPresets:[],infoOverrides:emptyInfoOverrides()};}
 export function stripAdminMeta(description:string){return description.replace(META_RE,"").replace(LEGACY_OPTIONS_RE,"").trimEnd();}
 export function parseAdminMeta(description:string):AdminMeta{
   const meta=emptyAdminMeta();
   const match=[...description.matchAll(META_RE)].at(-1);
-  if(match){try{const parsed=JSON.parse(decodeURIComponent(match[1]));return{...meta,...parsed,options:Array.isArray(parsed.options)?parsed.options:[],maintenanceItems:Array.isArray(parsed.maintenanceItems)?parsed.maintenanceItems:[],descriptionPresets:Array.isArray(parsed.descriptionPresets)?parsed.descriptionPresets:[]};}catch{/* fall through */}}
+  if(match){try{const parsed=JSON.parse(decodeURIComponent(match[1]));return{...meta,...parsed,options:Array.isArray(parsed.options)?parsed.options:[],maintenanceItems:Array.isArray(parsed.maintenanceItems)?parsed.maintenanceItems:[],descriptionPresets:Array.isArray(parsed.descriptionPresets)?parsed.descriptionPresets:[],infoOverrides:{...emptyInfoOverrides(),...(parsed.infoOverrides||{})}};}catch{/* fall through */}}
   const legacy=[...description.matchAll(LEGACY_OPTIONS_RE)].at(-1);
   if(legacy)meta.options=legacy[1].split("|").map(v=>v.trim()).filter(Boolean);
   return meta;
