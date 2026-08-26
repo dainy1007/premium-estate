@@ -27,9 +27,34 @@ function deriveTitleLocationFromAddress(value: unknown) {
   const full = deriveLocationFromAddress(value);
   if (!full) return "";
   const parts = full.split(" ").filter(Boolean);
-  // 검색 제목에는 시·군·구 + 읍·면·동을 우선 사용한다.
-  // 예: 경상남도 남해군 이동면 → 남해군 이동면
   return parts.slice(-2).join(" ") || full;
+}
+
+const CANONICAL_TYPES = [
+  "아파트",
+  "원룸",
+  "미니투룸",
+  "투룸",
+  "쓰리룸",
+  "단독주택",
+  "다가구",
+  "상가주택",
+  "상가",
+  "오피스텔",
+  "창고",
+  "공장",
+  "토지",
+] as const;
+
+function canonicalExplicitType(value: unknown) {
+  const explicitType = clean(value);
+  if (!explicitType) return "";
+
+  if (/상가\s*주택|상가주택/i.test(explicitType)) return "상가주택";
+  if (/단독\s*주택|단독주택/i.test(explicitType)) return "단독주택";
+  if (/미니\s*투룸|미니투룸/i.test(explicitType)) return "미니투룸";
+
+  return CANONICAL_TYPES.find((type) => explicitType === type || explicitType.includes(type)) || "";
 }
 
 export function detectPropertyDisplayType(input: {
@@ -44,31 +69,35 @@ export function detectPropertyDisplayType(input: {
   const location = clean(input.location);
   const description = clean(input.description);
   const text = [address, location, title, description].join(" ");
-  const explicitType = clean(input.type);
+  const explicitType = canonicalExplicitType(input.type);
 
-  if (/상가\s*주택|상가주택/i.test(explicitType) || /상가\s*주택|상가주택/i.test(title)) return "상가주택";
-  if (/단독\s*주택|단독주택/i.test(explicitType) || /단독\s*주택|단독주택/i.test(title)) return "단독주택";
-  if (/다가구/i.test(explicitType) || /다가구/i.test(title)) return "다가구";
-  if (/쓰리룸/i.test(explicitType) || /쓰리룸/i.test(title)) return "쓰리룸";
-  if (/미니투룸/i.test(explicitType) || /미니투룸/i.test(title)) return "미니투룸";
-  if (/투룸/i.test(explicitType) || /투룸/i.test(title)) return "투룸";
-  if (/원룸/i.test(explicitType) || /원룸/i.test(title)) return "원룸";
+  // 관리자/동기화에서 이미 지정된 매물유형은 제목의 보조 키워드보다 우선한다.
+  // 예: "근생 포함 창고" 제목에 상가 관련 문구가 있어도 type=창고이면 창고로 유지한다.
+  if (explicitType) return explicitType;
+
+  if (/상가\s*주택|상가주택/i.test(title)) return "상가주택";
+  if (/단독\s*주택|단독주택/i.test(title)) return "단독주택";
+  if (/다가구/i.test(title)) return "다가구";
+  if (/쓰리룸/i.test(title)) return "쓰리룸";
+  if (/미니투룸/i.test(title)) return "미니투룸";
+  if (/투룸/i.test(title)) return "투룸";
+  if (/원룸/i.test(title)) return "원룸";
 
   if (/현풍읍.*중리\s*462-4|중리\s*462-4/i.test(text)) return "상가주택";
 
   if (/남해\s*오네뜨|남해오네뜨|대구테크노폴리스남해오네뜨1차/i.test(text)) return "아파트";
   if (/하나리움\s*퀸즈\s*파크|하나리움퀸즈파크|하나리움퀸즈/i.test(text)) return "아파트";
-  if (/아파트/i.test(explicitType) || /아파트/i.test(title)) return "아파트";
+  if (/아파트/i.test(title)) return "아파트";
 
   if (/중리\s*505-2|테크노대로\s*73|줌시티/i.test(text)) return "오피스텔";
-  if (/오피스텔/i.test(explicitType) || /오피스텔/i.test(title)) return "오피스텔";
+  if (/오피스텔/i.test(title)) return "오피스텔";
 
-  if (/상가/i.test(explicitType) || /상가/i.test(title)) return "상가";
-  if (/창고/i.test(explicitType) || /창고/i.test(title)) return "창고";
-  if (/공장/i.test(explicitType) || /공장/i.test(title)) return "공장";
-  if (/토지/i.test(explicitType) || /토지/i.test(title)) return "토지";
+  if (/창고/i.test(title)) return "창고";
+  if (/공장/i.test(title)) return "공장";
+  if (/토지/i.test(title)) return "토지";
+  if (/상가/i.test(title)) return "상가";
 
-  return explicitType || "매물";
+  return clean(input.type) || "매물";
 }
 
 function normalizeTitleByType(title: string, type: string) {
@@ -94,8 +123,6 @@ function normalizeTitleGeography(title: string, address: unknown) {
   const correctLocation = deriveTitleLocationFromAddress(address);
   if (!rawTitle || !correctLocation) return rawTitle;
 
-  // 제목 앞쪽의 기존 지역표현이 실제 주소와 다르면 실제 주소 기준으로 교체한다.
-  // 대구 달성군 투룸 월세 + 경상남도 남해군 이동면 → 남해군 이동면 투룸 월세
   const withoutWrongPrefix = rawTitle
     .replace(/^(?:대구(?:광역시|시)?\s*)?달성군\s*/i, "")
     .replace(/^(?:경상남도\s*)?남해군\s*(?:이동면\s*)?/i, "")
