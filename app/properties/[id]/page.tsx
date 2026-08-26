@@ -27,6 +27,13 @@ function formatAreaValue(value: unknown) {
   return text;
 }
 
+function formatAreaText(value: string) {
+  return value
+    .replace(/m²/g, "㎡")
+    .replace(/(대지|연면적|공급|전용|계약)\s*([\d,.]+)(?!\s*㎡)/g, "$1 $2㎡")
+    .replace(/(^|\/|\()\s*([\d,.]+)(?!\s*㎡)(?=\s*(?:\/|\)|$))/g, (_match, prefix, number) => `${prefix}${number}㎡`);
+}
+
 function completeFeatureSentence(value: string) {
   const item = value.trim().replace(/[.!?]+$/, "");
   if (!item) return item;
@@ -76,10 +83,7 @@ function formatPropertyDescription(description: string, propertyType = "", dealT
     const saleMatch = trimmed.match(/^매매가\s*:\s*(.+)$/); if (saleMatch) return `매매가 : ${formatMoneyAmount(saleMatch[1])}`;
     const jeonseMatch = trimmed.match(/^전세가\s*:\s*(.+)$/); if (jeonseMatch) return `전세가 : ${formatMoneyAmount(jeonseMatch[1])}`;
     const areaMatch = trimmed.match(/^(공급\/전용 면적|면적|대지면적|연면적)\s*:\s*(.+)$/);
-    if (areaMatch) {
-      const value = areaMatch[2].replace(/([\d,.]+)(?!\s*(?:㎡|m²|평))(?=\s*(?:\/|\(|$))/g, "$1㎡").replace(/m²/g, "㎡");
-      return `${areaMatch[1]} : ${value}`;
-    }
+    if (areaMatch) return `${areaMatch[1]} : ${formatAreaText(areaMatch[2])}`;
     return line;
   }).join("\n");
 
@@ -101,8 +105,9 @@ function formatPropertyDescription(description: string, propertyType = "", dealT
     if (featureItems.length) sections.push(`매물 특징\n${featureItems.map((item) => `• ${item}`).join("\n")}`);
   }
   if (usageText && isCommercial) {
-    const usageItems = listItems(usageText);
-    if (usageItems.length) sections.push(`추천 활용\n${usageItems.map((item) => `• ${item}`).join("\n")}`);
+    const usageItems = listItems(usageText).filter((item) => !/^(추천 활용|추천 업종|현장 확인 포인트)$/.test(item.trim()));
+    const uniqueUsageItems = usageItems.filter((item, index, items) => items.findIndex((candidate) => candidate.trim() === item.trim()) === index);
+    if (uniqueUsageItems.length) sections.push(`추천 활용\n${uniqueUsageItems.map((item) => `• ${item}`).join("\n")}`);
   }
   return sections.filter(Boolean).join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
 }
