@@ -18,20 +18,27 @@ function formatMoneyAmount(value: string) {
   return `${cleaned}만원`;
 }
 
+function normalizeAreaUnits(value: string) {
+  return value
+    .replace(/m2|m²/gi, "㎡")
+    .replace(/㎡{2,}/g, "㎡")
+    .replace(/\s+㎡/g, "㎡");
+}
+
 function formatAreaValue(value: unknown) {
   if (value === null || value === undefined) return value as null | undefined;
-  const text = String(value).trim();
+  const text = normalizeAreaUnits(String(value).trim());
   if (!text) return text;
-  if (/㎡|m²|평/.test(text)) return text.replace(/m²/g, "㎡");
+  if (/㎡|평/.test(text)) return text;
   if (/^[\d,.]+$/.test(text)) return `${text}㎡`;
   return text;
 }
 
 function formatAreaText(value: string) {
-  return value
-    .replace(/m²/g, "㎡")
-    .replace(/(대지|연면적|공급|전용|계약)\s*([\d,.]+)(?!\s*㎡)/g, "$1 $2㎡")
-    .replace(/(^|\/|\()\s*([\d,.]+)(?!\s*㎡)(?=\s*(?:\/|\)|$))/g, (_match, prefix, number) => `${prefix}${number}㎡`);
+  let text = normalizeAreaUnits(value);
+  text = text.replace(/(대지|연면적|공급|전용|계약)\s*([\d,.]+)\s*㎡?/g, "$1 $2㎡");
+  text = text.replace(/(^|\/|\()\s*([\d,.]+)(?=\s*(?:\/|\)|$))/g, (_match, prefix, number) => `${prefix}${number}㎡`);
+  return normalizeAreaUnits(text);
 }
 
 function completeFeatureSentence(value: string) {
@@ -50,6 +57,17 @@ function completeFeatureSentence(value: string) {
 
 function listItems(value: string) {
   return value.split(/\n+|\s*•\s*|\s*·\s*/).map((item) => item.replace(/^[-•]\s*/, "").trim()).filter(Boolean);
+}
+
+function splitSentences(value: string) {
+  return value
+    .split(/(?<=[.!?])\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function isResidentialOnlyCommercialPhrase(value: string) {
+  return /창문이?\s*확인|환기\s*구조|채광|수납공간|생활용품|의류를?\s*정리|우드톤\s*바닥|바닥\s*마감으로\s*편안|편안한\s*분위기|빨래\s*건조|천장형\s*건조대/.test(value);
 }
 
 function formatPropertyDescription(description: string, propertyType = "", dealType = "") {
@@ -101,12 +119,14 @@ function formatPropertyDescription(description: string, propertyType = "", dealT
     if (optionLines.length) sections.push(`옵션\n${optionLines.join("\n")}`);
   }
   if (featureText) {
-    const featureItems = listItems(featureText).map(completeFeatureSentence);
+    let featureItems = listItems(featureText).flatMap(splitSentences);
+    if (isCommercial) featureItems = featureItems.filter((item) => !isResidentialOnlyCommercialPhrase(item));
+    featureItems = featureItems.map(completeFeatureSentence).filter((item, index, items) => items.indexOf(item) === index).slice(0, isCommercial ? 5 : 6);
     if (featureItems.length) sections.push(`매물 특징\n${featureItems.map((item) => `• ${item}`).join("\n")}`);
   }
   if (usageText && isCommercial) {
-    const usageItems = listItems(usageText).filter((item) => !/^(추천 활용|추천 업종|현장 확인 포인트)$/.test(item.trim()));
-    const uniqueUsageItems = usageItems.filter((item, index, items) => items.findIndex((candidate) => candidate.trim() === item.trim()) === index);
+    const usageItems = listItems(usageText).flatMap(splitSentences).filter((item) => !/^(추천 활용|추천 업종|현장 확인 포인트)$/.test(item.trim())).filter((item) => !/급배수|배기시설|전력용량|소방시설|관계기관|인허가|현장에서 확인/.test(item));
+    const uniqueUsageItems = usageItems.filter((item, index, items) => items.findIndex((candidate) => candidate.trim() === item.trim()) === index).slice(0, 4);
     if (uniqueUsageItems.length) sections.push(`추천 활용\n${uniqueUsageItems.map((item) => `• ${item}`).join("\n")}`);
   }
   return sections.filter(Boolean).join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
