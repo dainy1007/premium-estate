@@ -27,7 +27,12 @@ function formatPropertyDescription(description: string, propertyType = "") {
     .replace(/[ \t]*매물 정보[ \t]*/g, "\n\n매물 정보\n")
     .replace(/[ \t]*매물 특징[ \t]*/g, "\n\n매물 특징\n")
     .replace(/[ \t]*옵션[ \t]*:?[ \t]*/g, "\n옵션\n")
-    .replace(/[ \t]*(거래조건|면적|총층|층수|방\/욕실|방향|관리비|난방|주차)[ \t]*:[ \t]*/g, "\n$1 : ")
+    .replace(/[ \t]*(거래조건|매매가|공급\/전용 면적|면적|해당층\/총층|총층|층수|방\/욕실|방향|관리비|난방|총주차대수|주차|건축물 용도)[ \t]*:[ \t]*/g, "\n$1 : ")
+    .replace(/공급\/전용\s*\n\s*면적\s*:/g, "공급/전용 면적 :")
+    .replace(/해당층\/\s*\n\s*총층\s*:/g, "해당층/총층 :")
+    .replace(/대지\s*\n\s*면적\s*:/g, "대지면적 :")
+    .replace(/연\s*\n\s*면적\s*:/g, "연면적 :")
+    .replace(/\n관리비\s*:\s*확인 어려움(?:,?\s*도움말 보기)?/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
@@ -46,6 +51,16 @@ function formatPropertyDescription(description: string, propertyType = "") {
     optionText = text.slice(optionIndex + optionMarker.length).trim();
     text = text.slice(0, optionIndex).trim();
   }
+
+  // 매물 정보는 항목 사이의 불필요한 빈 줄을 제거해 한눈에 보이게 표시한다.
+  text = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line, index, lines) => line || (index > 0 && lines[index - 1] !== ""))
+    .join("\n")
+    .replace(/매물 정보\n\n/g, "매물 정보\n")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
 
   const sections = [text];
 
@@ -300,7 +315,7 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
             {formattedDescription && (
               <div className="mt-4 rounded-2xl bg-[#F8F9FB] p-5 sm:p-6">
                 <p className="text-sm font-semibold text-gray-500">매물 설명</p>
-                <p className="mt-3 whitespace-pre-line break-keep text-[15px] leading-8 text-[#0A2342]/90 sm:text-base">
+                <p className="mt-3 whitespace-pre-line break-keep text-[15px] leading-7 text-[#0A2342]/90 sm:text-base">
                   {formattedDescription}
                 </p>
               </div>
