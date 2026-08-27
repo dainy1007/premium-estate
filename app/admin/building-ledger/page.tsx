@@ -30,6 +30,7 @@ export default function BuildingLedgerAdminPage(){
   const[results,setResults]=useState<Record<number,RowResult>>({});
   const[drafts,setDrafts]=useState<Record<number,string>>({});
   const[selected,setSelected]=useState<Set<number>>(new Set());
+  const[searchKeyword,setSearchKeyword]=useState("");
   const[running,setRunning]=useState(false);
   const[savingId,setSavingId]=useState<number|null>(null);
   const[savingSelected,setSavingSelected]=useState(false);
@@ -51,8 +52,25 @@ export default function BuildingLedgerAdminPage(){
     setResults(nextResults);
   }
 
-  const allSelected=useMemo(()=>items.length>0&&items.every(v=>selected.has(v.id)),[items,selected]);
-  function toggleAll(){setSelected(allSelected?new Set():new Set(items.map(v=>v.id)));}
+  const filteredItems=useMemo(()=>{
+    const q=searchKeyword.trim().toLowerCase();
+    if(!q)return items;
+    return items.filter(item=>{
+      const meta=parseAdminMeta(item.description||"");
+      return [String(item.id),item.title,item.type,item.address,item.location,meta.ledgerLookupAddress,drafts[item.id]]
+        .filter(Boolean).join(" ").toLowerCase().includes(q);
+    });
+  },[items,searchKeyword,drafts]);
+
+  const allSelected=useMemo(()=>filteredItems.length>0&&filteredItems.every(v=>selected.has(v.id)),[filteredItems,selected]);
+  function toggleAll(){
+    setSelected(prev=>{
+      const next=new Set(prev);
+      if(allSelected)filteredItems.forEach(v=>next.delete(v.id));
+      else filteredItems.forEach(v=>next.add(v.id));
+      return next;
+    });
+  }
   function toggleOne(id:number){setSelected(prev=>{const next=new Set(prev);if(next.has(id))next.delete(id);else next.add(id);return next;});}
 
   async function saveLookupAddress(item:Item,address:string){
@@ -133,20 +151,24 @@ export default function BuildingLedgerAdminPage(){
         <div className="flex gap-2"><Link href="/admin" className="rounded-full border px-5 py-3">매물관리</Link><button onClick={()=>void runAll()} disabled={running||savingSelected} className="rounded-full bg-[#C9A227] px-5 py-3 font-semibold disabled:opacity-50">{running?"조회 중...":"전체 매물 보완"}</button></div>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border bg-[#F8F9FB] px-4 py-3">
-        <label className="flex items-center gap-2 font-semibold"><input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-5 w-5"/>전체 선택</label>
-        <span className="text-sm">선택 항목: <b className="rounded-full bg-[#0A2342] px-3 py-1 text-white">{selected.size}개</b></span>
-        <button onClick={()=>void saveSelectedAddresses()} disabled={running||savingSelected||!selected.size} className="rounded-xl border border-[#0A2342] bg-white px-5 py-2.5 font-semibold text-[#0A2342] disabled:opacity-40">{savingSelected?"주소 저장 중...":"조회주소 저장"}</button>
-        <button onClick={()=>void runSelected()} disabled={running||savingSelected||!selected.size} className="rounded-xl bg-[#0A2342] px-5 py-2.5 font-semibold text-white disabled:opacity-40">선택 매물 보완</button>
-        <button onClick={()=>setSelected(new Set())} disabled={running||savingSelected||!selected.size} className="rounded-xl border bg-white px-5 py-2.5 font-semibold disabled:opacity-40">선택 초기화</button>
+      <div className="mt-6 md:sticky md:top-[82px] md:z-30 md:-mx-2 md:rounded-2xl md:bg-white md:px-2 md:py-2 md:shadow-[0_8px_24px_rgba(10,35,66,0.10)]">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border bg-[#F8F9FB] px-4 py-3">
+          <label className="flex items-center gap-2 font-semibold"><input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-5 w-5"/>전체 선택</label>
+          <span className="text-sm">선택 항목: <b className="rounded-full bg-[#0A2342] px-3 py-1 text-white">{selected.size}개</b></span>
+          <label className="min-w-[240px] flex-1 md:max-w-[360px]"><span className="sr-only">매물 검색</span><input value={searchKeyword} onChange={e=>setSearchKeyword(e.target.value)} placeholder="매물번호·매물명·주소 검색" className="w-full rounded-xl border border-[#0A2342]/15 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#C9A227]"/></label>
+          {searchKeyword&&<span className="text-xs text-[#0A2342]/55">검색 결과 {filteredItems.length}건</span>}
+          <button onClick={()=>void saveSelectedAddresses()} disabled={running||savingSelected||!selected.size} className="rounded-xl border border-[#0A2342] bg-white px-5 py-2.5 font-semibold text-[#0A2342] disabled:opacity-40">{savingSelected?"주소 저장 중...":"조회주소 저장"}</button>
+          <button onClick={()=>void runSelected()} disabled={running||savingSelected||!selected.size} className="rounded-xl bg-[#0A2342] px-5 py-2.5 font-semibold text-white disabled:opacity-40">선택 매물 보완</button>
+          <button onClick={()=>setSelected(new Set())} disabled={running||savingSelected||!selected.size} className="rounded-xl border bg-white px-5 py-2.5 font-semibold disabled:opacity-40">선택 초기화</button>
+        </div>
       </div>
 
       <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[1280px]">
-        <thead className="bg-[#F8F9FB]"><tr>
+        <thead className="bg-[#F8F9FB] md:sticky md:top-[166px] md:z-20 md:shadow-sm"><tr>
           <th className="w-12 px-3 py-4 text-left"><input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-5 w-5"/></th>
           {["번호","매물명","유형","건축물대장 조회주소 (관리자 전용)","홈페이지 표시주소","처리상태","관리"].map(v=><th key={v} className="px-3 py-4 text-left">{v}</th>)}
         </tr></thead>
-        <tbody>{items.map(item=>{const result=results[item.id];const type=item.type||"-";const publicAddress=item.address||item.location||"주소 없음";return <tr key={item.id} className="border-t align-top text-sm">
+        <tbody>{filteredItems.map(item=>{const result=results[item.id];const type=item.type||"-";const publicAddress=item.address||item.location||"주소 없음";return <tr key={item.id} className="border-t align-top text-sm">
           <td className="px-3 py-4"><input type="checkbox" checked={selected.has(item.id)} onChange={()=>toggleOne(item.id)} className="h-5 w-5"/></td>
           <td className="px-3 py-4 font-semibold">{item.id}</td>
           <td className="px-3 py-4 font-semibold"><Link href={`/admin/properties/${item.id}/edit`} target="_blank" rel="noopener noreferrer" title="관리자 매물 수정 화면 새 탭에서 열기" className="cursor-pointer underline decoration-dotted underline-offset-4 hover:text-[#C9A227]">{item.title}</Link></td>
@@ -160,6 +182,8 @@ export default function BuildingLedgerAdminPage(){
           <td className="px-3 py-4"><button onClick={()=>void enrich(item)} disabled={running||savingSelected||savingId===item.id} className="rounded-full border px-4 py-2 font-semibold disabled:opacity-40">{savingId===item.id?"저장 중...":"건축물대장 조회"}</button></td>
         </tr>})}</tbody>
       </table></div>
+
+      {!filteredItems.length&&<div className="rounded-2xl border border-dashed border-[#0A2342]/20 bg-[#F8F9FB] p-10 text-center text-sm text-[#0A2342]/60">검색 조건에 맞는 매물이 없습니다.</div>}
 
       <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-7 text-[#0A2342]">
         <b>관리자 전용 조회주소 입력 기준</b><br/>
