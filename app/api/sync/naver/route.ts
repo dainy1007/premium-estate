@@ -143,7 +143,7 @@ function sourceInfoOverrides(listing:NaverListing){
   return {
     elevator:cleanUnknown(listing.elevator),
     parking:parking?(count&&!new RegExp(String(count)).test(parking)?`${parking} / 총 ${count}대`:parking):(count?`총 ${count}대`:""),
-    moveIn:"",
+    moveIn:cleanUnknown(listing.move_in),
     heating:cleanUnknown(listing.heating),
     direction:cleanUnknown(listing.direction),
     buildingUse:cleanUnknown(listing.building_use),
