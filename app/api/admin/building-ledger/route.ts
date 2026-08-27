@@ -119,17 +119,19 @@ export async function POST(req:NextRequest){
     const {data:p,error:findError}=await db.from("properties").select("id,description,area,floor").eq("id",propertyId).single();
     if(findError||!p)return NextResponse.json({ok:false,error:"PROPERTY_NOT_FOUND"},{status:404});
     const meta=parseAdminMeta(p.description||"");
-    const next={...meta,infoOverrides:{...meta.infoOverrides}};
+    const summary=[ledger.buildingUse,ledger.approvalDate,ledger.totalFloor?`지상 ${ledger.totalFloor}층`:"",ledger.parkingCount?`주차 ${ledger.parkingCount}대`:""].filter(Boolean).join(" · ");
+    const next={...meta,ledgerLookupAddress:address,ledgerStatus:"completed" as const,ledgerSummary:summary||"보완 완료",ledgerUpdatedAt:new Date().toISOString(),infoOverrides:{...meta.infoOverrides}};
     if(!next.infoOverrides.buildingUse&&ledger.buildingUse)next.infoOverrides.buildingUse=ledger.buildingUse;
     if(!next.infoOverrides.approvalDate&&ledger.approvalDate)next.infoOverrides.approvalDate=ledger.approvalDate;
     if(!next.infoOverrides.parking&&ledger.parkingCount)next.infoOverrides.parking=`총 ${ledger.parkingCount}대`;
     if(!next.infoOverrides.elevator&&ledger.elevatorCount)next.infoOverrides.elevator=`${ledger.elevatorCount}대`;
-    const update:Record<string,unknown>={description:buildDescriptionWithAdminMeta(p.description||"",next)};
+    const description=buildDescriptionWithAdminMeta(p.description||"",next);
+    const update:Record<string,unknown>={description};
     if(!text(p.area)&&ledger.totalArea)update.area=ledger.totalArea;
     if(!text(p.floor)&&ledger.totalFloor)update.floor=`-/${ledger.totalFloor}층`;
     const {error:updateError}=await db.from("properties").update(update).eq("id",propertyId);
     if(updateError)throw new Error(updateError.message);
-    return NextResponse.json({ok:true,property_id:propertyId,ledger:{buildingUse:ledger.buildingUse,approvalDate:ledger.approvalDate,totalFloor:ledger.totalFloor,totalArea:ledger.totalArea,buildingArea:ledger.buildingArea,parkingCount:ledger.parkingCount,elevatorCount:ledger.elevatorCount}});
+    return NextResponse.json({ok:true,property_id:propertyId,summary:next.ledgerSummary,description,ledger:{buildingUse:ledger.buildingUse,approvalDate:ledger.approvalDate,totalFloor:ledger.totalFloor,totalArea:ledger.totalArea,buildingArea:ledger.buildingArea,parkingCount:ledger.parkingCount,elevatorCount:ledger.elevatorCount}});
   }catch(e){
     if(e instanceof BuildingLedgerError){
       return NextResponse.json({ok:false,error:e.message,detail:e.upstream||undefined},{status:e.status>=400&&e.status<600?e.status:422});
