@@ -105,7 +105,7 @@ export default function BuildingLedgerAdminPage(){
         <tbody>{items.map(item=>{const result=results[item.id];const type=item.type||"-";const publicAddress=item.address||item.location||"주소 없음";return <tr key={item.id} className="border-t align-top text-sm">
           <td className="px-3 py-4"><input type="checkbox" checked={selected.has(item.id)} onChange={()=>toggleOne(item.id)} className="h-5 w-5"/></td>
           <td className="px-3 py-4 font-semibold">{item.id}</td>
-          <td className="px-3 py-4 font-semibold">{item.title}</td>
+          <td className="px-3 py-4 font-semibold"><Link href={`/properties/${item.id}`} target="_blank" rel="noopener noreferrer" title="매물 상세페이지 새 탭에서 열기" className="underline decoration-dotted underline-offset-4 hover:text-[#C9A227]">{item.title}</Link></td>
           <td className="px-3 py-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold">{type}</span></td>
           <td className="min-w-[330px] px-3 py-4">
             <input value={drafts[item.id]||""} onChange={e=>setDrafts(p=>({...p,[item.id]:e.target.value}))} onBlur={()=>void saveLookupAddress(item,drafts[item.id]||"")} placeholder={lookupGuide(type)} className="w-full rounded-xl border px-3 py-2.5 outline-none focus:border-[#C9A227]"/>
