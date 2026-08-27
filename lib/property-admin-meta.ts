@@ -2,6 +2,7 @@ export const COMMON_OPTIONS=["CCTV","도어락","신발장","인터폰","싱크�
 export const VARIABLE_OPTIONS=["에어컨","세탁기","냉장고","TV","장롱","붙박이장","옷장","수납장","인터넷","와이파이","천장형 건조대","건조대","인덕션"] as const;
 export const ALL_OPTIONS=[...COMMON_OPTIONS,...VARIABLE_OPTIONS] as const;
 export const MAINTENANCE_ITEMS=["수도세","인터넷","유선방송","공동전기세","복도청소비","정화조처리비","기타 공용관리비"] as const;
+
 export const DESCRIPTION_PRESETS=[
   "깔끔하게 관리되어 쾌적하게 거주하기 좋아요.",
   "채광이 좋고 실내가 밝아 답답함이 없어요.",
@@ -18,6 +19,75 @@ export const DESCRIPTION_PRESETS=[
   "즉시 입주 가능해 빠른 입주를 원하는 분께 추천합니다.",
   "가성비 좋은 월세 조건으로 부담 없이 거주하기 좋아요.",
 ] as const;
+
+const SMALL_HOME_PRESETS=[
+  ...DESCRIPTION_PRESETS,
+  "침실과 생활공간을 나누어 사용하기 좋은 구조예요.",
+  "혼자 거주하면서 공간을 실용적으로 사용하기 좋아요.",
+] as const;
+
+const APARTMENT_OFFICETEL_PRESETS=[
+  "관리 상태가 좋아 쾌적하게 거주하기 좋아요.",
+  "엘리베이터 이용이 편리한 건물이에요.",
+  "주차시설 이용이 편리해 차량을 보유한 분께 좋아요.",
+  "공동현관 및 보안시설이 갖춰져 있어 안심하고 생활하기 좋아요.",
+  "채광과 조망이 좋아 실내가 밝고 쾌적해요.",
+  "편의점·마트 등 생활편의시설 이용이 편리해요.",
+  "대중교통 이용이 편리한 위치예요.",
+  "즉시 입주 또는 입주시기 협의가 가능한 매물이에요.",
+  "대구테크노폴리스 생활권 이용이 편리해요.",
+] as const;
+
+const HOUSE_PRESETS=[
+  "독립적인 주거생활을 원하는 분께 추천해요.",
+  "실내 공간이 넉넉해 가족 단위 거주에 좋아요.",
+  "주차 공간을 편리하게 이용할 수 있어요.",
+  "조용한 주거환경에서 여유롭게 생활하기 좋아요.",
+  "마당·테라스 등 외부공간 활용을 기대할 수 있는 주택이에요.",
+  "전원생활이나 세컨하우스를 찾는 분께 추천해요.",
+  "생활공간을 넓게 활용하고 싶은 분께 적합해요.",
+  "입주시기와 임대조건은 협의 가능합니다.",
+] as const;
+
+const COMMERCIAL_PRESETS=[
+  "주변 주거세대와 유동인구를 배후수요로 기대할 수 있는 위치예요.",
+  "대로변 또는 주요 진입로 접근성이 좋아 매장 노출에 유리해요.",
+  "주변 상권과 연계해 생활밀착형 업종을 검토하기 좋은 위치예요.",
+  "주차와 차량 접근성을 활용하는 업종에 적합한지 검토해볼 수 있어요.",
+  "주변 아파트·원룸·오피스 수요를 겨냥한 업종을 검토하기 좋아요.",
+  "음식점·카페·편의점 등 생활편의 업종을 추천 후보로 검토할 수 있어요.",
+  "사무실·서비스업·소매점 등 다양한 업종을 검토하기 좋은 상가예요.",
+  "추천 업종은 상권과 건축물 용도 및 인허가 가능 여부를 확인한 뒤 결정하는 것이 좋아요.",
+] as const;
+
+const WAREHOUSE_FACTORY_PRESETS=[
+  "차량 진입과 물류 이동 동선을 확인하기 좋은 위치예요.",
+  "대형차량 진입 가능 여부를 확인해 물류·보관 용도로 검토하기 좋아요.",
+  "층고와 출입구 높이를 활용하는 창고·공장 용도로 검토하기 좋아요.",
+  "주차 및 야적공간 활용 여부를 확인해 다양한 사업용도로 검토할 수 있어요.",
+  "산업단지·IC·주요 도로 접근성을 활용하기 좋은 입지예요.",
+  "전력·용도·허가사항을 확인해 제조·보관·물류 업종으로 검토하기 좋아요.",
+] as const;
+
+const LAND_PRESETS=[
+  "도로 접면과 진입여건을 확인하기 좋은 토지예요.",
+  "토지 형상과 면적 활용도를 검토해 실수요 또는 투자용으로 살펴보기 좋아요.",
+  "용도지역과 건축 가능 여부를 확인해 활용계획을 세우기 좋아요.",
+  "주변 도로와 생활권 접근성을 함께 검토하기 좋은 위치예요.",
+  "주변 개발환경과 인근 토지 이용현황을 함께 확인해볼 만해요.",
+  "실수요·투자 목적에 따라 활용 가능성을 검토하기 좋은 토지예요.",
+] as const;
+
+export function getDescriptionPresetsForType(type:string):readonly string[]{
+  if(/상가/.test(type)&&!/상가주택/.test(type))return COMMERCIAL_PRESETS;
+  if(/창고|공장/.test(type))return WAREHOUSE_FACTORY_PRESETS;
+  if(/토지/.test(type))return LAND_PRESETS;
+  if(/아파트|오피스텔/.test(type))return APARTMENT_OFFICETEL_PRESETS;
+  if(/단독주택|다가구|상가주택/.test(type))return HOUSE_PRESETS;
+  if(/원룸|미니투룸|투룸|쓰리룸/.test(type))return SMALL_HOME_PRESETS;
+  return DESCRIPTION_PRESETS;
+}
+
 export const ELIGIBLE_RESIDENTIAL=/아파트|원룸|미니투룸|투룸|쓰리룸|단독주택|다가구|다세대|연립|빌라|오피스텔|상가주택/;
 
 export type PropertyInfoOverrides={
