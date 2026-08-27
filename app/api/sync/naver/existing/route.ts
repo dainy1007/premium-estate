@@ -17,6 +17,7 @@ type NaverListing = {
   elevator?:string;
   parking?:string;
   parking_count?:string|number;
+  move_in?:string;
   heating?:string;
   direction?:string;
   building_use?:string;
@@ -36,7 +37,7 @@ function mergeMeta(description:string,listing:NaverListing){
   const incoming={
     elevator:cleanUnknown(listing.elevator),
     parking,
-    moveIn:"",
+    moveIn:cleanUnknown(listing.move_in),
     heating:cleanUnknown(listing.heating),
     direction:cleanUnknown(listing.direction),
     buildingUse:cleanUnknown(listing.building_use),
