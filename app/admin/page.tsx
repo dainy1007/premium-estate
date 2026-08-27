@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { normalizePropertyForDisplay } from "@/lib/property-normalize";
 import type { Property, PropertyListingStatus } from "@/types/property";
@@ -22,6 +22,15 @@ type AdminProperty = Property & {
 
 const ALL = "전체";
 const COLUMNS = "id,title,address,location,price,type,deal_type,description,created_at,is_featured,is_hidden,listing_status";
+const ADMIN_LIST_STATE_KEY = "baekjo-admin-property-list-state";
+
+type SavedAdminListState = {
+  keyword?: string;
+  propertyType?: string;
+  dealType?: string;
+  statusFilter?: string;
+  scrollY?: number;
+};
 
 export default function AdminPage() {
   const [propertyList, setPropertyList] = useState<AdminProperty[]>([]);
@@ -32,8 +41,50 @@ export default function AdminPage() {
   const [dealType, setDealType] = useState(ALL);
   const [statusFilter, setStatusFilter] = useState(ALL);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [stateReady, setStateReady] = useState(false);
+  const restoreScrollRef = useRef<number | null>(null);
 
-  useEffect(() => { void getProperties(); }, []);
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(ADMIN_LIST_STATE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as SavedAdminListState;
+        setKeyword(saved.keyword || "");
+        setPropertyType(saved.propertyType || ALL);
+        setDealType(saved.dealType || ALL);
+        setStatusFilter(saved.statusFilter || ALL);
+        restoreScrollRef.current = Number.isFinite(saved.scrollY) ? Number(saved.scrollY) : null;
+      }
+    } catch (error) {
+      console.warn("관리자 매물 목록 상태 복원 실패:", error);
+    }
+    setStateReady(true);
+    void getProperties();
+  }, []);
+
+  useEffect(() => {
+    if (!stateReady) return;
+    try {
+      const previous = sessionStorage.getItem(ADMIN_LIST_STATE_KEY);
+      const previousState = previous ? JSON.parse(previous) as SavedAdminListState : {};
+      sessionStorage.setItem(ADMIN_LIST_STATE_KEY, JSON.stringify({
+        keyword,
+        propertyType,
+        dealType,
+        statusFilter,
+        scrollY: previousState.scrollY || 0,
+      }));
+    } catch (error) {
+      console.warn("관리자 매물 목록 상태 저장 실패:", error);
+    }
+  }, [keyword, propertyType, dealType, statusFilter, stateReady]);
+
+  useEffect(() => {
+    if (loading || restoreScrollRef.current == null) return;
+    const scrollY = restoreScrollRef.current;
+    restoreScrollRef.current = null;
+    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: "auto" })));
+  }, [loading]);
 
   async function getProperties() {
     setLoading(true);
@@ -69,6 +120,14 @@ export default function AdminPage() {
     return (!q || text.includes(q)) && (propertyType === ALL || p.type === propertyType) && (dealType === ALL || p.deal_type === dealType) && statusOk;
   }), [propertyList, keyword, propertyType, dealType, statusFilter]);
 
+  function rememberListPosition() {
+    try {
+      sessionStorage.setItem(ADMIN_LIST_STATE_KEY, JSON.stringify({ keyword, propertyType, dealType, statusFilter, scrollY: window.scrollY }));
+    } catch (error) {
+      console.warn("관리자 매물 목록 위치 저장 실패:", error);
+    }
+  }
+
   async function updateField(property: AdminProperty, changes: Record<string, unknown>) {
     setBusyId(property.id);
     const { error } = await supabase.from("properties").update(changes).eq("id", property.id);
@@ -84,7 +143,13 @@ export default function AdminPage() {
     else setPropertyList(list => list.filter(v => v.id !== id));
   }
 
-  const reset = () => { setKeyword(""); setPropertyType(ALL); setDealType(ALL); setStatusFilter(ALL); };
+  const reset = () => {
+    setKeyword("");
+    setPropertyType(ALL);
+    setDealType(ALL);
+    setStatusFilter(ALL);
+    try { sessionStorage.removeItem(ADMIN_LIST_STATE_KEY); } catch {}
+  };
 
   return <main className="min-h-screen bg-[#F8F9FB] px-4 py-8 text-[#0A2342]">
     <div className="mx-auto max-w-7xl">
@@ -109,7 +174,7 @@ export default function AdminPage() {
           </div>
         </div>
         {loading ? <p className="py-16 text-center">매물을 불러오는 중입니다...</p> : <div className="mt-6 overflow-x-auto"><table className="w-full min-w-[1180px]"><thead className="bg-[#F8F9FB]"><tr>{["번호","매물명","유형","지역·가격","상태","빠른 관리","상세 관리"].map(v=><th key={v} className="px-4 py-4 text-left">{v}</th>)}</tr></thead><tbody>
-          {filtered.map(p => { const completed=p.listing_status==="completed"; const busy=busyId===p.id; return <tr key={p.id} className="border-t align-top text-sm"><td className="px-4 py-4">{p.id}</td><td className="px-4 py-4 font-semibold">{p.title}</td><td className="px-4 py-4">{p.type || "-"} <span className="text-[#0A2342]/50">{p.deal_type}</span></td><td className="px-4 py-4"><p>{p.location || "-"}</p><p className="mt-1 font-semibold text-[#9B7900]">{p.price || "문의"}</p></td><td className="px-4 py-4">{p.is_hidden ? "숨김" : completed ? "계약완료" : "노출중"}{p.is_featured ? " · 추천" : ""}</td><td className="px-4 py-4"><div className="flex gap-2"><button disabled={busy} onClick={()=>void updateField(p,{is_featured:!p.is_featured})} className="rounded-full border px-3 py-2">추천</button><button disabled={busy} onClick={()=>void updateField(p,{is_hidden:!p.is_hidden})} className="rounded-full border px-3 py-2">숨김</button><button disabled={busy} onClick={()=>void updateField(p,{listing_status:completed?"active":"completed"})} className="rounded-full border px-3 py-2">계약완료</button></div></td><td className="px-4 py-4"><div className="flex gap-2"><Link href={`/admin/properties/${p.id}`} className="rounded-full border px-4 py-2">보기</Link><Link href={`/admin/properties/${p.id}/edit`} className="rounded-full border px-4 py-2">수정</Link><button onClick={()=>void handleDelete(p.id)} className="rounded-full border border-red-300 px-4 py-2 text-red-600">삭제</button></div></td></tr> })}
+          {filtered.map(p => { const completed=p.listing_status==="completed"; const busy=busyId===p.id; return <tr key={p.id} className="border-t align-top text-sm"><td className="px-4 py-4">{p.id}</td><td className="px-4 py-4 font-semibold">{p.title}</td><td className="px-4 py-4">{p.type || "-"} <span className="text-[#0A2342]/50">{p.deal_type}</span></td><td className="px-4 py-4"><p>{p.location || "-"}</p><p className="mt-1 font-semibold text-[#9B7900]">{p.price || "문의"}</p></td><td className="px-4 py-4">{p.is_hidden ? "숨김" : completed ? "계약완료" : "노출중"}{p.is_featured ? " · 추천" : ""}</td><td className="px-4 py-4"><div className="flex gap-2"><button disabled={busy} onClick={()=>void updateField(p,{is_featured:!p.is_featured})} className="rounded-full border px-3 py-2">추천</button><button disabled={busy} onClick={()=>void updateField(p,{is_hidden:!p.is_hidden})} className="rounded-full border px-3 py-2">숨김</button><button disabled={busy} onClick={()=>void updateField(p,{listing_status:completed?"active":"completed"})} className="rounded-full border px-3 py-2">계약완료</button></div></td><td className="px-4 py-4"><div className="flex gap-2"><Link onClick={rememberListPosition} href={`/admin/properties/${p.id}`} className="rounded-full border px-4 py-2">보기</Link><Link onClick={rememberListPosition} href={`/admin/properties/${p.id}/edit`} className="rounded-full border px-4 py-2">수정</Link><button onClick={()=>void handleDelete(p.id)} className="rounded-full border border-red-300 px-4 py-2 text-red-600">삭제</button></div></td></tr> })}
         </tbody></table></div>}
       </section>
     </div>
