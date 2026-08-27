@@ -164,7 +164,7 @@ export default function BuildingLedgerAdminPage(){
       </div>
 
       <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[1280px]">
-        <thead className="bg-[#F8F9FB] md:sticky md:top-[166px] md:z-20 md:shadow-sm"><tr>
+        <thead className="bg-[#F8F9FB]"><tr>
           <th className="w-12 px-3 py-4 text-left"><input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-5 w-5"/></th>
           {["번호","매물명","유형","건축물대장 조회주소 (관리자 전용)","홈페이지 표시주소","처리상태","관리"].map(v=><th key={v} className="px-3 py-4 text-left">{v}</th>)}
         </tr></thead>
