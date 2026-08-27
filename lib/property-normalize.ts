@@ -11,6 +11,23 @@ export function sanitizePropertyArea(value: unknown) {
     .replace(/전용(\d+(?:\.\d+)?)㎡/g, "전용 $1㎡");
 }
 
+function withSquareMeter(value: unknown) {
+  const text = sanitizePropertyArea(value);
+  if (!text) return "";
+  if (/㎡|평/.test(text)) return text;
+  if (/^[\d,.]+$/.test(text)) return `${text}㎡`;
+  return text;
+}
+
+function buildDisplayArea(property: Property) {
+  const contract = withSquareMeter(property.contract_area);
+  const exclusive = withSquareMeter(property.exclusive_area);
+  if (contract && exclusive) return `계약 ${contract} / 전용 ${exclusive}`;
+  if (contract) return `계약 ${contract}`;
+  if (exclusive) return `전용 ${exclusive}`;
+  return withSquareMeter(property.area);
+}
+
 export function deriveLocationFromAddress(value: unknown) {
   const address = clean(value);
   if (!address) return "";
@@ -121,5 +138,5 @@ export function normalizePropertyForDisplay<T extends Property>(property: T): T 
   const isAdminEdited = rawDescription.includes("<!--PROPERTY_ADMIN_META:");
   const normalizedDescription = isAdminEdited ? rawDescription : normalizeDescriptionGeography(rawDescription, property.address, type, property.deal_type);
   const description = isAdminEdited ? normalizedDescription : addSmallHomeConvenience(normalizedDescription, type, [property.title, property.address, property.location, property.description].filter(Boolean).join(" "));
-  return {...property,type,title,location: geographicLocation || property.location,area:sanitizePropertyArea(property.area),contract_area:sanitizePropertyArea(property.contract_area),exclusive_area:sanitizePropertyArea(property.exclusive_area),description};
+  return {...property,type,title,location: geographicLocation || property.location,area:buildDisplayArea(property),contract_area:sanitizePropertyArea(property.contract_area),exclusive_area:sanitizePropertyArea(property.exclusive_area),description};
 }
