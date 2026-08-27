@@ -12,6 +12,7 @@ const buildingKey=process.env.BUILDING_LEDGER_SERVICE_KEY;
 type KakaoDoc={address?:{b_code?:string;main_address_no?:string;sub_address_no?:string;mountain_yn?:"Y"|"N"|string};road_address?:unknown};
 type LedgerItem=Record<string,unknown>;
 const text=(v:unknown)=>String(v??"").trim();
+const formatApprovalDate=(v:unknown)=>{const raw=text(v).replace(/\D/g,"");if(raw.length!==8)return text(v);return `${raw.slice(0,4)}.${raw.slice(4,6)}.${raw.slice(6,8)}`;};
 
 class BuildingLedgerError extends Error {
   status:number;
@@ -45,97 +46,47 @@ async function resolveAddress(address:string){
   const addr=doc?.address;
   if(!addr?.b_code)throw new BuildingLedgerError("ADDRESS_NOT_RESOLVED",422);
   const bcode=addr.b_code;
-  return {
-    sigunguCd:bcode.slice(0,5),
-    bjdongCd:bcode.slice(5,10),
-    platGbCd:addr.mountain_yn==="Y"?"1":"0",
-    bun:(addr.main_address_no||"0").padStart(4,"0"),
-    ji:(addr.sub_address_no||"0").padStart(4,"0")
-  };
+  return {sigunguCd:bcode.slice(0,5),bjdongCd:bcode.slice(5,10),platGbCd:addr.mountain_yn==="Y"?"1":"0",bun:(addr.main_address_no||"0").padStart(4,"0"),ji:(addr.sub_address_no||"0").padStart(4,"0")};
 }
 
 async function fetchLedger(address:string){
   if(!buildingKey)throw new BuildingLedgerError("BUILDING_LEDGER_SERVICE_KEY_NOT_CONFIGURED",503);
   const loc=await resolveAddress(address);
-  const qs=new URLSearchParams({
-    serviceKey:normalizedServiceKey(buildingKey),
-    sigunguCd:loc.sigunguCd,
-    bjdongCd:loc.bjdongCd,
-    platGbCd:loc.platGbCd,
-    bun:loc.bun,
-    ji:loc.ji,
-    numOfRows:"50",
-    pageNo:"1",
-    _type:"json"
-  });
+  const qs=new URLSearchParams({serviceKey:normalizedServiceKey(buildingKey),sigunguCd:loc.sigunguCd,bjdongCd:loc.bjdongCd,platGbCd:loc.platGbCd,bun:loc.bun,ji:loc.ji,numOfRows:"50",pageNo:"1",_type:"json"});
   const endpoint=`https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo?${qs.toString()}`;
   const r=await fetch(endpoint,{cache:"no-store"});
   const raw=await r.text();
-  if(!r.ok){
-    const detail=upstreamMessage(raw)||r.statusText||"NO_RESPONSE_BODY";
-    console.error("BUILDING_LEDGER_HTTP",r.status,detail,{...loc});
-    throw new BuildingLedgerError(`BUILDING_LEDGER_${r.status}`,r.status,detail);
-  }
+  if(!r.ok){const detail=upstreamMessage(raw)||r.statusText||"NO_RESPONSE_BODY";console.error("BUILDING_LEDGER_HTTP",r.status,detail,{...loc});throw new BuildingLedgerError(`BUILDING_LEDGER_${r.status}`,r.status,detail);}
   let data:any;
-  try{data=JSON.parse(raw);}catch{
-    const detail=upstreamMessage(raw)||"NON_JSON_RESPONSE";
-    console.error("BUILDING_LEDGER_NON_JSON",detail,{...loc});
-    throw new BuildingLedgerError("BUILDING_LEDGER_INVALID_RESPONSE",502,detail);
-  }
-  const header=data?.response?.header;
-  const resultCode=text(header?.resultCode);
-  if(resultCode&&resultCode!=="00"){
-    const msg=text(header?.resultMsg)||"UNKNOWN";
-    console.error("BUILDING_LEDGER_API_ERROR",resultCode,msg,{...loc});
-    throw new BuildingLedgerError(`BUILDING_LEDGER_API_${resultCode}`,422,msg);
-  }
-  const body=data?.response?.body;
-  const items=body?.items?.item;
-  const list:Array<LedgerItem>=Array.isArray(items)?items:items?[items]:[];
+  try{data=JSON.parse(raw);}catch{const detail=upstreamMessage(raw)||"NON_JSON_RESPONSE";console.error("BUILDING_LEDGER_NON_JSON",detail,{...loc});throw new BuildingLedgerError("BUILDING_LEDGER_INVALID_RESPONSE",502,detail);}
+  const header=data?.response?.header;const resultCode=text(header?.resultCode);
+  if(resultCode&&resultCode!=="00"){const msg=text(header?.resultMsg)||"UNKNOWN";console.error("BUILDING_LEDGER_API_ERROR",resultCode,msg,{...loc});throw new BuildingLedgerError(`BUILDING_LEDGER_API_${resultCode}`,422,msg);}
+  const body=data?.response?.body;const items=body?.items?.item;const list:Array<LedgerItem>=Array.isArray(items)?items:items?[items]:[];
   if(!list.length)throw new BuildingLedgerError("BUILDING_LEDGER_NO_RESULT",404);
   const item=list.find(v=>text(v.mainAtchGbCdNm).includes("주건축물"))||list[0];
   const parkingTotal=Number(item.indrMechUtcnt||0)+Number(item.oudrMechUtcnt||0)+Number(item.indrAutoUtcnt||0)+Number(item.oudrAutoUtcnt||0);
-  return {
-    raw:item,
-    buildingUse:text(item.mainPurpsCdNm),
-    approvalDate:text(item.useAprDay),
-    totalFloor:text(item.grndFlrCnt),
-    undergroundFloor:text(item.ugrndFlrCnt),
-    totalArea:text(item.totArea),
-    buildingArea:text(item.archArea),
-    parkingCount:text(item.totPkngCnt)||String(parkingTotal||""),
-    elevatorCount:text(item.rideUseElvtCnt),
-  };
+  return {raw:item,buildingUse:text(item.mainPurpsCdNm),approvalDate:formatApprovalDate(item.useAprDay),totalFloor:text(item.grndFlrCnt),undergroundFloor:text(item.ugrndFlrCnt),totalArea:text(item.totArea),buildingArea:text(item.archArea),parkingCount:text(item.totPkngCnt)||String(parkingTotal||""),elevatorCount:text(item.rideUseElvtCnt)};
 }
 
 export async function POST(req:NextRequest){
   if(!supabaseUrl||!serviceRoleKey)return NextResponse.json({ok:false,error:"SERVER_CONFIG"},{status:503});
-  const body=await req.json().catch(()=>({}));
-  const propertyId=Number(body.property_id); const address=text(body.address);
+  const body=await req.json().catch(()=>({}));const propertyId=Number(body.property_id);const address=text(body.address);
   if(!Number.isInteger(propertyId)||propertyId<=0||!address)return NextResponse.json({ok:false,error:"INVALID_INPUT"},{status:400});
   try{
-    const ledger=await fetchLedger(address);
-    const db=createClient(supabaseUrl,serviceRoleKey,{auth:{persistSession:false,autoRefreshToken:false}});
+    const ledger=await fetchLedger(address);const db=createClient(supabaseUrl,serviceRoleKey,{auth:{persistSession:false,autoRefreshToken:false}});
     const {data:p,error:findError}=await db.from("properties").select("id,description,area,floor").eq("id",propertyId).single();
     if(findError||!p)return NextResponse.json({ok:false,error:"PROPERTY_NOT_FOUND"},{status:404});
     const meta=parseAdminMeta(p.description||"");
     const summary=[ledger.buildingUse,ledger.approvalDate,ledger.totalFloor?`지상 ${ledger.totalFloor}층`:"",ledger.parkingCount?`주차 ${ledger.parkingCount}대`:""].filter(Boolean).join(" · ");
     const next={...meta,ledgerLookupAddress:address,ledgerStatus:"completed" as const,ledgerSummary:summary||"보완 완료",ledgerUpdatedAt:new Date().toISOString(),infoOverrides:{...meta.infoOverrides}};
-    if(!next.infoOverrides.buildingUse&&ledger.buildingUse)next.infoOverrides.buildingUse=ledger.buildingUse;
-    if(!next.infoOverrides.approvalDate&&ledger.approvalDate)next.infoOverrides.approvalDate=ledger.approvalDate;
-    if(!next.infoOverrides.parking&&ledger.parkingCount)next.infoOverrides.parking=`총 ${ledger.parkingCount}대`;
-    if(!next.infoOverrides.elevator&&ledger.elevatorCount)next.infoOverrides.elevator=`${ledger.elevatorCount}대`;
-    const description=buildDescriptionWithAdminMeta(p.description||"",next);
-    const update:Record<string,unknown>={description};
-    if(!text(p.area)&&ledger.totalArea)update.area=ledger.totalArea;
-    if(!text(p.floor)&&ledger.totalFloor)update.floor=`-/${ledger.totalFloor}층`;
-    const {error:updateError}=await db.from("properties").update(update).eq("id",propertyId);
-    if(updateError)throw new Error(updateError.message);
+    // 건축물대장 조회값은 공식 원장값이므로 이전 수동/오류값보다 우선해 매 조회 시 갱신한다.
+    if(ledger.buildingUse)next.infoOverrides.buildingUse=ledger.buildingUse;
+    if(ledger.approvalDate)next.infoOverrides.approvalDate=ledger.approvalDate;
+    if(ledger.parkingCount)next.infoOverrides.parking=`총 ${ledger.parkingCount}대`;
+    if(ledger.elevatorCount)next.infoOverrides.elevator=`${ledger.elevatorCount}대`;
+    const description=buildDescriptionWithAdminMeta(p.description||"",next);const update:Record<string,unknown>={description};
+    if(!text(p.area)&&ledger.totalArea)update.area=ledger.totalArea;if(!text(p.floor)&&ledger.totalFloor)update.floor=`-/${ledger.totalFloor}층`;
+    const {error:updateError}=await db.from("properties").update(update).eq("id",propertyId);if(updateError)throw new Error(updateError.message);
     return NextResponse.json({ok:true,property_id:propertyId,summary:next.ledgerSummary,description,ledger:{buildingUse:ledger.buildingUse,approvalDate:ledger.approvalDate,totalFloor:ledger.totalFloor,totalArea:ledger.totalArea,buildingArea:ledger.buildingArea,parkingCount:ledger.parkingCount,elevatorCount:ledger.elevatorCount}});
-  }catch(e){
-    if(e instanceof BuildingLedgerError){
-      return NextResponse.json({ok:false,error:e.message,detail:e.upstream||undefined},{status:e.status>=400&&e.status<600?e.status:422});
-    }
-    return NextResponse.json({ok:false,error:e instanceof Error?e.message:String(e)},{status:422});
-  }
+  }catch(e){if(e instanceof BuildingLedgerError)return NextResponse.json({ok:false,error:e.message,detail:e.upstream||undefined},{status:e.status>=400&&e.status<600?e.status:422});return NextResponse.json({ok:false,error:e instanceof Error?e.message:String(e)},{status:422});}
 }
