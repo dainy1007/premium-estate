@@ -9,10 +9,10 @@ const syncSecret=process.env.NAVER_SYNC_SECRET;
 type L={article_no:string;address?:string;road_address?:string;region?:string;price?:string;area?:string;property_type?:string;trade_type?:string};
 const s=(v:unknown)=>String(v??"").trim();
 const norm=(v:unknown)=>s(v).replace(/\s+/g,"").replace(/,/g,"").toLowerCase();
-const nums=(v:unknown)=>{const m=s(v).match(/\d+(?:\.\d+)?/g);return m?m.map(Number):[]};
+const nums=(v:unknown):number[]=>{const m=s(v).match(/\d+(?:\.\d+)?/g);return m?m.map(Number):[]};
 function areaClose(a:unknown,b:unknown){const x=nums(a)[0],y=nums(b)[0];return x!==undefined&&y!==undefined&&Math.abs(x-y)<=0.6;}
 function priceSame(a:unknown,b:unknown){const x=nums(a),y=nums(b);return x.length>0&&y.length>0&&x.length===y.length&&x.every((n,i)=>n===y[i]);}
-function addrScore(a:unknown,b:unknown){const x=norm(a),y=norm(b);if(!x||!y)return 0;if(x===y)return 5;if(x.includes(y)||y.includes(x))return 4;const ax=x.match(/[가-힣]+(?:읍|면|동|리)/g)||[];const by=y.match(/[가-힣]+(?:읍|면|동|리)/g)||[];return ax.filter(v=>by.includes(v)).length;}
+function addrScore(a:unknown,b:unknown){const x=norm(a),y=norm(b);if(!x||!y)return 0;if(x===y)return 5;if(x.includes(y)||y.includes(x))return 4;const ax:string[]=x.match(/[가-힣]+(?:읍|면|동|리)/g)??[];const by:string[]=y.match(/[가-힣]+(?:읍|면|동|리)/g)??[];return ax.filter(v=>by.includes(v)).length;}
 
 export async function POST(req:NextRequest){
  if(!supabaseUrl||!serviceRoleKey||!syncSecret)return NextResponse.json({ok:false,error:"server_config"},{status:503});
