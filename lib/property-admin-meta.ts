@@ -35,7 +35,7 @@ export const DESCRIPTION_PRESETS=[
   "엘리베이터와 가까워 접근성이 좋습니다.",
   "현풍 중앙공원 맞은편에 위치해 가시성과 접근성이 좋습니다.",
 ] as const;
-export const ELIGIBLE_RESIDENTIAL=/원룸|미니투룸|투룸|쓰리룸|다가구|다세대|연립|빌라|상가주택/;
+export const ELIGIBLE_RESIDENTIAL=/아파트|원룸|미니투룸|투룸|쓰리룸|단독주택|다가구|다세대|연립|빌라|오피스텔|상가주택/;
 
 export type PropertyInfoOverrides={
   elevator:string;
@@ -90,8 +90,9 @@ export function buildDescriptionWithAdminMeta(description:string,meta:AdminMeta)
   return `${clean}${clean?"\n":""}<!--PROPERTY_ADMIN_META:${encoded}-->`;
 }
 export function inferOptions(description:string,type:string){
+  if(!ELIGIBLE_RESIDENTIAL.test(type))return [];
   const stored=parseAdminMeta(description).options;if(stored.length)return stored;
-  const result:string[]=[];if(ELIGIBLE_RESIDENTIAL.test(type))result.push(...COMMON_OPTIONS);
+  const result:string[]=[...COMMON_OPTIONS];
   for(const option of VARIABLE_OPTIONS){const pattern=option==="TV"?/(?:^|[\s·,\/])TV(?:$|[\s·,\/])/i:new RegExp(option.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));if(pattern.test(description))result.push(option);}
   return [...new Set(result)];
 }
