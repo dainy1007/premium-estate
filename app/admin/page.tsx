@@ -98,12 +98,12 @@ export default function AdminPage() {
       </section>
       <section className="mt-6 rounded-[32px] bg-white p-5 shadow-sm md:p-8">
         <div className="flex flex-col gap-4 border-b pb-6 lg:flex-row lg:items-end lg:justify-between"><div><h2 className="text-xl font-bold">등록 매물 관리</h2><p className="mt-1 text-sm text-[#0A2342]/55">홈페이지와 동일한 주소·매물유형 보정 기준으로 표시합니다.</p></div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[220px_145px_145px_145px_auto]">
-            <input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder="매물명·지역·가격 검색" className="rounded-2xl border px-4 py-3 text-sm"/>
-            <select value={propertyType} onChange={e=>setPropertyType(e.target.value)} className="rounded-2xl border bg-white px-4 py-3">{propertyTypes.map(v=><option key={v}>{v}</option>)}</select>
-            <select value={dealType} onChange={e=>setDealType(e.target.value)} className="rounded-2xl border bg-white px-4 py-3">{dealTypes.map(v=><option key={v}>{v}</option>)}</select>
-            <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="rounded-2xl border bg-white px-4 py-3">{[ALL,"노출중","추천","숨김","계약완료"].map(v=><option key={v}>{v}</option>)}</select>
-            <button onClick={reset} className="rounded-2xl border px-4 py-3 font-semibold">초기화</button>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[220px_145px_145px_145px_auto] xl:items-end">
+            <label className="flex flex-col gap-1.5"><span className="text-xs font-semibold text-[#0A2342]/60">검색</span><input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder="매물명·지역·가격 검색" className="rounded-2xl border px-4 py-3 text-sm"/></label>
+            <label className="flex flex-col gap-1.5"><span className="text-xs font-semibold text-[#0A2342]/60">매물유형</span><select value={propertyType} onChange={e=>setPropertyType(e.target.value)} className="rounded-2xl border bg-white px-4 py-3">{propertyTypes.map(v=><option key={v}>{v}</option>)}</select></label>
+            <label className="flex flex-col gap-1.5"><span className="text-xs font-semibold text-[#0A2342]/60">거래유형</span><select value={dealType} onChange={e=>setDealType(e.target.value)} className="rounded-2xl border bg-white px-4 py-3">{dealTypes.map(v=><option key={v}>{v}</option>)}</select></label>
+            <label className="flex flex-col gap-1.5"><span className="text-xs font-semibold text-[#0A2342]/60">노출상태</span><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="rounded-2xl border bg-white px-4 py-3">{[ALL,"노출중","추천","숨김","계약완료"].map(v=><option key={v}>{v}</option>)}</select></label>
+            <button onClick={reset} className="rounded-2xl border px-4 py-3 font-semibold">필터 초기화</button>
           </div>
         </div>
         {loading ? <p className="py-16 text-center">매물을 불러오는 중입니다...</p> : <div className="mt-6 overflow-x-auto"><table className="w-full min-w-[1180px]"><thead className="bg-[#F8F9FB]"><tr>{["번호","매물명","유형","지역·가격","상태","빠른 관리","상세 관리"].map(v=><th key={v} className="px-4 py-4 text-left">{v}</th>)}</tr></thead><tbody>
