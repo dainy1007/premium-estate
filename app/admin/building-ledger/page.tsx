@@ -29,9 +29,15 @@ export default function BuildingLedgerAdminPage(){
     const{data}=await supabase.from("properties").select("id,title,address,location,type,description").order("id",{ascending:false});
     const rows=(data||[]) as Item[];
     setItems(rows);
-    const next:Record<number,string>={};
-    for(const item of rows){next[item.id]=parseAdminMeta(item.description||"").ledgerLookupAddress||"";}
-    setDrafts(next);
+    const nextDrafts:Record<number,string>={};
+    const nextResults:Record<number,RowResult>={};
+    for(const item of rows){
+      const meta=parseAdminMeta(item.description||"");
+      nextDrafts[item.id]=meta.ledgerLookupAddress||"";
+      if(meta.ledgerStatus==="completed")nextResults[item.id]={id:item.id,status:"완료",message:meta.ledgerSummary||"보완 완료"};
+    }
+    setDrafts(nextDrafts);
+    setResults(nextResults);
   }
 
   const allSelected=useMemo(()=>items.length>0&&items.every(v=>selected.has(v.id)),[items,selected]);
@@ -43,12 +49,13 @@ export default function BuildingLedgerAdminPage(){
     const meta=parseAdminMeta(item.description||"");
     if(meta.ledgerLookupAddress===value)return true;
     setSavingId(item.id);
-    const nextMeta={...meta,ledgerLookupAddress:value};
+    const nextMeta={...meta,ledgerLookupAddress:value,ledgerStatus:"" as const,ledgerSummary:"",ledgerUpdatedAt:""};
     const description=buildDescriptionWithAdminMeta(item.description||"",nextMeta);
     const{error}=await supabase.from("properties").update({description}).eq("id",item.id);
     setSavingId(null);
     if(error){window.alert("관리자 전용 조회주소 저장에 실패했습니다.");return false;}
     setItems(list=>list.map(v=>v.id===item.id?{...v,description}:v));
+    setResults(prev=>{const next={...prev};delete next[item.id];return next;});
     return true;
   }
 
@@ -78,8 +85,9 @@ export default function BuildingLedgerAdminPage(){
       const data=await r.json();
       if(!data.ok)throw new Error([data.error,data.detail].filter(Boolean).join(" · ")||"조회 실패");
       const l=data.ledger||{};
-      const msg=[l.buildingUse,l.approvalDate,l.totalFloor?`지상 ${l.totalFloor}층`:"",l.parkingCount?`주차 ${l.parkingCount}대`:""].filter(Boolean).join(" · ");
+      const msg=data.summary||[l.buildingUse,l.approvalDate,l.totalFloor?`지상 ${l.totalFloor}층`:"",l.parkingCount?`주차 ${l.parkingCount}대`:""].filter(Boolean).join(" · ");
       setResults(p=>({...p,[item.id]:{id:item.id,status:"완료",message:msg||"보완 완료"}}));
+      if(data.description)setItems(list=>list.map(v=>v.id===item.id?{...v,description:data.description}:v));
     }catch(e){setResults(p=>({...p,[item.id]:{id:item.id,status:"오류",message:e instanceof Error?e.message:String(e)}}));}
   }
 
