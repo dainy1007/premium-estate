@@ -37,6 +37,9 @@ export type AdminMeta={
   waterFeeSeparate:boolean;
   descriptionPresets:string[];
   ledgerLookupAddress:string;
+  ledgerStatus:""|"completed";
+  ledgerSummary:string;
+  ledgerUpdatedAt:string;
   infoOverrides:PropertyInfoOverrides;
 };
 
@@ -45,7 +48,7 @@ const LEGACY_OPTIONS_RE=/\n?<!--PROPERTY_OPTIONS:([\s\S]*?)-->/g;
 const STRUCTURED_INFO_LINE_RE=/^\s*(?:매물\s*정보|거래조건|금액|주소|관리비(?:\s*항목)?|매물\s*종류|엘리베이터|면적|공급\/전용\s*면적|방|화장실|방\/욕실|층수|주차|총주차대수|입주가능일|입주\s*가능일|난방|방향|건축물\s*용도|사용승인일)\s*(?::|：)?\s*.*$/gm;
 
 export function emptyInfoOverrides():PropertyInfoOverrides{return{elevator:"",parking:"",moveIn:"",heating:"",direction:"",buildingUse:"",approvalDate:""};}
-export function emptyAdminMeta():AdminMeta{return{options:[],maintenanceFee:"",maintenanceItems:[],waterFeeSeparate:false,descriptionPresets:[],ledgerLookupAddress:"",infoOverrides:emptyInfoOverrides()};}
+export function emptyAdminMeta():AdminMeta{return{options:[],maintenanceFee:"",maintenanceItems:[],waterFeeSeparate:false,descriptionPresets:[],ledgerLookupAddress:"",ledgerStatus:"",ledgerSummary:"",ledgerUpdatedAt:"",infoOverrides:emptyInfoOverrides()};}
 
 export function stripAdminMeta(description:string){
   const hasAdminMeta=description.includes("<!--PROPERTY_ADMIN_META:");
@@ -60,7 +63,7 @@ export function stripAdminMeta(description:string){
 export function parseAdminMeta(description:string):AdminMeta{
   const meta=emptyAdminMeta();
   const match=[...description.matchAll(META_RE)].at(-1);
-  if(match){try{const parsed=JSON.parse(decodeURIComponent(match[1]));return{...meta,...parsed,ledgerLookupAddress:String(parsed.ledgerLookupAddress||""),options:Array.isArray(parsed.options)?parsed.options:[],maintenanceItems:Array.isArray(parsed.maintenanceItems)?parsed.maintenanceItems:[],descriptionPresets:Array.isArray(parsed.descriptionPresets)?parsed.descriptionPresets:[],infoOverrides:{...emptyInfoOverrides(),...(parsed.infoOverrides||{})}};}catch{/* fall through */}}
+  if(match){try{const parsed=JSON.parse(decodeURIComponent(match[1]));return{...meta,...parsed,ledgerLookupAddress:String(parsed.ledgerLookupAddress||""),ledgerStatus:parsed.ledgerStatus==="completed"?"completed":"",ledgerSummary:String(parsed.ledgerSummary||""),ledgerUpdatedAt:String(parsed.ledgerUpdatedAt||""),options:Array.isArray(parsed.options)?parsed.options:[],maintenanceItems:Array.isArray(parsed.maintenanceItems)?parsed.maintenanceItems:[],descriptionPresets:Array.isArray(parsed.descriptionPresets)?parsed.descriptionPresets:[],infoOverrides:{...emptyInfoOverrides(),...(parsed.infoOverrides||{})}};}catch{/* fall through */}}
   const legacy=[...description.matchAll(LEGACY_OPTIONS_RE)].at(-1);
   if(legacy)meta.options=legacy[1].split("|").map(v=>v.trim()).filter(Boolean);
   return meta;
