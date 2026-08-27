@@ -22,6 +22,7 @@ export default function BuildingLedgerAdminPage(){
   const[selected,setSelected]=useState<Set<number>>(new Set());
   const[running,setRunning]=useState(false);
   const[savingId,setSavingId]=useState<number|null>(null);
+  const[savingSelected,setSavingSelected]=useState(false);
 
   useEffect(()=>{void load();},[]);
   async function load(){
@@ -51,6 +52,20 @@ export default function BuildingLedgerAdminPage(){
     return true;
   }
 
+  async function saveSelectedAddresses(){
+    if(savingSelected||running||!selected.size)return;
+    setSavingSelected(true);
+    let saved=0;
+    let failed=0;
+    for(const item of items.filter(v=>selected.has(v.id))){
+      const ok=await saveLookupAddress(item,drafts[item.id]||"");
+      if(ok)saved+=1;else failed+=1;
+    }
+    setSavingSelected(false);
+    if(failed)window.alert(`조회주소 저장 완료: ${saved}건 / 실패: ${failed}건`);
+    else window.alert(`선택한 ${saved}개 매물의 조회주소를 저장했습니다.`);
+  }
+
   async function enrich(item:Item){
     const adminAddress=(drafts[item.id]||"").trim();
     const publicAddress=(item.address||item.location||"").trim();
@@ -69,13 +84,13 @@ export default function BuildingLedgerAdminPage(){
   }
 
   async function runSelected(){
-    if(running||!selected.size)return;
+    if(running||savingSelected||!selected.size)return;
     setRunning(true);
     for(const item of items.filter(v=>selected.has(v.id))){await enrich(item);}
     setRunning(false);
   }
   async function runAll(){
-    if(running)return;
+    if(running||savingSelected)return;
     setRunning(true);
     for(const item of items){await enrich(item);}
     setRunning(false);
@@ -85,14 +100,15 @@ export default function BuildingLedgerAdminPage(){
     <div className="mx-auto max-w-[1480px] rounded-[32px] bg-white p-6 shadow-sm md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h1 className="text-3xl font-bold">건축물대장 자동 보완</h1><p className="mt-2 text-sm text-[#0A2342]/60">관리자 전용 상세주소를 기준으로 건축물대장을 조회해 비어 있는 건물 기본정보만 보완합니다.</p></div>
-        <div className="flex gap-2"><Link href="/admin" className="rounded-full border px-5 py-3">매물관리</Link><button onClick={()=>void runAll()} disabled={running} className="rounded-full bg-[#C9A227] px-5 py-3 font-semibold disabled:opacity-50">{running?"조회 중...":"전체 매물 보완"}</button></div>
+        <div className="flex gap-2"><Link href="/admin" className="rounded-full border px-5 py-3">매물관리</Link><button onClick={()=>void runAll()} disabled={running||savingSelected} className="rounded-full bg-[#C9A227] px-5 py-3 font-semibold disabled:opacity-50">{running?"조회 중...":"전체 매물 보완"}</button></div>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border bg-[#F8F9FB] px-4 py-3">
         <label className="flex items-center gap-2 font-semibold"><input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-5 w-5"/>전체 선택</label>
         <span className="text-sm">선택 항목: <b className="rounded-full bg-[#0A2342] px-3 py-1 text-white">{selected.size}개</b></span>
-        <button onClick={()=>void runSelected()} disabled={running||!selected.size} className="rounded-xl bg-[#0A2342] px-5 py-2.5 font-semibold text-white disabled:opacity-40">선택 매물 보완</button>
-        <button onClick={()=>setSelected(new Set())} disabled={!selected.size} className="rounded-xl border bg-white px-5 py-2.5 font-semibold disabled:opacity-40">선택 초기화</button>
+        <button onClick={()=>void saveSelectedAddresses()} disabled={running||savingSelected||!selected.size} className="rounded-xl border border-[#0A2342] bg-white px-5 py-2.5 font-semibold text-[#0A2342] disabled:opacity-40">{savingSelected?"주소 저장 중...":"조회주소 저장"}</button>
+        <button onClick={()=>void runSelected()} disabled={running||savingSelected||!selected.size} className="rounded-xl bg-[#0A2342] px-5 py-2.5 font-semibold text-white disabled:opacity-40">선택 매물 보완</button>
+        <button onClick={()=>setSelected(new Set())} disabled={running||savingSelected||!selected.size} className="rounded-xl border bg-white px-5 py-2.5 font-semibold disabled:opacity-40">선택 초기화</button>
       </div>
 
       <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[1280px]">
@@ -111,7 +127,7 @@ export default function BuildingLedgerAdminPage(){
           </td>
           <td className="min-w-[230px] px-3 py-4">{publicAddress}</td>
           <td className="min-w-[210px] px-3 py-4"><span className={`font-bold ${result?.status==="오류"?"text-red-600":result?.status==="완료"?"text-blue-600":""}`}>{result?.status||"대기"}</span>{result?.message&&<p className="mt-1 max-w-[300px] break-words text-xs text-[#0A2342]/60">{result.message}</p>}</td>
-          <td className="px-3 py-4"><button onClick={()=>void enrich(item)} disabled={running||savingId===item.id} className="rounded-full border px-4 py-2 font-semibold disabled:opacity-40">{savingId===item.id?"저장 중...":"건축물대장 조회"}</button></td>
+          <td className="px-3 py-4"><button onClick={()=>void enrich(item)} disabled={running||savingSelected||savingId===item.id} className="rounded-full border px-4 py-2 font-semibold disabled:opacity-40">{savingId===item.id?"저장 중...":"건축물대장 조회"}</button></td>
         </tr>})}</tbody>
       </table></div>
 
