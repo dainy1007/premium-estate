@@ -23,6 +23,7 @@ export default function PropertyEditPage(){
  const[form,setForm]=useState({title:"",price:"",type:"",deal_type:"",address:"",location:"",area:"",rooms:0,bathrooms:0,floor:"",description:""});
  const isResidential=ELIGIBLE_RESIDENTIAL.test(form.type);
  const isCommercial=form.type==="상가";
+ const isWarehouseFactory=/창고|공장/.test(form.type);
 
  useEffect(()=>{async function getProperty(){
   const{data,error}=await supabase.from("properties").select("*").eq("id",id).single();
@@ -56,7 +57,7 @@ export default function PropertyEditPage(){
 
  if(loading)return <main className="flex min-h-screen items-center justify-center"><p>매물 정보를 불러오는 중입니다...</p></main>;
  const inputClass="w-full rounded-xl border border-[#0A2342]/15 bg-white px-4 py-3 outline-none focus:border-[#C9A227]";
- const infoOverrideFields=([['elevator','엘리베이터'],['parking','주차'],['heating','난방'],['direction','방향'],['buildingUse','건축물 용도'],['approvalDate','사용승인일']] as const).filter(([key])=>!(isCommercial&&key==="heating"));
+ const infoOverrideFields=([['elevator','엘리베이터'],['parking','주차'],['moveIn','입주가능일'],['heating','난방'],['direction','방향'],['buildingUse','건축물 용도'],['approvalDate','사용승인일']] as const).filter(([key])=>!((isCommercial||isWarehouseFactory)&&(key==="moveIn"||key==="heating")));
  return <main className="min-h-screen bg-[#F8F9FB] px-4 py-8 text-[#0A2342]"><div className="mx-auto max-w-7xl rounded-[32px] bg-white p-6 shadow-sm md:p-8"><div className="mb-8 flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-3xl font-bold">매물 수정</h1><p className="mt-2 text-sm text-[#0A2342]/60">홈페이지 매물정보 박스의 흰색 영역을 직접 수정할 수 있습니다.</p></div><Link href="/admin" className="rounded-full border px-5 py-3">목록으로</Link></div><form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-[1.15fr_.85fr]"><div className="space-y-6">
  <section className="rounded-[24px] border border-[#0A2342]/10 bg-[#F8F9FB] p-5"><h2 className="text-xl font-bold">매물정보 박스 입력</h2><p className="mt-1 text-sm text-[#0A2342]/55">매물번호는 자동이며, 아래 값은 홈페이지 흰색 칸에 그대로 반영됩니다.</p><div className="mt-5 grid gap-4 sm:grid-cols-2">
  <div><label className="mb-2 block font-semibold">매물유형</label><select value={form.type} onChange={e=>setPropertyType(e.target.value)} className={inputClass}><option value="">선택</option>{PROPERTY_TYPES.map(item=><option key={item} value={item}>{item}</option>)}</select></div>
