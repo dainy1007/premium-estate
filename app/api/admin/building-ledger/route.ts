@@ -13,21 +13,37 @@ type KakaoDoc={address?:{b_code?:string;main_address_no?:string;sub_address_no?:
 type LedgerItem=Record<string,unknown>;
 const text=(v:unknown)=>String(v??"").trim();
 
+class BuildingLedgerError extends Error {
+  status:number;
+  upstream:string;
+  constructor(message:string,status=422,upstream=""){
+    super(message);
+    this.name="BuildingLedgerError";
+    this.status=status;
+    this.upstream=upstream;
+  }
+}
+
 function normalizedServiceKey(value:string){
   const raw=value.trim();
   if(!raw)return raw;
   try{return raw.includes("%")?decodeURIComponent(raw):raw;}catch{return raw;}
 }
 
+function upstreamMessage(raw:string){
+  const cleaned=raw.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+  return cleaned.slice(0,700);
+}
+
 async function resolveAddress(address:string){
-  if(!kakaoKey)throw new Error("KAKAO_REST_API_KEY_NOT_CONFIGURED");
+  if(!kakaoKey)throw new BuildingLedgerError("KAKAO_REST_API_KEY_NOT_CONFIGURED",503);
   const url=`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`;
   const r=await fetch(url,{headers:{Authorization:`KakaoAK ${kakaoKey}`},cache:"no-store"});
-  if(!r.ok)throw new Error(`KAKAO_ADDRESS_${r.status}`);
+  if(!r.ok)throw new BuildingLedgerError(`KAKAO_ADDRESS_${r.status}`,r.status);
   const data=await r.json() as {documents?:KakaoDoc[]};
   const doc=data.documents?.[0];
   const addr=doc?.address;
-  if(!addr?.b_code)throw new Error("ADDRESS_NOT_RESOLVED");
+  if(!addr?.b_code)throw new BuildingLedgerError("ADDRESS_NOT_RESOLVED",422);
   const bcode=addr.b_code;
   return {
     sigunguCd:bcode.slice(0,5),
@@ -39,7 +55,7 @@ async function resolveAddress(address:string){
 }
 
 async function fetchLedger(address:string){
-  if(!buildingKey)throw new Error("BUILDING_LEDGER_SERVICE_KEY_NOT_CONFIGURED");
+  if(!buildingKey)throw new BuildingLedgerError("BUILDING_LEDGER_SERVICE_KEY_NOT_CONFIGURED",503);
   const loc=await resolveAddress(address);
   const qs=new URLSearchParams({
     serviceKey:normalizedServiceKey(buildingKey),
@@ -56,25 +72,27 @@ async function fetchLedger(address:string){
   const r=await fetch(endpoint,{cache:"no-store"});
   const raw=await r.text();
   if(!r.ok){
-    console.error("BUILDING_LEDGER_HTTP",r.status,raw.slice(0,1000));
-    throw new Error(`BUILDING_LEDGER_${r.status}`);
+    const detail=upstreamMessage(raw)||r.statusText||"NO_RESPONSE_BODY";
+    console.error("BUILDING_LEDGER_HTTP",r.status,detail,{...loc});
+    throw new BuildingLedgerError(`BUILDING_LEDGER_${r.status}`,r.status,detail);
   }
   let data:any;
   try{data=JSON.parse(raw);}catch{
-    console.error("BUILDING_LEDGER_NON_JSON",raw.slice(0,1000));
-    throw new Error("BUILDING_LEDGER_INVALID_RESPONSE");
+    const detail=upstreamMessage(raw)||"NON_JSON_RESPONSE";
+    console.error("BUILDING_LEDGER_NON_JSON",detail,{...loc});
+    throw new BuildingLedgerError("BUILDING_LEDGER_INVALID_RESPONSE",502,detail);
   }
   const header=data?.response?.header;
   const resultCode=text(header?.resultCode);
   if(resultCode&&resultCode!=="00"){
     const msg=text(header?.resultMsg)||"UNKNOWN";
     console.error("BUILDING_LEDGER_API_ERROR",resultCode,msg,{...loc});
-    throw new Error(`BUILDING_LEDGER_API_${resultCode}_${msg}`);
+    throw new BuildingLedgerError(`BUILDING_LEDGER_API_${resultCode}`,422,msg);
   }
   const body=data?.response?.body;
   const items=body?.items?.item;
   const list:Array<LedgerItem>=Array.isArray(items)?items:items?[items]:[];
-  if(!list.length)throw new Error("BUILDING_LEDGER_NO_RESULT");
+  if(!list.length)throw new BuildingLedgerError("BUILDING_LEDGER_NO_RESULT",404);
   const item=list.find(v=>text(v.mainAtchGbCdNm).includes("주건축물"))||list[0];
   const parkingTotal=Number(item.indrMechUtcnt||0)+Number(item.oudrMechUtcnt||0)+Number(item.indrAutoUtcnt||0)+Number(item.oudrAutoUtcnt||0);
   return {
@@ -112,5 +130,10 @@ export async function POST(req:NextRequest){
     const {error:updateError}=await db.from("properties").update(update).eq("id",propertyId);
     if(updateError)throw new Error(updateError.message);
     return NextResponse.json({ok:true,property_id:propertyId,ledger:{buildingUse:ledger.buildingUse,approvalDate:ledger.approvalDate,totalFloor:ledger.totalFloor,totalArea:ledger.totalArea,buildingArea:ledger.buildingArea,parkingCount:ledger.parkingCount,elevatorCount:ledger.elevatorCount}});
-  }catch(e){return NextResponse.json({ok:false,error:e instanceof Error?e.message:String(e)},{status:422});}
+  }catch(e){
+    if(e instanceof BuildingLedgerError){
+      return NextResponse.json({ok:false,error:e.message,detail:e.upstream||undefined},{status:e.status>=400&&e.status<600?e.status:422});
+    }
+    return NextResponse.json({ok:false,error:e instanceof Error?e.message:String(e)},{status:422});
+  }
 }
