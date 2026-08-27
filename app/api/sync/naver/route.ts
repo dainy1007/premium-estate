@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildSeoTitle } from "@/lib/property-seo";
 import { detectPropertyDisplayType, sanitizePropertyArea } from "@/lib/property-normalize";
-import { buildDescriptionWithAdminMeta, parseAdminMeta, stripAdminMeta } from "@/lib/property-admin-meta";
+import { buildDescriptionWithAdminMeta, emptyAdminMeta, parseAdminMeta, stripAdminMeta, type AdminMeta } from "@/lib/property-admin-meta";
 
 export const runtime = "nodejs";
 
@@ -11,130 +11,198 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const syncSecret = process.env.NAVER_SYNC_SECRET;
 const allowedRealtors = (process.env.NAVER_SYNC_ALLOWED_REALTORS ?? "").split(",").map((v) => v.trim()).filter(Boolean);
 
-type NaverListing = { article_no:string; region?:string; address?:string; road_address?:string; property_type?:string; trade_type?:string; price?:string; area?:string; floor?:string; realtor?:string; move_in?:string; description?:string; };
+type NaverListing = {
+  article_no:string;
+  region?:string;
+  address?:string;
+  road_address?:string;
+  property_type?:string;
+  trade_type?:string;
+  price?:string;
+  area?:string;
+  contract_area?:string;
+  exclusive_area?:string;
+  floor?:string;
+  rooms?:string|number;
+  bathrooms?:string|number;
+  realtor?:string;
+  move_in?:string;
+  elevator?:string;
+  parking?:string;
+  parking_count?:string|number;
+  heating?:string;
+  direction?:string;
+  building_use?:string;
+  approval_date?:string;
+  description?:string;
+};
 
 function unauthorized(message="Unauthorized"){return NextResponse.json({ok:false,error:message},{status:401});}
 function normalized(value:unknown){return String(value??"").trim();}
+function cleanUnknown(value:unknown){const v=normalized(value);return !v||v==="-"||v==="-/-"||v==="없음"?"":v;}
+function optionalNumber(value:unknown){const v=normalized(value);if(!v)return undefined;const match=v.match(/\d+/);return match?Number(match[0]):undefined;}
 
 function deriveGeography(listing:NaverListing){
- const address=normalized(listing.road_address)||normalized(listing.address); const region=normalized(listing.region); const parts=address.split(/\s+/).filter(Boolean);
- const province=parts.find((p)=>/(?:도|특별시|광역시|특별자치시|특별자치도)$/.test(p))||"";
- const cityCounty=parts.find((p,i)=>i>0&&/(?:시|군|구)$/.test(p))||""; const town=parts.find((p)=>/(?:읍|면|동)$/.test(p))||region;
- return {address,shortRegion:town||cityCounty||region,descriptionRegion:[province,cityCounty,town].filter(Boolean).join(" ")||address||region};
+  const address=normalized(listing.road_address)||normalized(listing.address);
+  const region=normalized(listing.region);
+  const parts=address.split(/\s+/).filter(Boolean);
+  const province=parts.find((p)=>/(?:도|특별시|광역시|특별자치시|특별자치도)$/.test(p))||"";
+  const cityCounty=parts.find((p,i)=>i>0&&/(?:시|군|구)$/.test(p))||"";
+  const town=parts.find((p)=>/(?:읍|면|동)$/.test(p))||region;
+  return {address,shortRegion:town||cityCounty||region,descriptionRegion:[province,cityCounty,town].filter(Boolean).join(" ")||address||region};
 }
 
-function getListingType(listing:NaverListing){const {address,shortRegion}=deriveGeography(listing);return detectPropertyDisplayType({type:normalized(listing.property_type),address,location:shortRegion,description:normalized(listing.description)});}
+function getListingType(listing:NaverListing){
+  const {address,shortRegion}=deriveGeography(listing);
+  return detectPropertyDisplayType({type:normalized(listing.property_type),address,location:shortRegion,description:normalized(listing.description)});
+}
 
-const COMMON_RESIDENTIAL_OPTIONS = ["CCTV", "도어락", "신발장", "인터폰", "싱크대", "가스레인지"];
-const DIFFERENTIAL_OPTION_PATTERN = /에어컨|세탁기|냉장고|TV|티비|텔레비전|장롱|옷장|붙박이장|수납장|인터넷|와이파이|유선|건조대|인덕션/i;
+const COMMON_RESIDENTIAL_OPTIONS=["CCTV","도어락","신발장","인터폰","싱크대","가스레인지"];
+const DIFFERENTIAL_OPTION_PATTERN=/에어컨|세탁기|냉장고|TV|티비|텔레비전|장롱|옷장|붙박이장|수납장|인터넷|와이파이|유선|건조대|인덕션/i;
 
 function shouldApplyCommonResidentialOptions(propertyType:string){
- const type=propertyType.trim();
- if(!type)return false;
- if(/아파트|오피스텔|단독주택/.test(type))return false;
- if(/상가|창고|공장|토지|사무실|빌딩|건물|숙박|펜션/.test(type))return false;
- return /원룸|미니투룸|투룸|쓰리룸|다가구|다세대|연립|빌라|주택/.test(type);
+  const type=propertyType.trim();
+  if(!type)return false;
+  if(/아파트|오피스텔|단독주택/.test(type))return false;
+  if(/상가|창고|공장|토지|사무실|빌딩|건물|숙박|펜션/.test(type))return false;
+  return /원룸|미니투룸|투룸|쓰리룸|다가구|다세대|연립|빌라|주택/.test(type);
 }
 
 function normalizeOptionName(value:string){return value.replace(/^[•·\-]\s*/,"").replace(/^[^가-힣A-Za-z0-9]+/,"").replace(/\s+/g," ").trim();}
 function parseOptionItems(optionText:string){return optionText.split(/\r?\n+|\s*[·,/]\s*/).map(normalizeOptionName).filter(Boolean);}
 function canonicalOptionName(value:string){
- const item=normalizeOptionName(value);
- if(/CCTV|현관\s*보안/i.test(item))return "CCTV";
- if(/도어락/.test(item))return "도어락";
- if(/신발장/.test(item))return "신발장";
- if(/인터폰/.test(item))return "인터폰";
- if(/싱크대/.test(item))return "싱크대";
- if(/가스레인지/.test(item))return "가스레인지";
- if(/에어컨/.test(item))return "에어컨";
- if(/세탁기/.test(item))return "세탁기";
- if(/냉장고/.test(item))return "냉장고";
- if(/^TV$|티비|텔레비전/i.test(item))return "TV";
- if(/붙박이장/.test(item))return "붙박이장";
- if(/장롱/.test(item))return "장롱";
- if(/옷장/.test(item))return "옷장";
- if(/수납장/.test(item))return "수납장";
- if(/인터넷|와이파이/.test(item))return "인터넷";
- if(/유선/.test(item))return "유선";
- if(/건조대/.test(item))return "건조대";
- if(/인덕션/.test(item))return "인덕션";
- return item;
+  const item=normalizeOptionName(value);
+  if(/CCTV|현관\s*보안/i.test(item))return "CCTV";
+  if(/도어락/.test(item))return "도어락";
+  if(/신발장/.test(item))return "신발장";
+  if(/인터폰/.test(item))return "인터폰";
+  if(/싱크대/.test(item))return "싱크대";
+  if(/가스레인지/.test(item))return "가스레인지";
+  if(/에어컨/.test(item))return "에어컨";
+  if(/세탁기/.test(item))return "세탁기";
+  if(/냉장고/.test(item))return "냉장고";
+  if(/^TV$|티비|텔레비전/i.test(item))return "TV";
+  if(/붙박이장/.test(item))return "붙박이장";
+  if(/장롱/.test(item))return "장롱";
+  if(/옷장/.test(item))return "옷장";
+  if(/수납장/.test(item))return "수납장";
+  if(/인터넷|와이파이/.test(item))return "인터넷";
+  if(/유선/.test(item))return "유선";
+  if(/건조대/.test(item))return "건조대";
+  if(/인덕션/.test(item))return "인덕션";
+  return item;
 }
 
 function applyResidentialOptionPolicy(description:string,propertyType:string){
- if(!shouldApplyCommonResidentialOptions(propertyType))return description;
- const lines=description.split(/\r?\n/); let optionStart=-1; let optionEnd=lines.length;
- for(let i=0;i<lines.length;i+=1){if(/^옵션\s*:??\s*$/.test(lines[i].trim())){optionStart=i;break;}}
- if(optionStart>=0){for(let i=optionStart+1;i<lines.length;i+=1){const t=lines[i].trim();if(t&&/^(?:매물\s*특징|매물\s*정보|상세\s*정보|교통|입지|추천)/.test(t)){optionEnd=i;break;}}}
- const sourceOptions=optionStart>=0?parseOptionItems(lines.slice(optionStart+1,optionEnd).join("\n")):[];
- const sourceDifferential=sourceOptions.filter((item)=>DIFFERENTIAL_OPTION_PATTERN.test(item));
- const merged=[...COMMON_RESIDENTIAL_OPTIONS,...sourceDifferential].map(canonicalOptionName).filter((v,i,a)=>v&&a.indexOf(v)===i);
- const optionLines=["옵션",...merged.map((item)=>`• ${item}`)];
- if(optionStart>=0)return [...lines.slice(0,optionStart),...optionLines,...lines.slice(optionEnd)].join("\n");
- const featureIndex=lines.findIndex((line)=>/^매물\s*특징\s*$/.test(line.trim()));
- if(featureIndex>=0)return [...lines.slice(0,featureIndex),...optionLines,"",...lines.slice(featureIndex)].join("\n");
- return [...lines,"",...optionLines].join("\n");
+  if(!shouldApplyCommonResidentialOptions(propertyType))return description;
+  const lines=description.split(/\r?\n/);let optionStart=-1;let optionEnd=lines.length;
+  for(let i=0;i<lines.length;i+=1){if(/^옵션\s*:??\s*$/.test(lines[i].trim())){optionStart=i;break;}}
+  if(optionStart>=0){for(let i=optionStart+1;i<lines.length;i+=1){const t=lines[i].trim();if(t&&/^(?:매물\s*특징|매물\s*정보|상세\s*정보|교통|입지|추천)/.test(t)){optionEnd=i;break;}}}
+  const sourceOptions=optionStart>=0?parseOptionItems(lines.slice(optionStart+1,optionEnd).join("\n")):[];
+  const sourceDifferential=sourceOptions.filter((item)=>DIFFERENTIAL_OPTION_PATTERN.test(item));
+  const merged=[...COMMON_RESIDENTIAL_OPTIONS,...sourceDifferential].map(canonicalOptionName).filter((v,i,a)=>v&&a.indexOf(v)===i);
+  const optionLines=["옵션",...merged.map((item)=>`• ${item}`)];
+  if(optionStart>=0)return [...lines.slice(0,optionStart),...optionLines,...lines.slice(optionEnd)].join("\n");
+  const featureIndex=lines.findIndex((line)=>/^매물\s*특징\s*$/.test(line.trim()));
+  if(featureIndex>=0)return [...lines.slice(0,featureIndex),...optionLines,"",...lines.slice(featureIndex)].join("\n");
+  return [...lines,"",...optionLines].join("\n");
 }
 
 function preserveSourceFeatures(description:string){
- const lines=description.split(/\r?\n/); const out:string[]=[];
- for(let i=0;i<lines.length;i++){
-   const t=lines[i].trim(); const next=(lines[i+1]??"").trim();
-   if(/^[•·\-]\s*(?:디지스트|DGIST)\s*학생입니다\.?$/i.test(t)&&/^[•·\-]\s*직원(?:과|및)/.test(next)){out.push("• 디지스트 학생 및 직원, 인근 직장인이 생활하기 편리한 위치입니다."); i+=1; continue;}
-   if(/^[•·\-]\s*(?:편의점|마트)입니다\.?$/.test(t))continue;
-   out.push(lines[i]);
- }
- return out.join("\n");
+  const lines=description.split(/\r?\n/);const out:string[]=[];
+  for(let i=0;i<lines.length;i++){
+    const t=lines[i].trim();const next=(lines[i+1]??"").trim();
+    if(/^[•·\-]\s*(?:디지스트|DGIST)\s*학생입니다\.?$/i.test(t)&&/^[•·\-]\s*직원(?:과|및)/.test(next)){out.push("• 디지스트 학생 및 직원, 인근 직장인이 생활하기 편리한 위치입니다.");i+=1;continue;}
+    if(/^[•·\-]\s*(?:편의점|마트)입니다\.?$/.test(t))continue;
+    out.push(lines[i]);
+  }
+  return out.join("\n");
 }
 
 function sanitizeDescription(listing:NaverListing){
- let description=normalized(listing.description); if(!description)return "";
- const {descriptionRegion}=deriveGeography(listing); const propertyType=getListingType(listing); const tradeType=normalized(listing.trade_type);
- if(descriptionRegion&&propertyType&&propertyType!=="매물"&&tradeType){
-   const opening=`${descriptionRegion}에 위치한 ${propertyType} ${tradeType} 매물입니다.`;
-   description=description.replace(/^[^\n.]*에 위치한\s+(?:매물\s+)?[^\n.]*매물입니다\.?/,opening);
-   if(!description.startsWith(opening))description=`${opening}\n${description}`;
- }
- description=description.replace(/(\d+(?:\.\d+)?)F㎡/g,"$1㎡").replace(/전용\s*(\d+(?:\.\d+)?)F\b/g,"전용 $1㎡").replace(/전용(\d+(?:\.\d+)?)㎡/g,"전용 $1㎡");
- description=preserveSourceFeatures(description);
- return applyResidentialOptionPolicy(description,propertyType);
+  let description=normalized(listing.description);if(!description)return "";
+  const {descriptionRegion}=deriveGeography(listing);const propertyType=getListingType(listing);const tradeType=normalized(listing.trade_type);
+  if(descriptionRegion&&propertyType&&propertyType!=="매물"&&tradeType){
+    const opening=`${descriptionRegion}에 위치한 ${propertyType} ${tradeType} 매물입니다.`;
+    description=description.replace(/^[^\n.]*에 위치한\s+(?:매물\s+)?[^\n.]*매물입니다\.?/,opening);
+    if(!description.startsWith(opening))description=`${opening}\n${description}`;
+  }
+  description=description.replace(/(\d+(?:\.\d+)?)F㎡/g,"$1㎡").replace(/전용\s*(\d+(?:\.\d+)?)F\b/g,"전용 $1㎡").replace(/전용(\d+(?:\.\d+)?)㎡/g,"전용 $1㎡");
+  description=preserveSourceFeatures(description);
+  return applyResidentialOptionPolicy(description,propertyType);
 }
 
-function makeTitle(listing:NaverListing){const {address,shortRegion}=deriveGeography(listing);return buildSeoTitle({location:shortRegion,address,type:getListingType(listing),deal_type:normalized(listing.trade_type),description:normalized(listing.description)})||`네이버 매물 ${listing.article_no}`;}
+function makeTitle(listing:NaverListing){
+  const {address,shortRegion}=deriveGeography(listing);
+  return buildSeoTitle({location:shortRegion,address,type:getListingType(listing),deal_type:normalized(listing.trade_type),description:normalized(listing.description)})||`네이버 매물 ${listing.article_no}`;
+}
 
-function preserveLockedAdminData(existingDescription:string,newDescription:string){
- const hasLockedData=existingDescription.includes("<!--PROPERTY_ADMIN_META:")||existingDescription.includes("<!--PROPERTY_OPTIONS:");
- if(!hasLockedData)return newDescription;
- const existingMeta=parseAdminMeta(existingDescription);
- return buildDescriptionWithAdminMeta(stripAdminMeta(newDescription),existingMeta);
+function sourceInfoOverrides(listing:NaverListing){
+  const parking=cleanUnknown(listing.parking);
+  const count=optionalNumber(listing.parking_count);
+  return {
+    elevator:cleanUnknown(listing.elevator),
+    parking:parking?(count&&!new RegExp(String(count)).test(parking)?`${parking} / 총 ${count}대`:parking):(count?`총 ${count}대`:""),
+    moveIn:"",
+    heating:cleanUnknown(listing.heating),
+    direction:cleanUnknown(listing.direction),
+    buildingUse:cleanUnknown(listing.building_use),
+    approvalDate:cleanUnknown(listing.approval_date),
+  };
+}
+
+function mergeSourceMeta(existingDescription:string,listing:NaverListing,propertyType:string):AdminMeta{
+  const hasLockedData=existingDescription.includes("<!--PROPERTY_ADMIN_META:")||existingDescription.includes("<!--PROPERTY_OPTIONS:");
+  const current=hasLockedData?parseAdminMeta(existingDescription):emptyAdminMeta();
+  const incoming=sourceInfoOverrides(listing);
+  const infoOverrides={...current.infoOverrides};
+  for(const key of Object.keys(incoming) as Array<keyof typeof incoming>){if(!infoOverrides[key]&&incoming[key])infoOverrides[key]=incoming[key];}
+  return {...current,options:/상가|창고|공장|토지|사무실/.test(propertyType)?[]:current.options,infoOverrides};
+}
+
+function buildSyncedDescription(existingDescription:string,newDescription:string,listing:NaverListing,propertyType:string){
+  const meta=mergeSourceMeta(existingDescription,listing,propertyType);
+  return buildDescriptionWithAdminMeta(stripAdminMeta(newDescription),meta);
 }
 
 export async function POST(request:NextRequest){
- const missing=[!supabaseUrl?"NEXT_PUBLIC_SUPABASE_URL":"",!serviceRoleKey?"SUPABASE_SERVICE_ROLE_KEY":""].filter(Boolean);
- if(missing.length)return NextResponse.json({ok:false,error:"Supabase server configuration is missing.",missing,diagnostics:{hasSupabaseUrl:Boolean(supabaseUrl),hasServiceRoleKey:Boolean(serviceRoleKey),vercelEnv:process.env.VERCEL_ENV??"unknown"}},{status:500});
- if(!syncSecret)return NextResponse.json({ok:false,error:"NAVER_SYNC_SECRET is not configured."},{status:503});
- if((request.headers.get("authorization")??"")!==`Bearer ${syncSecret}`)return unauthorized();
- let body:{listings?:NaverListing[]}; try{body=await request.json();}catch{return NextResponse.json({ok:false,error:"Invalid JSON."},{status:400});}
- const listings=Array.isArray(body.listings)?body.listings:[]; if(!listings.length)return NextResponse.json({ok:true,inserted:0,updated:0,skipped:0});
- const supabase=createClient(supabaseUrl!,serviceRoleKey!,{auth:{persistSession:false,autoRefreshToken:false}});
- let inserted=0,updated=0,skipped=0; const results:Array<Record<string,unknown>>=[];
- for(const raw of listings){
-   const articleNo=normalized(raw.article_no),realtor=normalized(raw.realtor);
-   if(!/^\d{9,12}$/.test(articleNo)){skipped++;results.push({article_no:articleNo,status:"skipped",reason:"invalid_article_no"});continue;}
-   if(!allowedRealtors.length){skipped++;results.push({article_no:articleNo,status:"skipped",reason:"allowed_realtors_not_configured"});continue;}
-   if(!allowedRealtors.includes(realtor)){skipped++;results.push({article_no:articleNo,status:"skipped",reason:"not_our_listing",realtor});continue;}
-   const marker=`naver:${articleNo}`; const {address,shortRegion,descriptionRegion}=deriveGeography(raw); const propertyType=getListingType(raw);
-   const payload={title:makeTitle(raw),type:propertyType!=="매물"?propertyType:(normalized(raw.property_type)||null),deal_type:normalized(raw.trade_type)||null,location:descriptionRegion||shortRegion||address,address,price:normalized(raw.price),area:sanitizePropertyArea(raw.area),floor:normalized(raw.floor),description:sanitizeDescription(raw),admin_memo:marker,listing_status:"active",is_hidden:false};
-   const {data:existing,error:findError}=await supabase.from("properties").select("id,description").eq("admin_memo",marker).maybeSingle();
-   if(findError){results.push({article_no:articleNo,status:"error",error:findError.message});continue;}
-   if(existing?.id){
-     const updatePayload={...payload,description:preserveLockedAdminData(existing.description||"",payload.description)};
-     const {error}=await supabase.from("properties").update(updatePayload).eq("id",existing.id);
-     if(error)results.push({article_no:articleNo,status:"error",error:error.message});else{updated++;results.push({article_no:articleNo,status:"updated",property_id:existing.id,preserved_admin_meta:true});}
-   }else{
-     const {data,error}=await supabase.from("properties").insert({...payload,image_url:""}).select("id").single();
-     if(error||!data)results.push({article_no:articleNo,status:"error",error:error?.message??"insert_failed"});else{inserted++;results.push({article_no:articleNo,status:"inserted",property_id:data.id});}
-   }
- }
- return NextResponse.json({ok:true,inserted,updated,skipped,results});
+  const missing=[!supabaseUrl?"NEXT_PUBLIC_SUPABASE_URL":"",!serviceRoleKey?"SUPABASE_SERVICE_ROLE_KEY":""].filter(Boolean);
+  if(missing.length)return NextResponse.json({ok:false,error:"Supabase server configuration is missing.",missing,diagnostics:{hasSupabaseUrl:Boolean(supabaseUrl),hasServiceRoleKey:Boolean(serviceRoleKey),vercelEnv:process.env.VERCEL_ENV??"unknown"}},{status:500});
+  if(!syncSecret)return NextResponse.json({ok:false,error:"NAVER_SYNC_SECRET is not configured."},{status:503});
+  if((request.headers.get("authorization")??"")!==`Bearer ${syncSecret}`)return unauthorized();
+  let body:{listings?:NaverListing[]};try{body=await request.json();}catch{return NextResponse.json({ok:false,error:"Invalid JSON."},{status:400});}
+  const listings=Array.isArray(body.listings)?body.listings:[];if(!listings.length)return NextResponse.json({ok:true,inserted:0,updated:0,skipped:0});
+  const supabase=createClient(supabaseUrl!,serviceRoleKey!,{auth:{persistSession:false,autoRefreshToken:false}});
+  let inserted=0,updated=0,skipped=0;const results:Array<Record<string,unknown>>=[];
+  for(const raw of listings){
+    const articleNo=normalized(raw.article_no),realtor=normalized(raw.realtor);
+    if(!/^\d{9,12}$/.test(articleNo)){skipped++;results.push({article_no:articleNo,status:"skipped",reason:"invalid_article_no"});continue;}
+    if(!allowedRealtors.length){skipped++;results.push({article_no:articleNo,status:"skipped",reason:"allowed_realtors_not_configured"});continue;}
+    if(!allowedRealtors.includes(realtor)){skipped++;results.push({article_no:articleNo,status:"skipped",reason:"not_our_listing",realtor});continue;}
+    const marker=`naver:${articleNo}`;
+    const {address,shortRegion,descriptionRegion}=deriveGeography(raw);
+    const propertyType=getListingType(raw);
+    const rooms=optionalNumber(raw.rooms),bathrooms=optionalNumber(raw.bathrooms);
+    const payload:Record<string,unknown>={
+      title:makeTitle(raw),type:propertyType!=="매물"?propertyType:(normalized(raw.property_type)||null),deal_type:normalized(raw.trade_type)||null,
+      location:descriptionRegion||shortRegion||address,address,price:normalized(raw.price),area:sanitizePropertyArea(raw.area),floor:normalized(raw.floor),
+      admin_memo:marker,listing_status:"active",is_hidden:false,
+    };
+    if(rooms!==undefined)payload.rooms=rooms;
+    if(bathrooms!==undefined)payload.bathrooms=bathrooms;
+    const contractArea=cleanUnknown(raw.contract_area),exclusiveArea=cleanUnknown(raw.exclusive_area);
+    if(contractArea)payload.contract_area=sanitizePropertyArea(contractArea);
+    if(exclusiveArea)payload.exclusive_area=sanitizePropertyArea(exclusiveArea);
+    const {data:existing,error:findError}=await supabase.from("properties").select("id,description").eq("admin_memo",marker).maybeSingle();
+    if(findError){results.push({article_no:articleNo,status:"error",error:findError.message});continue;}
+    payload.description=buildSyncedDescription(existing?.description||"",sanitizeDescription(raw),raw,propertyType);
+    if(existing?.id){
+      const {error}=await supabase.from("properties").update(payload).eq("id",existing.id);
+      if(error)results.push({article_no:articleNo,status:"error",error:error.message});else{updated++;results.push({article_no:articleNo,status:"updated",property_id:existing.id,details_synced:true});}
+    }else{
+      const {data,error}=await supabase.from("properties").insert({...payload,image_url:""}).select("id").single();
+      if(error||!data)results.push({article_no:articleNo,status:"error",error:error?.message??"insert_failed"});else{inserted++;results.push({article_no:articleNo,status:"inserted",property_id:data.id,details_synced:true});}
+    }
+  }
+  return NextResponse.json({ok:true,inserted,updated,skipped,results});
 }
