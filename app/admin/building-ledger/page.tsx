@@ -15,6 +15,16 @@ function lookupGuide(type:string){
   return "건축물대장 조회용 정확한 지번 입력";
 }
 
+function restoredLedgerResult(item:Item):RowResult|undefined{
+  const meta=parseAdminMeta(item.description||"");
+  const legacyCompleted=Boolean(meta.infoOverrides?.buildingUse&&meta.infoOverrides?.approvalDate);
+  if(meta.ledgerStatus==="completed"||legacyCompleted){
+    const fallback=[meta.infoOverrides?.buildingUse,meta.infoOverrides?.approvalDate,meta.infoOverrides?.parking].filter(Boolean).join(" · ");
+    return{id:item.id,status:"완료",message:meta.ledgerSummary||fallback||"건축물대장 등록 완료"};
+  }
+  return undefined;
+}
+
 export default function BuildingLedgerAdminPage(){
   const[items,setItems]=useState<Item[]>([]);
   const[results,setResults]=useState<Record<number,RowResult>>({});
@@ -34,7 +44,8 @@ export default function BuildingLedgerAdminPage(){
     for(const item of rows){
       const meta=parseAdminMeta(item.description||"");
       nextDrafts[item.id]=meta.ledgerLookupAddress||"";
-      if(meta.ledgerStatus==="completed")nextResults[item.id]={id:item.id,status:"완료",message:meta.ledgerSummary||"보완 완료"};
+      const restored=restoredLedgerResult(item);
+      if(restored)nextResults[item.id]=restored;
     }
     setDrafts(nextDrafts);
     setResults(nextResults);
@@ -79,7 +90,11 @@ export default function BuildingLedgerAdminPage(){
     const address=adminAddress||publicAddress;
     if(!address){setResults(p=>({...p,[item.id]:{id:item.id,status:"건너뜀",message:"조회주소 없음"}}));return;}
     if(adminAddress){const ok=await saveLookupAddress(item,adminAddress);if(!ok)return;}
-    setResults(p=>({...p,[item.id]:{id:item.id,status:"대기",message:"조회 중"}}));
+
+    const currentItem=items.find(v=>v.id===item.id)||item;
+    const previousCompleted=restoredLedgerResult(currentItem);
+    setResults(p=>({...p,[item.id]:previousCompleted?{...previousCompleted,message:`${previousCompleted.message||"건축물대장 등록 완료"} · 재조회 중`}:{id:item.id,status:"대기",message:"조회 중"}}));
+
     try{
       const r=await fetch("/api/admin/building-ledger",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({property_id:item.id,address})});
       const data=await r.json();
@@ -88,7 +103,14 @@ export default function BuildingLedgerAdminPage(){
       const msg=data.summary||[l.buildingUse,l.approvalDate,l.totalFloor?`지상 ${l.totalFloor}층`:"",l.parkingCount?`주차 ${l.parkingCount}대`:""].filter(Boolean).join(" · ");
       setResults(p=>({...p,[item.id]:{id:item.id,status:"완료",message:msg||"보완 완료"}}));
       if(data.description)setItems(list=>list.map(v=>v.id===item.id?{...v,description:data.description}:v));
-    }catch(e){setResults(p=>({...p,[item.id]:{id:item.id,status:"오류",message:e instanceof Error?e.message:String(e)}}));}
+    }catch(e){
+      const errorMessage=e instanceof Error?e.message:String(e);
+      if(previousCompleted){
+        setResults(p=>({...p,[item.id]:{id:item.id,status:"완료",message:`${previousCompleted.message||"건축물대장 등록 완료"} · 재조회 일시 실패(기존 정보 유지)`}}));
+      }else{
+        setResults(p=>({...p,[item.id]:{id:item.id,status:"오류",message:errorMessage}}));
+      }
+    }
   }
 
   async function runSelected(){
