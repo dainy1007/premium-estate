@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-const BUILDING_LEDGER_PRINT_URL = "https://www.eais.go.kr/moct/bci/aaa01/BCIAAA01V01";
+const BUILDING_LEDGER_VIEW_URL = "https://www.eais.go.kr/moct/bci/aaa01/BCIAAA01V01";
+const REGISTRY_VIEW_URL = "https://www.iros.go.kr";
 
 const adminLinks = [
   { href: "/admin/overview", label: "운영 현황" },
@@ -114,12 +115,20 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
           <div className="hidden items-center gap-2 md:flex">
             <a
-              href={BUILDING_LEDGER_PRINT_URL}
+              href={BUILDING_LEDGER_VIEW_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-lg border border-[#C9A227] px-3 py-2 text-sm font-semibold text-[#0A2342] hover:bg-[#C9A227]/10"
             >
-              건축물대장 출력
+              건축물대장 열람
+            </a>
+            <a
+              href={REGISTRY_VIEW_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg border border-[#C9A227] px-3 py-2 text-sm font-semibold text-[#0A2342] hover:bg-[#C9A227]/10"
+            >
+              등기부등본 열람
             </a>
             <Link
               href="/"
@@ -165,13 +174,22 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 </Link>
               ))}
               <a
-                href={BUILDING_LEDGER_PRINT_URL}
+                href={BUILDING_LEDGER_VIEW_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setMobileMenuOpen(false)}
                 className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]"
               >
-                건축물대장 출력
+                건축물대장 열람
+              </a>
+              <a
+                href={REGISTRY_VIEW_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]"
+              >
+                등기부등본 열람
               </a>
               <Link
                 href="/"
