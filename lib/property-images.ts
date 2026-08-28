@@ -15,8 +15,8 @@ const CORNER_SCALE = 0.27;
 const CORNER_ALPHA = 1.0;
 const CORNER_RIGHT_MARGIN = 30;
 const CORNER_BOTTOM_MARGIN = 30;
-const CENTER_WATERMARK_SRC = "/watermarks/baekjo_center.png";
-const CORNER_WATERMARK_SRC = "/watermarks/baekjo_corner.png";
+const CENTER_WATERMARK_SRC = "/watermarks/baekjo-watermark-center.webp";
+const CORNER_WATERMARK_SRC = "/watermarks/baekjo-watermark-corner.webp";
 
 export type NewPropertyImage = { file: File; previewUrl: string; id: string };
 
@@ -86,14 +86,22 @@ function drawWatermarkImage(
   alpha: number,
   mode: "center" | "corner"
 ) {
-  const targetWidth = Math.max(1, Math.round(width * scale));
-  const ratio = image.naturalHeight / Math.max(1, image.naturalWidth);
+  const naturalWidth = Math.max(1, image.naturalWidth);
+  const naturalHeight = Math.max(1, image.naturalHeight);
+  const ratio = naturalHeight / naturalWidth;
+
+  const desiredWidth = Math.max(1, Math.round(width * scale));
+  const maxHeight = Math.max(1, Math.round(height * (mode === "center" ? 0.58 : 0.34)));
+  const widthFromHeight = Math.max(1, Math.round(maxHeight / ratio));
+  const targetWidth = Math.min(desiredWidth, widthFromHeight);
   const targetHeight = Math.max(1, Math.round(targetWidth * ratio));
 
   let x = Math.round((width - targetWidth) / 2);
   let y = Math.round(height * CENTER_Y_RATIO - targetHeight / 2);
 
-  if (mode === "corner") {
+  if (mode === "center") {
+    y = Math.max(0, Math.min(y, height - targetHeight));
+  } else {
     x = Math.max(0, width - targetWidth - CORNER_RIGHT_MARGIN);
     y = Math.max(0, height - targetHeight - CORNER_BOTTOM_MARGIN);
   }
@@ -106,7 +114,7 @@ function drawWatermarkImage(
   ctx.restore();
 }
 
-async function preparePropertyImage(file: File) {
+export async function preparePropertyImage(file: File) {
   if (typeof document === "undefined") return file;
 
   const source = await loadImageBitmap(file);
