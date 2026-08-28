@@ -67,18 +67,23 @@ function loadWatermark(src: string) {
   return watermarkCache.get(src)!;
 }
 
-function drawWatermarkImage(ctx: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, mode: "center" | "corner") {
+function drawWatermarkImage(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+  mode: "center" | "corner",
+) {
   const config = mode === "center" ? WATERMARK_CONFIG.center : WATERMARK_CONFIG.corner;
   const ratio = Math.max(1, image.naturalHeight) / Math.max(1, image.naturalWidth);
-  const desiredWidth = Math.max(1, Math.round(width * config.widthRatio));
-  const maxHeight = Math.max(1, Math.round(height * config.maxHeightRatio));
-  const widthFromHeight = Math.max(1, Math.round(maxHeight / Math.max(ratio, 0.0001)));
-  const targetWidth = Math.min(desiredWidth, widthFromHeight, width);
-  const targetHeight = Math.max(1, Math.round(targetWidth * ratio));
+  const targetWidth = Math.max(1, Math.floor(width * config.widthRatio));
+  const targetHeight = Math.max(1, Math.floor(targetWidth * ratio));
 
-  let x = Math.round((width - targetWidth) / 2);
-  let y = Math.round(height * WATERMARK_CONFIG.center.centerYRatio - targetHeight / 2);
+  let x = Math.floor((width - targetWidth) / 2);
+  let y = Math.floor(height * WATERMARK_CONFIG.center.centerYRatio - targetHeight / 2);
+
   if (mode === "center") {
+    x = Math.max(0, Math.min(x, width - targetWidth));
     y = Math.max(0, Math.min(y, height - targetHeight));
   } else {
     x = Math.max(0, width - targetWidth - WATERMARK_CONFIG.corner.rightMarginPx);
@@ -95,42 +100,71 @@ function drawWatermarkImage(ctx: CanvasRenderingContext2D, image: HTMLImageEleme
 
 export async function preparePropertyImage(file: File) {
   if (typeof document === "undefined") return file;
+
   const source = await loadImageBitmap(file);
   const [centerWatermark, cornerWatermark] = await Promise.all([
     loadWatermark(WATERMARK_CONFIG.center.src),
     loadWatermark(WATERMARK_CONFIG.corner.src),
   ]);
+
   const sourceWidth = source.width;
   const sourceHeight = source.height;
+
+  // 기존 자동등록과 동일: 먼저 긴 변을 최대 2400px로 맞춘 뒤 워터마크를 합성한다.
+  const watermarkScale = Math.min(
+    1,
+    WATERMARK_CONFIG.processing.watermarkLongEdgePx / Math.max(sourceWidth, sourceHeight),
+  );
+  const workingWidth = Math.max(1, Math.floor(sourceWidth * watermarkScale));
+  const workingHeight = Math.max(1, Math.floor(sourceHeight * watermarkScale));
+
   const watermarkedCanvas = document.createElement("canvas");
-  watermarkedCanvas.width = sourceWidth;
-  watermarkedCanvas.height = sourceHeight;
+  watermarkedCanvas.width = workingWidth;
+  watermarkedCanvas.height = workingHeight;
   const watermarkCtx = watermarkedCanvas.getContext("2d", { alpha: false });
   if (!watermarkCtx) throw new Error(`${file.name}: 이미지 처리 기능을 사용할 수 없습니다.`);
+
   watermarkCtx.imageSmoothingEnabled = true;
   watermarkCtx.imageSmoothingQuality = "high";
   watermarkCtx.fillStyle = "#ffffff";
-  watermarkCtx.fillRect(0, 0, sourceWidth, sourceHeight);
-  watermarkCtx.drawImage(source, 0, 0, sourceWidth, sourceHeight);
-  drawWatermarkImage(watermarkCtx, centerWatermark, sourceWidth, sourceHeight, "center");
-  drawWatermarkImage(watermarkCtx, cornerWatermark, sourceWidth, sourceHeight, "corner");
+  watermarkCtx.fillRect(0, 0, workingWidth, workingHeight);
+  watermarkCtx.drawImage(source, 0, 0, workingWidth, workingHeight);
 
-  const outputScale = Math.min(1, WATERMARK_CONFIG.output.longEdgePx / Math.max(sourceWidth, sourceHeight));
-  const outputWidth = Math.max(1, Math.round(sourceWidth * outputScale));
-  const outputHeight = Math.max(1, Math.round(sourceHeight * outputScale));
+  drawWatermarkImage(watermarkCtx, centerWatermark, workingWidth, workingHeight, "center");
+  drawWatermarkImage(watermarkCtx, cornerWatermark, workingWidth, workingHeight, "corner");
+
+  // 기존 홈페이지 동기화와 동일: 워터마크 완료본을 긴 변 최대 1800px로 최종 최적화한다.
+  const outputScale = Math.min(
+    1,
+    WATERMARK_CONFIG.output.longEdgePx / Math.max(workingWidth, workingHeight),
+  );
+  const outputWidth = Math.max(1, Math.floor(workingWidth * outputScale));
+  const outputHeight = Math.max(1, Math.floor(workingHeight * outputScale));
+
   const outputCanvas = document.createElement("canvas");
   outputCanvas.width = outputWidth;
   outputCanvas.height = outputHeight;
   const outputCtx = outputCanvas.getContext("2d", { alpha: false });
   if (!outputCtx) throw new Error(`${file.name}: 이미지 최적화 기능을 사용할 수 없습니다.`);
+
   outputCtx.imageSmoothingEnabled = true;
   outputCtx.imageSmoothingQuality = "high";
   outputCtx.fillStyle = "#ffffff";
   outputCtx.fillRect(0, 0, outputWidth, outputHeight);
   outputCtx.drawImage(watermarkedCanvas, 0, 0, outputWidth, outputHeight);
+
   if ("close" in source && typeof source.close === "function") source.close();
-  const blob = await canvasToBlob(outputCanvas, "image/jpeg", WATERMARK_CONFIG.output.jpegQuality);
-  return new File([blob], sanitizeFileName(file.name), { type: "image/jpeg", lastModified: Date.now() });
+
+  const blob = await canvasToBlob(
+    outputCanvas,
+    "image/jpeg",
+    WATERMARK_CONFIG.output.jpegQuality,
+  );
+
+  return new File([blob], sanitizeFileName(file.name), {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
 }
 
 export async function uploadPropertyImages(propertyId: number, files: File[], startOrder = 0, title = "매물 이미지") {
