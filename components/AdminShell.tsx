@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+const BUILDING_LEDGER_PRINT_URL = "https://www.eais.go.kr/moct/bci/aaa01/BCIAAA01V01";
+
 const adminLinks = [
   { href: "/admin/overview", label: "운영 현황" },
   { href: "/admin", label: "매물 관리" },
@@ -111,6 +113,14 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="hidden items-center gap-2 md:flex">
+            <a
+              href={BUILDING_LEDGER_PRINT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg border border-[#C9A227] px-3 py-2 text-sm font-semibold text-[#0A2342] hover:bg-[#C9A227]/10"
+            >
+              건축물대장 출력
+            </a>
             <Link
               href="/"
               target="_blank"
@@ -154,6 +164,15 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                   {item.label}
                 </Link>
               ))}
+              <a
+                href={BUILDING_LEDGER_PRINT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]"
+              >
+                건축물대장 출력
+              </a>
               <Link
                 href="/"
                 target="_blank"
