@@ -30,13 +30,12 @@ export default function Home() {
   ];
 
   const quickLinks = [
-    { label: "아파트", type: "아파트" },
-    { label: "오피스텔", type: "오피스텔" },
-    { label: "원룸·투룸", type: "소형주택" },
-    { label: "주택", type: "주택" },
-    { label: "상가", type: "상가" },
-    { label: "창고·공장", type: "창고·공장" },
-    { label: "토지", type: "토지" },
+    { label: "원룸·미니투룸·투룸", type: "소형주택", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=82" },
+    { label: "상가", type: "상가", image: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=82" },
+    { label: "오피스텔", type: "오피스텔", image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=82" },
+    { label: "다가구·단독주택", type: "주택", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=82" },
+    { label: "사무실", type: "사무실", image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=900&q=82" },
+    { label: "창고·공장·토지", type: "창고·공장", image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=82" },
   ];
 
   const regionLinks = [
@@ -78,9 +77,9 @@ export default function Home() {
             <div className="mt-4 flex flex-wrap justify-center gap-2 lg:justify-start">{regionLinks.map((region) => <Link key={region.label} href={region.href} className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90">{region.label}</Link>)}</div>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row"><Link href="/properties" className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white">상세 조건 검색</Link><a href="tel:01077750014" className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#0A2342]">전화 상담 010-7775-0014</a></div>
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.7 }} className="mt-10 w-full max-w-6xl rounded-[28px] border border-white/15 bg-white/10 p-4 backdrop-blur-md sm:p-5">
-            <p className="mb-3 text-left text-sm font-semibold text-white/75">매물유형 바로가기</p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">{quickLinks.map((item) => <Link key={item.label} href={`/search?type=${encodeURIComponent(item.type)}`} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-[#C9A227] hover:bg-[#C9A227]/20">{item.label}</Link>)}</div>
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.7 }} className="mt-10 w-full max-w-7xl rounded-[28px] border border-white/15 bg-white/10 p-4 backdrop-blur-md sm:p-5">
+            <div className="mb-4 flex items-end justify-between gap-4 text-left"><div><p className="text-sm font-semibold text-white/75">매물유형 바로가기</p><p className="mt-1 text-lg font-bold text-white">원하시는 매물 유형을 선택하세요</p></div><span className="hidden text-xs text-white/60 sm:block">카드를 누르면 해당 매물만 볼 수 있어요</span></div>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">{quickLinks.map((item) => <Link key={item.label} href={`/search?type=${encodeURIComponent(item.type)}`} className="group overflow-hidden rounded-2xl border border-white/20 bg-white text-[#0A2342] shadow-lg transition duration-300 hover:-translate-y-1 hover:border-[#C9A227] hover:shadow-xl"><div className="h-28 bg-cover bg-center transition duration-500 group-hover:scale-105 sm:h-32" style={{ backgroundImage: `url('${item.image}')` }} /><div className="flex min-h-16 items-center justify-between gap-2 px-3 py-3 sm:px-4"><span className="text-sm font-extrabold leading-tight sm:text-[15px]">{item.label}</span><span className="shrink-0 text-lg text-[#C9A227]">›</span></div></Link>)}</div>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }} className="mt-8 grid w-full max-w-4xl grid-cols-2 gap-3 md:grid-cols-4">{stats.map((stat) => <div key={stat.label} className="rounded-2xl border border-white/15 bg-white/10 p-5 text-center backdrop-blur-sm"><p className="text-3xl font-semibold text-[#C9A227]">{stat.value}</p><p className="mt-2 text-sm text-white/80">{stat.label}</p></div>)}</motion.div>
         </div>
