@@ -19,6 +19,27 @@ function withStoredOptions(description: string, options: string[]) {
   return `${clean}${clean ? "\n" : ""}<!--PROPERTY_OPTIONS:${options.join("|")}-->`;
 }
 
+function WatermarkPreview({ src, alt }: { src: string; alt: string }) {
+  return (
+    <div className="relative h-32 w-full overflow-hidden">
+      <img src={src} alt={alt} className="h-full w-full object-cover" />
+      <img
+        src="/watermarks/baekjo_center.png"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 w-[52%] -translate-x-1/2 -translate-y-1/2 opacity-[0.38]"
+        style={{ top: "60%" }}
+      />
+      <img
+        src="/watermarks/baekjo_corner.png"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-[3px] right-[3px] w-[27%]"
+      />
+    </div>
+  );
+}
+
 export default function NewPropertyPage() {
   const [imageFiles, setImageFiles] = useState<{ id: string; file: File; previewUrl: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -130,10 +151,10 @@ export default function NewPropertyPage() {
           </div>
 
           <div className="space-y-6 rounded-[24px] border border-[#0A2342]/10 bg-[#0A2342] p-6 text-white">
-            <div><h2 className="text-xl font-semibold">이미지 업로드</h2><p className="mt-2 text-sm leading-7 text-white/80">매물 이미지를 업로드하면 미리보기를 확인할 수 있습니다.</p></div>
+            <div><h2 className="text-xl font-semibold">이미지 업로드</h2><p className="mt-2 text-sm leading-7 text-white/80">사진을 선택하면 실제 저장될 워터마크 위치를 미리 확인할 수 있습니다.</p></div>
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-[24px] border border-dashed border-white/25 bg-white/10 px-6 py-10 text-center transition hover:bg-white/15"><span className="text-sm font-semibold text-[#C9A227]">사진 선택</span><span className="mt-2 text-sm text-white/70">최대 20장까지 JPEG, PNG 파일을 업로드할 수 있습니다.</span><input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} /></label>
-            <div className="rounded-[24px] border border-white/10 bg-white/10 p-3">{imageFiles.length>0?<div className="grid grid-cols-2 gap-3">{imageFiles.map((image,index)=><div key={image.id} className="relative overflow-hidden rounded-[18px]"><img src={image.previewUrl} alt={`미리보기 ${index+1}`} className="h-32 w-full object-cover"/>{index===0&&<span className="absolute left-2 top-2 rounded-full bg-[#C9A227] px-2 py-1 text-xs font-bold text-[#0A2342]">대표</span>}<button type="button" onClick={()=>handleRemoveImage(image.id)} className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white">삭제</button></div>)}</div>:<div className="flex h-56 items-center justify-center rounded-[18px] border border-dashed border-white/20 text-sm text-white/60">이미지 미리보기 영역</div>}<p className="mt-3 text-sm text-white/70">{imageFiles.length} / {MAX_PROPERTY_IMAGES}장 선택됨 · 첫 번째 이미지가 대표 이미지입니다.</p></div>
-            <div className="flex flex-col gap-3 sm:flex-row"><Link href="/admin" className="inline-flex items-center justify-center rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">취소</Link><button type="submit" disabled={submitting} className="inline-flex items-center justify-center rounded-full bg-[#C9A227] px-5 py-3 text-sm font-semibold text-[#0A2342] transition hover:-translate-y-1 hover:bg-[#d8b53b] disabled:cursor-not-allowed disabled:opacity-60">{submitting?"등록 중...":"등록하기"}</button></div>
+            <div className="rounded-[24px] border border-white/10 bg-white/10 p-3">{imageFiles.length>0?<div className="grid grid-cols-2 gap-3">{imageFiles.map((image,index)=><div key={image.id} className="relative overflow-hidden rounded-[18px]"><WatermarkPreview src={image.previewUrl} alt={`미리보기 ${index+1}`} />{index===0&&<span className="absolute left-2 top-2 z-10 rounded-full bg-[#C9A227] px-2 py-1 text-xs font-bold text-[#0A2342]">대표</span>}<button type="button" onClick={()=>handleRemoveImage(image.id)} className="absolute right-2 top-2 z-10 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white">삭제</button></div>)}</div>:<div className="flex h-48 items-center justify-center rounded-[18px] border border-dashed border-white/20 text-sm text-white/50">업로드한 이미지가 여기에 표시됩니다.</div>}</div>
+            <button type="submit" disabled={submitting} className="w-full rounded-full bg-[#C9A227] px-6 py-4 font-bold text-[#0A2342] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60">{submitting?"등록 중...":"매물 등록"}</button>
           </div>
         </motion.form>
       </div>
