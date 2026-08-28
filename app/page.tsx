@@ -22,12 +22,12 @@ export default function Home() {
     { label: "토지 투자 상담", href: "/search?type=%ED%86%A0%EC%A7%80" },
   ];
   const quickLinks = [
-    { label: "원룸/투룸", sub: "깔끔한 원룸부터 투룸까지", type: "소형주택", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=88" },
-    { label: "다가구/주택", sub: "단독·다가구·전원주택", type: "주택", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=88" },
-    { label: "오피스텔", sub: "주거와 업무를 한 번에", type: "오피스텔", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=88" },
-    { label: "상가(사무실)", sub: "상가·사무실·점포", type: "상가", image: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=88" },
-    { label: "아파트", sub: "다양한 아파트 매물", type: "아파트", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=88" },
-    { label: "창고/공장/토지", sub: "창고·공장·토지 매물", type: "창고·공장", image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=88" },
+    { label: "원룸/투룸", sub: "깔끔한 원룸부터 투룸까지", type: "소형주택", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1000&q=90" },
+    { label: "다가구/주택", sub: "단독·다가구·전원주택", type: "주택", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=90" },
+    { label: "오피스텔", sub: "주거와 업무를 한 번에", type: "오피스텔", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1000&q=90" },
+    { label: "상가(사무실)", sub: "상가·사무실·점포", type: "상가", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1000&q=90" },
+    { label: "아파트", sub: "다양한 아파트 매물", type: "아파트", image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1000&q=90" },
+    { label: "창고/공장/토지", sub: "창고·공장·토지 매물", type: "창고·공장", image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1000&q=90" },
   ];
   const regionLinks = [
     { label: "유가읍", href: "/search?q=%EC%9C%A0%EA%B0%80%EC%9D%8D" }, { label: "현풍읍", href: "/search?q=%ED%98%84%ED%92%8D%EC%9D%8D" }, { label: "구지면", href: "/search?q=%EA%B5%AC%EC%A7%80%EB%A9%B4" }, { label: "테크노폴리스", href: "/search?q=%ED%85%8C%ED%81%AC%EB%85%B8%ED%8F%B4%EB%A6%AC%EC%8A%A4" }, { label: "디지스트 인근", href: "/search?q=%EB%94%94%EC%A7%80%EC%8A%A4%ED%8A%B8" },
