@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildSeoTitle } from "@/lib/property-seo";
 import { detectPropertyDisplayType, sanitizePropertyArea } from "@/lib/property-normalize";
-import { buildDescriptionWithAdminMeta, emptyAdminMeta, parseAdminMeta, stripAdminMeta, type AdminMeta } from "@/lib/property-admin-meta";
+import { buildDescriptionWithAdminMeta, emptyAdminMeta, MAINTENANCE_ITEMS, parseAdminMeta, stripAdminMeta, type AdminMeta } from "@/lib/property-admin-meta";
 
 export const runtime = "nodejs";
 
@@ -93,19 +93,25 @@ function canonicalOptionName(value:string){
   return item;
 }
 
-function applyResidentialOptionPolicy(description:string,propertyType:string){
-  if(!shouldApplyCommonResidentialOptions(propertyType))return description;
+function findOptionSection(description:string){
   const lines=description.split(/\r?\n/);let optionStart=-1;let optionEnd=lines.length;
   for(let i=0;i<lines.length;i+=1){if(/^옵션\s*:??\s*$/.test(lines[i].trim())){optionStart=i;break;}}
   if(optionStart>=0){for(let i=optionStart+1;i<lines.length;i+=1){const t=lines[i].trim();if(t&&/^(?:매물\s*특징|매물\s*정보|상세\s*정보|교통|입지|추천)/.test(t)){optionEnd=i;break;}}}
+  return {lines,optionStart,optionEnd};
+}
+
+function extractResidentialOptions(description:string,propertyType:string){
+  if(!shouldApplyCommonResidentialOptions(propertyType))return [];
+  const {lines,optionStart,optionEnd}=findOptionSection(description);
   const sourceOptions=optionStart>=0?parseOptionItems(lines.slice(optionStart+1,optionEnd).join("\n")):[];
   const sourceDifferential=sourceOptions.filter((item)=>DIFFERENTIAL_OPTION_PATTERN.test(item));
-  const merged=[...COMMON_RESIDENTIAL_OPTIONS,...sourceDifferential].map(canonicalOptionName).filter((v,i,a)=>v&&a.indexOf(v)===i);
-  const optionLines=["옵션",...merged.map((item)=>`• ${item}`)];
-  if(optionStart>=0)return [...lines.slice(0,optionStart),...optionLines,...lines.slice(optionEnd)].join("\n");
-  const featureIndex=lines.findIndex((line)=>/^매물\s*특징\s*$/.test(line.trim()));
-  if(featureIndex>=0)return [...lines.slice(0,featureIndex),...optionLines,"",...lines.slice(featureIndex)].join("\n");
-  return [...lines,"",...optionLines].join("\n");
+  return [...COMMON_RESIDENTIAL_OPTIONS,...sourceDifferential].map(canonicalOptionName).filter((v,i,a)=>v&&a.indexOf(v)===i);
+}
+
+function removeOptionSection(description:string){
+  const {lines,optionStart,optionEnd}=findOptionSection(description);
+  if(optionStart<0)return description;
+  return [...lines.slice(0,optionStart),...lines.slice(optionEnd)].join("\n").replace(/\n{3,}/g,"\n\n").trim();
 }
 
 function preserveSourceFeatures(description:string){
@@ -129,7 +135,7 @@ function sanitizeDescription(listing:NaverListing){
   }
   description=description.replace(/(\d+(?:\.\d+)?)F㎡/g,"$1㎡").replace(/전용\s*(\d+(?:\.\d+)?)F\b/g,"전용 $1㎡").replace(/전용(\d+(?:\.\d+)?)㎡/g,"전용 $1㎡");
   description=preserveSourceFeatures(description);
-  return applyResidentialOptionPolicy(description,propertyType);
+  return removeOptionSection(description);
 }
 
 function makeTitle(listing:NaverListing){
@@ -157,7 +163,17 @@ function mergeSourceMeta(existingDescription:string,listing:NaverListing,propert
   const incoming=sourceInfoOverrides(listing);
   const infoOverrides={...current.infoOverrides};
   for(const key of Object.keys(incoming) as Array<keyof typeof incoming>){if(!infoOverrides[key]&&incoming[key])infoOverrides[key]=incoming[key];}
-  return {...current,options:/상가|창고|공장|토지|사무실/.test(propertyType)?[]:current.options,infoOverrides};
+  const isNonResidential=/상가|창고|공장|토지|사무실/.test(propertyType);
+  const sourceOptions=extractResidentialOptions(normalized(listing.description),propertyType);
+  const options=isNonResidential?[]:(current.options.length?current.options:sourceOptions);
+  const isOneRoom=propertyType.trim()==="원룸";
+  return {
+    ...current,
+    options,
+    maintenanceFee:isOneRoom&&!current.maintenanceFee?"10만원":current.maintenanceFee,
+    maintenanceItems:isOneRoom&&!current.maintenanceItems.length?[...MAINTENANCE_ITEMS]:current.maintenanceItems,
+    infoOverrides,
+  };
 }
 
 function buildSyncedDescription(existingDescription:string,newDescription:string,listing:NaverListing,propertyType:string){
