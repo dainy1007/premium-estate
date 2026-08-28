@@ -4,18 +4,18 @@
 // REFERENCE: existing registered property photos shown on 2026-08-28 are the visual source of truth.
 // Existing photos are never reprocessed. New/additional/replacement uploads must match this standard.
 
-export const WATERMARK_SPEC_VERSION = "2026-08-28-existing-photo-standard-v1" as const;
+export const WATERMARK_SPEC_VERSION = "2026-08-28-existing-photo-standard-v2" as const;
 
 export const WATERMARK_CONFIG = Object.freeze({
   center: Object.freeze({
-    src: "/watermarks/baekjo-watermark-center.webp",
+    src: "/watermarks/baekjo_center.png",
     widthRatio: 0.52,
     opacity: 0.38,
     centerYRatio: 0.60,
     maxHeightRatio: 0.58,
   }),
   corner: Object.freeze({
-    src: "/watermarks/baekjo-watermark-corner.webp",
+    src: "/watermarks/baekjo_corner.png",
     widthRatio: 0.27,
     opacity: 1.0,
     rightMarginPx: 30,
