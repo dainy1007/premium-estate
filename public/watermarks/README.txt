@@ -1,1 +1,28 @@
-Watermark assets are stored in this folder. Use baekjo-watermark-center.png for the centered swan logo and baekjo-watermark-corner.png for the bottom-right contact mark.
+백조현대부동산 홈페이지 워터마크 고정 기준
+버전: 2026-08-28-v1
+
+[사용 파일]
+중앙: /watermarks/baekjo-watermark-center.webp
+우측하단: /watermarks/baekjo-watermark-corner.webp
+
+[중앙 워터마크]
+가로 비율: 사진 너비의 52%
+투명도: 0.38
+세로 중심 위치: 사진 높이의 60%
+최대 높이: 사진 높이의 58%
+
+[우측 하단 워터마크]
+가로 비율: 사진 너비의 27%
+투명도: 1.00
+오른쪽 여백: 30px
+아래 여백: 30px
+최대 높이: 사진 높이의 34%
+
+[출력]
+긴 변 최대: 1800px
+JPEG 품질: 0.90
+
+중요: 이 기준값은 lib/watermark-config.ts 한 곳에서만 관리한다.
+관리자 신규 등록/수정 업로드와 홈페이지 표시 로직은 반드시 이 설정을 참조해야 한다.
+기존 워터마크가 이미 사진 파일 자체에 합성된 경우 새 워터마크를 화면 위에 중복 오버레이하지 않는다.
+기존 사진을 새 기준으로 바꾸려면 워터마크가 없는 원본 사진에서 다시 생성해 교체한다.
