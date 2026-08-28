@@ -19,10 +19,9 @@ export default function Header() {
   const { scrollY } = useScroll();
   const pathname = usePathname();
   const router = useRouter();
+  const brightHome = pathname === "/";
 
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    setScrolled(latest > 20);
-  });
+  useMotionValueEvent(scrollY, "change", (latest) => setScrolled(latest > 20));
 
   const handleHomeClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     setMobileMenuOpen(false);
@@ -33,12 +32,8 @@ export default function Header() {
     }
   };
 
-  const handleSectionClick = (
-    event: React.MouseEvent<HTMLAnchorElement>,
-    sectionId: string,
-  ) => {
+  const handleSectionClick = (event: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     setMobileMenuOpen(false);
-
     if (pathname === "/") {
       event.preventDefault();
       const section = document.getElementById(sectionId);
@@ -48,107 +43,32 @@ export default function Header() {
       }
       return;
     }
-
     event.preventDefault();
     router.push(`/#${sectionId}`);
   };
 
+  const darkText = scrolled || brightHome;
+
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -10 }}
-      animate={{
-        opacity: 1,
-        y: 0,
-        backgroundColor: scrolled ? "rgba(255,255,255,0.96)" : "rgba(255,255,255,0)",
-      }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-x-0 top-0 z-50"
-    >
+    <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0, backgroundColor: scrolled ? "rgba(255,255,255,0.96)" : brightHome ? "rgba(255,255,255,0.82)" : "rgba(255,255,255,0)" }} transition={{ duration: 0.3 }} className="fixed inset-x-0 top-0 z-50 backdrop-blur-sm">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link href="/" onClick={handleHomeClick} className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0A2540] text-xs font-bold text-[#C9A227]">
-            백조
-          </div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0A2540] text-xs font-bold text-[#C9A227]">백조</div>
           <div>
-            <p className={`font-bold tracking-wide ${scrolled ? "text-[#0A2540]" : "text-white"}`}>
-              백조현대부동산중개
-            </p>
-            <p className={`text-xs ${scrolled ? "text-[#0A2540]/60" : "text-white/80"}`}>
-              Trusted Real Estate Partner
-            </p>
+            <p className={`text-lg font-extrabold tracking-wide ${darkText ? "text-[#0A2540]" : "text-white"}`}>백조현대부동산중개</p>
+            <p className={`text-xs ${darkText ? "text-[#0A2540]/60" : "text-white/80"}`}>Trusted Real Estate Partner</p>
           </div>
         </Link>
-
         <nav className="hidden gap-8 md:flex">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              onClick={
-                item.href === "/"
-                  ? handleHomeClick
-                  : item.sectionId
-                    ? (event) => handleSectionClick(event, item.sectionId!)
-                    : undefined
-              }
-              className={`text-sm font-medium hover:text-[#C9A227] ${scrolled ? "text-[#0A2540]" : "text-white"}`}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => <Link key={item.label} href={item.href} onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : undefined} className={`text-sm font-medium hover:text-[#C9A227] ${darkText ? "text-[#0A2540]" : "text-white"}`}>{item.label}</Link>)}
         </nav>
-
         <div className="hidden items-center gap-3 md:flex">
-          <a href="tel:01077750014" className="rounded-full border border-[#C9A227] px-4 py-2 text-sm font-semibold text-[#C9A227]">
-            ☎ 010-7775-0014
-          </a>
-          <Link href="/contact" className="rounded-full bg-[#C9A227] px-5 py-2.5 text-sm font-semibold text-[#0A2540]">
-            상담문의
-          </Link>
+          <a href="tel:01077750014" className="rounded-full border border-[#C9A227] bg-white/70 px-4 py-2 text-sm font-semibold text-[#C9A227]">☎ 010-7775-0014</a>
+          <Link href="/contact" className="rounded-full bg-[#C9A227] px-5 py-2.5 text-sm font-semibold text-[#0A2540]">상담문의</Link>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className={scrolled ? "text-2xl text-[#0A2540] md:hidden" : "text-2xl text-white md:hidden"}
-          aria-label="메뉴 열기"
-        >
-          ☰
-        </button>
+        <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className={darkText ? "text-2xl text-[#0A2540] md:hidden" : "text-2xl text-white md:hidden"} aria-label="메뉴 열기">☰</button>
       </div>
-
-      {mobileMenuOpen && (
-        <div className="bg-white p-6 shadow-lg md:hidden">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              onClick={
-                item.href === "/"
-                  ? handleHomeClick
-                  : item.sectionId
-                    ? (event) => handleSectionClick(event, item.sectionId!)
-                    : () => setMobileMenuOpen(false)
-              }
-              className="block py-2 text-[#0A2540]"
-            >
-              {item.label}
-            </Link>
-          ))}
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <a href="tel:01077750014" className="rounded-full border border-[#C9A227] py-3 text-center font-semibold text-[#0A2540]">
-              전화 상담
-            </a>
-            <Link
-              href="/contact"
-              onClick={() => setMobileMenuOpen(false)}
-              className="rounded-full bg-[#C9A227] py-3 text-center font-semibold text-[#0A2540]"
-            >
-              문의 남기기
-            </Link>
-          </div>
-        </div>
-      )}
+      {mobileMenuOpen && <div className="bg-white p-6 shadow-lg md:hidden">{navItems.map((item) => <Link key={item.label} href={item.href} onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : () => setMobileMenuOpen(false)} className="block py-2 text-[#0A2540]">{item.label}</Link>)}<div className="mt-3 grid grid-cols-2 gap-3"><a href="tel:01077750014" className="rounded-full border border-[#C9A227] py-3 text-center font-semibold text-[#0A2540]">전화 상담</a><Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="rounded-full bg-[#C9A227] py-3 text-center font-semibold text-[#0A2540]">문의 남기기</Link></div></div>}
     </motion.header>
   );
 }
