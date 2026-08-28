@@ -24,9 +24,3 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
-
-/* Keep all property-type quick-link photos visually crisp and consistent. */
-div[style*="/property-types/"] {
-  filter: contrast(1.08) saturate(1.05) brightness(1.01);
-  image-rendering: auto;
-}
