@@ -1,8 +1,10 @@
 // Canonical watermark specification for 백조현대부동산.
 // IMPORTANT: All homepage/admin property image watermark logic must import from this file.
-// Do not duplicate these values in components or upload code.
+// Do not duplicate or alter these values unless the owner explicitly changes the watermark standard.
+// REFERENCE: existing registered property photos shown on 2026-08-28 are the visual source of truth.
+// Existing photos are never reprocessed. New/additional/replacement uploads must match this standard.
 
-export const WATERMARK_SPEC_VERSION = "2026-08-28-v1" as const;
+export const WATERMARK_SPEC_VERSION = "2026-08-28-existing-photo-standard-v1" as const;
 
 export const WATERMARK_CONFIG = Object.freeze({
   center: Object.freeze({
