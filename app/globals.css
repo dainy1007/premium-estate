@@ -25,7 +25,8 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Match the commercial quick-link photo to the softer tone of the other category cards. */
-div[style*="commercial-final.jpg"] {
-  filter: contrast(0.91) saturate(0.90) brightness(1.02) blur(0.28px);
+/* Keep all property-type quick-link photos visually crisp and consistent. */
+div[style*="/property-types/"] {
+  filter: contrast(1.08) saturate(1.05) brightness(1.01);
+  image-rendering: auto;
 }
