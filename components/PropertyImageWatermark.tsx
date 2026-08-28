@@ -2,9 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-
-const CENTER_SRC = "/watermarks/baekjo-watermark-center.webp";
-const CORNER_SRC = "/watermarks/baekjo-watermark-corner.webp";
+import { WATERMARK_CONFIG } from "@/lib/watermark-config";
 
 function isPropertyPhoto(img: HTMLImageElement) {
   const src = img.currentSrc || img.src || "";
@@ -23,37 +21,38 @@ function applyWatermark(img: HTMLImageElement) {
   if (style.overflow === "visible") parent.style.overflow = "hidden";
 
   const center = document.createElement("img");
-  center.src = CENTER_SRC;
+  center.src = WATERMARK_CONFIG.center.src;
   center.alt = "";
   center.setAttribute("aria-hidden", "true");
   center.dataset.baekjoWatermarkLayer = "center";
   Object.assign(center.style, {
     position: "absolute",
     left: "50%",
-    top: "60%",
+    top: `${WATERMARK_CONFIG.center.centerYRatio * 100}%`,
     transform: "translate(-50%, -50%)",
-    width: "52%",
+    width: `${WATERMARK_CONFIG.center.widthRatio * 100}%`,
     height: "auto",
-    maxHeight: "70%",
+    maxHeight: `${WATERMARK_CONFIG.center.maxHeightRatio * 100}%`,
     objectFit: "contain",
-    opacity: "0.38",
+    opacity: String(WATERMARK_CONFIG.center.opacity),
     pointerEvents: "none",
     zIndex: "2",
   });
 
   const corner = document.createElement("img");
-  corner.src = CORNER_SRC;
+  corner.src = WATERMARK_CONFIG.corner.src;
   corner.alt = "";
   corner.setAttribute("aria-hidden", "true");
   corner.dataset.baekjoWatermarkLayer = "corner";
   Object.assign(corner.style, {
     position: "absolute",
-    right: "3%",
-    bottom: "3%",
-    width: "27%",
+    right: `${WATERMARK_CONFIG.corner.publicRightRatio * 100}%`,
+    bottom: `${WATERMARK_CONFIG.corner.publicBottomRatio * 100}%`,
+    width: `${WATERMARK_CONFIG.corner.widthRatio * 100}%`,
     height: "auto",
-    maxHeight: "35%",
+    maxHeight: `${WATERMARK_CONFIG.corner.maxHeightRatio * 100}%`,
     objectFit: "contain",
+    opacity: String(WATERMARK_CONFIG.corner.opacity),
     pointerEvents: "none",
     zIndex: "2",
   });
