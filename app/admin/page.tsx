@@ -41,6 +41,8 @@ export default function AdminPage() {
   const [dealType, setDealType] = useState(ALL);
   const [statusFilter, setStatusFilter] = useState(ALL);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
   const [stateReady, setStateReady] = useState(false);
   const restoreScrollRef = useRef<number | null>(null);
 
@@ -136,6 +138,39 @@ export default function AdminPage() {
     setBusyId(null);
   }
 
+  function startTitleEdit(property: AdminProperty) {
+    setEditingTitleId(property.id);
+    setEditingTitle(property.title || "");
+  }
+
+  function cancelTitleEdit() {
+    setEditingTitleId(null);
+    setEditingTitle("");
+  }
+
+  async function saveTitle(property: AdminProperty) {
+    const nextTitle = editingTitle.trim();
+    if (!nextTitle) {
+      window.alert("매물명을 입력해 주세요.");
+      return;
+    }
+    if (nextTitle === property.title) {
+      cancelTitleEdit();
+      return;
+    }
+
+    setBusyId(property.id);
+    const { error } = await supabase.from("properties").update({ title: nextTitle }).eq("id", property.id);
+    if (error) {
+      console.error(error);
+      window.alert("매물명 수정에 실패했습니다.");
+    } else {
+      setPropertyList(list => list.map(v => v.id === property.id ? ({ ...v, title: nextTitle } as AdminProperty) : v));
+      cancelTitleEdit();
+    }
+    setBusyId(null);
+  }
+
   async function handleDelete(id: number) {
     if (!window.confirm("정말 삭제하시겠습니까?")) return;
     const { error } = await supabase.from("properties").delete().eq("id", id);
@@ -174,7 +209,7 @@ export default function AdminPage() {
           </div>
         </div>
         {loading ? <p className="py-16 text-center">매물을 불러오는 중입니다...</p> : <div className="mt-6 overflow-x-auto"><table className="w-full min-w-[1180px]"><thead className="bg-[#F8F9FB]"><tr>{["번호","매물명","유형","지역·가격","상태","빠른 관리","상세 관리"].map(v=><th key={v} className="px-4 py-4 text-left">{v}</th>)}</tr></thead><tbody>
-          {filtered.map(p => { const completed=p.listing_status==="completed"; const busy=busyId===p.id; return <tr key={p.id} className="border-t align-top text-sm"><td className="px-4 py-4">{p.id}</td><td className="px-4 py-4 font-semibold">{p.title}</td><td className="px-4 py-4">{p.type || "-"} <span className="text-[#0A2342]/50">{p.deal_type}</span></td><td className="px-4 py-4"><p>{p.location || "-"}</p><p className="mt-1 font-semibold text-[#9B7900]">{p.price || "문의"}</p></td><td className="px-4 py-4">{p.is_hidden ? "숨김" : completed ? "계약완료" : "노출중"}{p.is_featured ? " · 추천" : ""}</td><td className="px-4 py-4"><div className="flex gap-2"><button disabled={busy} onClick={()=>void updateField(p,{is_featured:!p.is_featured})} className="rounded-full border px-3 py-2">추천</button><button disabled={busy} onClick={()=>void updateField(p,{is_hidden:!p.is_hidden})} className="rounded-full border px-3 py-2">숨김</button><button disabled={busy} onClick={()=>void updateField(p,{listing_status:completed?"active":"completed"})} className="rounded-full border px-3 py-2">계약완료</button></div></td><td className="px-4 py-4"><div className="flex gap-2"><Link onClick={rememberListPosition} href={`/admin/properties/${p.id}`} className="rounded-full border px-4 py-2">보기</Link><Link onClick={rememberListPosition} href={`/admin/properties/${p.id}/edit`} className="rounded-full border px-4 py-2">수정</Link><button onClick={()=>void handleDelete(p.id)} className="rounded-full border border-red-300 px-4 py-2 text-red-600">삭제</button></div></td></tr> })}
+          {filtered.map(p => { const completed=p.listing_status==="completed"; const busy=busyId===p.id; const editingTitleRow=editingTitleId===p.id; return <tr key={p.id} className="border-t align-top text-sm"><td className="px-4 py-4">{p.id}</td><td className="px-4 py-4 font-semibold">{editingTitleRow ? <div className="min-w-[300px]"><input autoFocus value={editingTitle} onChange={e=>setEditingTitle(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter") void saveTitle(p); if(e.key==="Escape") cancelTitleEdit(); }} className="w-full rounded-xl border border-[#0A2342]/25 bg-white px-3 py-2 font-semibold outline-none focus:border-[#C9A227]"/><div className="mt-2 flex gap-2"><button disabled={busy} onClick={()=>void saveTitle(p)} className="rounded-full bg-[#0A2342] px-3 py-1.5 text-xs font-semibold text-white">저장</button><button disabled={busy} onClick={cancelTitleEdit} className="rounded-full border px-3 py-1.5 text-xs font-semibold">취소</button></div></div> : <div className="group flex min-w-[300px] items-start gap-2"><button type="button" onClick={()=>startTitleEdit(p)} className="text-left font-semibold hover:text-[#9B7900] hover:underline hover:underline-offset-4" title="매물명 수정">{p.title}</button><button type="button" onClick={()=>startTitleEdit(p)} className="mt-[-2px] rounded-full border border-[#0A2342]/15 px-2 py-1 text-[11px] font-medium text-[#0A2342]/55 opacity-0 transition group-hover:opacity-100">수정</button></div>}</td><td className="px-4 py-4">{p.type || "-"} <span className="text-[#0A2342]/50">{p.deal_type}</span></td><td className="px-4 py-4"><p>{p.location || "-"}</p><p className="mt-1 font-semibold text-[#9B7900]">{p.price || "문의"}</p></td><td className="px-4 py-4">{p.is_hidden ? "숨김" : completed ? "계약완료" : "노출중"}{p.is_featured ? " · 추천" : ""}</td><td className="px-4 py-4"><div className="flex gap-2"><button disabled={busy} onClick={()=>void updateField(p,{is_featured:!p.is_featured})} className="rounded-full border px-3 py-2">추천</button><button disabled={busy} onClick={()=>void updateField(p,{is_hidden:!p.is_hidden})} className="rounded-full border px-3 py-2">숨김</button><button disabled={busy} onClick={()=>void updateField(p,{listing_status:completed?"active":"completed"})} className="rounded-full border px-3 py-2">계약완료</button></div></td><td className="px-4 py-4"><div className="flex gap-2"><Link onClick={rememberListPosition} href={`/admin/properties/${p.id}`} className="rounded-full border px-4 py-2">보기</Link><Link onClick={rememberListPosition} href={`/admin/properties/${p.id}/edit`} className="rounded-full border px-4 py-2">수정</Link><button onClick={()=>void handleDelete(p.id)} className="rounded-full border border-red-300 px-4 py-2 text-red-600">삭제</button></div></td></tr> })}
         </tbody></table></div>}
       </section>
     </div>
