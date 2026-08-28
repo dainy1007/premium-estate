@@ -22,8 +22,8 @@ export default function Home() {
     { label: "토지 투자 상담", href: "/search?type=%ED%86%A0%EC%A7%80" },
   ];
   const quickLinks = [
-    { label: "원룸", type: "소형주택", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=82" },
-    { label: "다가구", type: "주택", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=82" },
+    { label: "원룸/투룸", type: "소형주택", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=82" },
+    { label: "다가구/주택", type: "주택", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=82" },
     { label: "오피스텔", type: "오피스텔", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=82" },
     { label: "상가(사무실)", type: "상가", image: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=82" },
     { label: "아파트", type: "아파트", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=82" },
