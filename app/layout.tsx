@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { siteConfig } from "@/lib/site-config";
-import PropertyImageWatermark from "@/components/PropertyImageWatermark";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -116,7 +115,6 @@ export default function RootLayout({
             __html: JSON.stringify(realEstateAgentJsonLd).replace(/</g, "\\u003c"),
           }}
         />
-        <PropertyImageWatermark />
         {children}
       </body>
     </html>
