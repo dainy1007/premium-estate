@@ -22,12 +22,12 @@ export default function Home() {
     { label: "토지 투자 상담", href: "/search?type=%ED%86%A0%EC%A7%80" },
   ];
   const quickLinks = [
-    { label: "원룸/투룸", sub: "깔끔한 원룸부터 투룸까지", type: "소형주택", image: "https://q-xx.bstatic.com/xdata/images/hotel/max500/577005293.jpg?k=a2c1bd950fe7c5a980b0070e3d57369c4253b413376a34b61429138245d973ff&o=" },
-    { label: "다가구/주택", sub: "단독·다가구·전원주택", type: "주택", image: "https://blog.kakaocdn.net/dna/srBPa/dJMcadIpZxz/AAAAAAAAAAAAAAAAAAAAAOX2ZzvYR55boDYumr4cLc8Fwjf9KVX25k8sHndIPMrw/img.png?allow_ip=&allow_referer=&credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1777561199&signature=oZTuHkNy%2BEJ%2BWneiSL6g%2BVfIKmA%3D" },
-    { label: "오피스텔", sub: "주거와 업무를 한 번에", type: "오피스텔", image: "https://www.shinyoung21.com/Upload/business/20220929_134054399.jpg" },
-    { label: "상가(사무실)", sub: "상가·사무실·점포", type: "상가", image: "https://mblogthumb-phinf.pstatic.net/MjAyNDA5MDhfNTEg/MDAxNzI1ODAzODUxMDg2.iMYEp9x44a19hD3-1VTA20UAx1HGNO4v1NFyFIX5AVEg.ZYTkZ-88aia-5PyLj7nrm4L8elnWqjEai7IcyF6YcFwg.PNG/01.png?type=w800" },
-    { label: "아파트", sub: "다양한 아파트 매물", type: "아파트", image: "https://media.gettyimages.com/id/1177633362/photo/korean-high-rise-apartment.jpg?s=612x612&w=0&k=20&c=O7Kf2fKcHZBD7aMWPhQy5oW6H9AYFWIuT6D3jA5IKlY=" },
-    { label: "창고/공장/토지", sub: "창고·공장·토지 매물", type: "창고·공장", image: "https://youilconst.co.kr/wp-content/uploads/2024/08/%EC%9B%90%ED%98%95%EC%A0%95%EA%B3%B5-%EB%B6%80%EC%82%B0%EC%8B%9C-%EA%B0%95%EC%84%9C%EA%B5%AC-%EB%AF%B8%EC%9D%8C%EB%8F%99-2020.-10.png" },
+    { label: "원룸/투룸", sub: "깔끔한 원룸부터 투룸까지", type: "소형주택", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1000&q=90" },
+    { label: "다가구/주택", sub: "단독·다가구·전원주택", type: "주택", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=90" },
+    { label: "오피스텔", sub: "주거와 업무를 한 번에", type: "오피스텔", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1000&q=90" },
+    { label: "상가(사무실)", sub: "상가·사무실·점포", type: "상가", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1000&q=90" },
+    { label: "아파트", sub: "다양한 아파트 매물", type: "아파트", image: "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1000&q=90" },
+    { label: "창고/공장/토지", sub: "창고·공장·토지 매물", type: "창고·공장", image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1000&q=90" },
   ];
   const regionLinks = [
     { label: "유가읍", href: "/search?q=%EC%9C%A0%EA%B0%80%EC%9D%8D" }, { label: "현풍읍", href: "/search?q=%ED%98%84%ED%92%8D%EC%9D%8D" }, { label: "구지면", href: "/search?q=%EA%B5%AC%EC%A7%80%EB%A9%B4" }, { label: "테크노폴리스", href: "/search?q=%ED%85%8C%ED%81%AC%EB%85%B8%ED%8F%B4%EB%A6%AC%EC%8A%A4" }, { label: "디지스트 인근", href: "/search?q=%EB%94%94%EC%A7%80%EC%8A%A4%ED%8A%B8" },
