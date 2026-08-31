@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const navItems = [
   { label: "HOME", href: "/" },
@@ -12,24 +12,6 @@ const navItems = [
   { label: "매물검색", href: "/properties" },
   { label: "상담문의", href: "/contact" },
 ];
-
-function SwanLogo() {
-  const [logoSrc, setLogoSrc] = useState("");
-  useEffect(() => {
-    let active = true;
-    fetch("/baekjo-logo.webp.base64.tmp", { cache: "force-cache" })
-      .then((r) => r.ok ? r.text() : Promise.reject(new Error("logo load failed")))
-      .then((base64) => { if (active) setLogoSrc(`data:image/webp;base64,${base64.trim()}`); })
-      .catch(() => { if (active) setLogoSrc(""); });
-    return () => { active = false; };
-  }, []);
-
-  return (
-    <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#D5AF45] bg-[#061f3d] shadow-md sm:h-[82px] sm:w-[82px]" aria-label="백조현대부동산 로고">
-      {logoSrc ? <img src={logoSrc} alt="백조현대부동산 백조 로고" className="h-full w-full object-cover" /> : <span className="text-sm font-extrabold text-[#D5AF45]">백조</span>}
-    </div>
-  );
-}
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -71,15 +53,8 @@ export default function Header() {
   return (
     <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0, backgroundColor: scrolled ? "rgba(255,255,255,0.97)" : brightHome ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0)" }} transition={{ duration: 0.3 }} className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 backdrop-blur-sm">
       <div className="mx-auto flex h-28 max-w-[1380px] items-center justify-between px-6 lg:px-8">
-        <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center gap-5">
-          <SwanLogo />
-          <div className="min-w-0">
-            <p className={`whitespace-nowrap text-[22px] font-black tracking-[-0.04em] sm:text-[28px] ${textClass}`}>백조현대부동산중개</p>
-            <div className="mt-2 hidden items-center gap-3 sm:flex">
-              <span className="h-px w-8 bg-[#D5AF45]" />
-              <p className={`whitespace-nowrap text-[10px] font-semibold tracking-[0.2em] sm:text-[11px] ${darkText ? "text-[#52647a]" : "text-white/80"}`}>BAEKJO HYUNDAI REAL ESTATE</p>
-            </div>
-          </div>
+        <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center">
+          <img src="/baekjo-header-logo.png" alt="백조현대부동산중개" className="h-[78px] w-auto object-contain sm:h-[88px]" />
         </Link>
         <nav className="hidden items-center xl:flex">
           {navItems.map((item, index) => (
