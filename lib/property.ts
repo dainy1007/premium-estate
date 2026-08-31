@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { normalizePropertyForDisplay } from "@/lib/property-normalize";
+import { formatPropertyPriceDisplay } from "@/lib/property-price";
 import { getVerifiedSaleInfo } from "@/lib/sale-property-verification";
 import type { Property } from "@/types/property";
 
@@ -14,19 +15,20 @@ function hasAdminLockedData(property: Property) {
 
 function applyVerifiedSaleInfo(property: Property): Property {
   const normalized = normalizePropertyForDisplay(property);
+  const priced = { ...normalized, price: formatPropertyPriceDisplay(normalized.price) };
 
   // 관리자가 매물정보/옵션/설명을 한 번 저장한 매물은 관리자 입력을 최우선으로 유지한다.
   // 과거 주소별 검증 기본값이 이후 관리자 수정값을 다시 덮어쓰지 않게 한다.
-  if (hasAdminLockedData(property)) return normalized;
+  if (hasAdminLockedData(property)) return priced;
 
-  const verified = getVerifiedSaleInfo(normalized);
-  if (!verified) return normalized;
+  const verified = getVerifiedSaleInfo(priced);
+  if (!verified) return priced;
 
   return {
-    ...normalized,
-    area: verified.area || normalized.area,
-    floor: verified.floor || normalized.floor,
-    description: verified.description || normalized.description,
+    ...priced,
+    area: verified.area || priced.area,
+    floor: verified.floor || priced.floor,
+    description: verified.description || priced.description,
   };
 }
 
