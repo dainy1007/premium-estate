@@ -35,3 +35,12 @@ export function formatKrwAmount(amount: number | null): string {
 
   return `${new Intl.NumberFormat("ko-KR").format(amount)}원`;
 }
+
+export function formatPropertyPriceDisplay(price: string | null | undefined): string {
+  const text = String(price ?? "").trim();
+  if (!text) return "가격 문의";
+  if (/가격\s*문의|협의|계약완료/i.test(text)) return text;
+  if (/원\s*$/.test(text)) return text;
+  if (/억\s*$/.test(text) && !text.includes("/")) return text;
+  return `${text}만원`;
+}
