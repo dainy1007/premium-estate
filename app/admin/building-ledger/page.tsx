@@ -10,7 +10,7 @@ type Status="대기"|"완료"|"건너뜀"|"실패";
 type RowResult={id:number;status:Status;message?:string};
 type StatusFilter="전체"|Status;
 
-function lookupGuide(type:string){if(/아파트|오피스텔|다세대|연립|빌라/.test(type))return "지번 + 동/호수 입력";if(/상가|사무실/.test(type))return "지번 + 호수 입력";if(/단독주택|다가구|상가주택|원룸|미니투룸|투룸|쓰리룸/.test(type))return "정확한 지번 입력";return "건축물대장 조회용 정확한 지번 입력";}
+function lookupGuide(type:string){if(/상가주택|단독주택|다가구/.test(type))return "건물 통매매/통임대: 정확한 지번만 입력";if(/아파트|오피스텔|다세대|연립|빌라/.test(type))return "지번 + 동/호수 입력";if(/상가|사무실/.test(type))return "개별 호실 매물: 지번 + 호수 입력";if(/원룸|미니투룸|투룸|쓰리룸/.test(type))return "정확한 지번 입력";return "건축물대장 조회용 정확한 지번 입력";}
 function restoredLedgerResult(item:Item):RowResult|undefined{const meta=parseAdminMeta(item.description||"");if(/^조회 실패/.test(meta.ledgerSummary||"")||/전유부 재확인 필요|전용면적 기존 정보 유지/.test(meta.ledgerSummary||""))return{id:item.id,status:"실패",message:meta.ledgerSummary||"건축물대장 조회 실패"};const legacyCompleted=Boolean(meta.infoOverrides?.buildingUse&&meta.infoOverrides?.approvalDate);if(meta.ledgerStatus==="completed"||legacyCompleted){const fallback=[meta.infoOverrides?.buildingUse,meta.infoOverrides?.approvalDate,meta.infoOverrides?.parking].filter(Boolean).join(" · ");return{id:item.id,status:"완료",message:meta.ledgerSummary||fallback||"건축물대장 등록 완료"};}return undefined;}
 const statusStyle:Record<Status,string>={"대기":"border-slate-200 bg-slate-50 text-slate-700","완료":"border-blue-200 bg-blue-50 text-blue-700","실패":"border-red-200 bg-red-50 text-red-700","건너뜀":"border-amber-200 bg-amber-50 text-amber-700"};
 
