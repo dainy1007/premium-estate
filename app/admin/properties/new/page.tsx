@@ -97,8 +97,9 @@ export default function NewPropertyPage() {
     event.preventDefault();
     setSubmitting(true);
     const priceAmount = parsePropertyPriceAmount(form.price);
+    const unifiedAddress = form.address.trim();
     const { data: property, error } = await supabase.from("properties").insert([{
-      title: form.title, type: form.type, deal_type: form.deal_type, location: form.location, address: form.address,
+      title: form.title, type: form.type, deal_type: form.deal_type, location: unifiedAddress, address: unifiedAddress,
       price: form.price, price_amount: priceAmount, area: form.area, contract_area: form.contract_area,
       exclusive_area: form.exclusive_area, rooms: form.rooms, bathrooms: form.bathrooms, floor: form.floor,
       description: withStoredOptions(form.description, selectedOptions), image_url: "",
@@ -132,9 +133,10 @@ export default function NewPropertyPage() {
               <div><label className="mb-2 block text-sm font-medium text-[#0A2342]/80">거래유형</label><select value={form.deal_type} onChange={(e)=>setForm({...form,deal_type:e.target.value})} className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"><option value="">거래유형 선택</option>{transactionTypes.map((type)=><option key={type} value={type}>{type}</option>)}</select></div>
               <div><label className="mb-2 block text-sm font-medium text-[#0A2342]/80">가격</label><input value={form.price} onChange={(e)=>setForm({...form,price:e.target.value})} className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]" placeholder="예: 500/45" /><p className="mt-2 text-xs text-[#0A2342]/55">검색용 가격: {formatKrwAmount(parsePropertyPriceAmount(form.price))}</p></div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div><label className="mb-2 block text-sm font-medium text-[#0A2342]/80">지역</label><input value={form.location} onChange={(e)=>setForm({...form,location:e.target.value})} className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]" placeholder="예: 현풍읍" /></div>
-              <div><label className="mb-2 block text-sm font-medium text-[#0A2342]/80">주소</label><input value={form.address} onChange={(e)=>setForm({...form,address:e.target.value})} className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]" placeholder="예: 현풍읍 중리 447" /></div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">지역 / 주소</label>
+              <input value={form.address} onChange={(e)=>setForm({...form,address:e.target.value,location:e.target.value})} className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]" placeholder="예: 달성군 현풍읍 중리 447" />
+              <p className="mt-2 text-xs text-[#0A2342]/55">지역명 또는 전체 주소를 한 번만 입력하면 지역과 주소에 동일하게 저장됩니다.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div><label className="mb-2 block text-sm font-medium text-[#0A2342]/80">면적</label><input value={form.area} onChange={(e)=>setForm({...form,area:e.target.value})} className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]" placeholder="예: 49.59㎡" /></div>
