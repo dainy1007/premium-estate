@@ -68,11 +68,11 @@ export default function Header() {
       >
         <div className="mx-auto flex h-[106px] max-w-[1600px] items-center justify-between px-4 sm:h-[118px] sm:px-6 xl:h-[142px] xl:px-8 2xl:px-10">
           <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center gap-3 sm:gap-4 xl:gap-5">
-            <div className="h-[74px] w-[74px] shrink-0 overflow-hidden rounded-full sm:h-[88px] sm:w-[88px] xl:h-[108px] xl:w-[108px]">
+            <div className="relative h-[74px] w-[74px] shrink-0 overflow-hidden rounded-full sm:h-[88px] sm:w-[88px] xl:h-[108px] xl:w-[108px]">
               <img
                 src="/baekjo-header-logo.png"
                 alt="백조현대부동산중개 백조 로고"
-                className="h-full w-full object-cover object-left"
+                className="absolute left-0 top-0 h-full w-auto max-w-none"
               />
             </div>
 
