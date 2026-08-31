@@ -19,21 +19,17 @@ function includesAny(text: string, terms: string[]) {
 }
 
 function detectPropertyType(input: SeoPropertyInput) {
-  // 등록된 매물유형(type)을 최우선으로 사용한다.
-  // 설명의 '대지면적', '토지' 같은 보조 문구가 원룸을 토지로 오분류하는 것을 방지한다.
   const explicitType = clean(input.type);
   if (explicitType) {
     const normalizedExplicitType = normalizePropertyType(explicitType);
     if (normalizedExplicitType && normalizedExplicitType !== "부동산") return normalizedExplicitType;
   }
-
   const title = clean(input.title);
   if (title) {
     const normalizedTitleType = normalizePropertyType(title);
     const knownTypes = ["미니투룸", "쓰리룸", "투룸", "원룸", "창고", "공장", "상가주택", "상가", "오피스텔", "아파트", "토지", "다가구", "단독주택"];
     if (knownTypes.includes(normalizedTitleType)) return normalizedTitleType;
   }
-
   return normalizePropertyType(clean(input.description));
 }
 
@@ -65,10 +61,7 @@ export function normalizeDealType(value: string) {
 }
 
 export function detectSeoArea(input: SeoPropertyInput) {
-  const text = [input.location, input.address, input.title, input.description]
-    .map(clean)
-    .join(" ");
-
+  const text = [input.location, input.address, input.title, input.description].map(clean).join(" ");
   if (/구지면|\b구지\b/i.test(text)) return "구지면";
   if (/현풍읍|\b현풍\b/i.test(text)) return "현풍읍";
   if (/유가읍|\b유가\b/i.test(text)) return "유가읍";
@@ -79,10 +72,7 @@ export function detectSeoArea(input: SeoPropertyInput) {
 }
 
 export function detectLandmark(input: SeoPropertyInput) {
-  const text = [input.location, input.address, input.title, input.description]
-    .map(clean)
-    .join(" ");
-
+  const text = [input.location, input.address, input.title, input.description].map(clean).join(" ");
   if (/디지스트|DGIST/i.test(text)) return "디지스트 인근";
   if (/테크노폴리스/i.test(text)) return "테크노폴리스";
   if (/쿠팡/i.test(text)) return "구지 쿠팡물류 인근";
@@ -96,10 +86,7 @@ export function buildSeoTitle(input: SeoPropertyInput) {
   const dealType = normalizeDealType(clean(input.deal_type));
   const landmark = detectLandmark(input);
   const base = [area, propertyType, dealType].filter(Boolean).join(" ");
-
-  return landmark && !base.includes(landmark)
-    ? `${base} | ${landmark}`
-    : base || clean(input.title) || "대구 달성군 부동산 매물";
+  return landmark && !base.includes(landmark) ? `${base} | ${landmark}` : base || clean(input.title) || "대구 달성군 부동산 매물";
 }
 
 export function buildSeoKeywords(input: SeoPropertyInput) {
@@ -107,22 +94,35 @@ export function buildSeoKeywords(input: SeoPropertyInput) {
   const propertyType = detectPropertyType(input);
   const dealType = normalizeDealType(clean(input.deal_type));
   const landmark = detectLandmark(input);
-
   const compactArea = area.replace(/\s+/g, "");
   const compactLandmark = landmark.replace(/\s*인근$/, "").replace(/\s+/g, "");
-
+  const text = [input.location, input.address, input.title, input.description].map(clean).join(" ");
+  const coreAreas = [
+    /현풍/i.test(text) ? "현풍" : "",
+    /유가/i.test(text) ? "유가읍" : "",
+    /디지스트|DGIST/i.test(text) ? "디지스트" : "",
+    /테크노폴리스/i.test(text) ? "테크노폴리스" : "",
+  ].filter(Boolean);
   const keywords = [
     [compactArea, propertyType, dealType].filter(Boolean).join(""),
     [compactArea, propertyType].filter(Boolean).join(""),
     landmark ? [compactLandmark, propertyType, dealType].filter(Boolean).join("") : "",
     landmark ? [compactLandmark, propertyType].filter(Boolean).join("") : "",
     `${compactArea}부동산`,
+    ...coreAreas.flatMap((core) => [
+      `${core}${propertyType}${dealType}`,
+      `${core}${propertyType}`,
+      `${core}부동산`,
+    ]),
+    "현풍부동산",
+    "유가읍부동산",
+    "디지스트부동산",
+    "테크노폴리스부동산",
     "대구테크노폴리스부동산",
     "백조현대부동산",
     "백조현대부동산중개",
   ].filter(Boolean);
-
-  return [...new Set(keywords)].slice(0, 12);
+  return [...new Set(keywords)].slice(0, 18);
 }
 
 export function buildImageAlt(input: SeoPropertyInput, index = 1) {
@@ -137,20 +137,7 @@ export function getRelatedSeoLandings(input: SeoPropertyInput) {
   const area = detectSeoArea(input);
   const propertyType = detectPropertyType(input);
   const landmark = detectLandmark(input);
-  const searchable = [
-    input.title,
-    input.location,
-    input.address,
-    input.type,
-    input.deal_type,
-    input.description,
-    area,
-    propertyType,
-    landmark,
-  ]
-    .map(clean)
-    .join(" ");
-
+  const searchable = [input.title, input.location, input.address, input.type, input.deal_type, input.description, area, propertyType, landmark].map(clean).join(" ");
   return allSeoLandings
     .map((landing) => {
       const slug = landing.slug;
@@ -160,7 +147,6 @@ export function getRelatedSeoLandings(input: SeoPropertyInput) {
         (area === "구지면" && slug.startsWith("guji-")) ||
         (slug.startsWith("techno-") && /테크노폴리스/i.test(landmark)) ||
         (slug.startsWith("dgist-") && /디지스트/i.test(landmark));
-
       const locationScore = includesAny(searchable, landing.locationTerms) ? 2 : 0;
       const propertyScore = landingMatchesPropertyType(propertyType, landing.propertyTerms) ? 4 : 0;
       const keywordScore = includesAny(searchable, landing.keywords) ? 1 : 0;
@@ -170,9 +156,5 @@ export function getRelatedSeoLandings(input: SeoPropertyInput) {
     .filter(({ score, areaCompatible }) => areaCompatible && score >= 8)
     .sort((a, b) => b.score - a.score)
     .slice(0, 4)
-    .map(({ landing }) => ({
-      slug: landing.slug,
-      title: landing.heading,
-      href: `/real-estate/${landing.slug}`,
-    }));
+    .map(({ landing }) => ({ slug: landing.slug, title: landing.heading, href: `/real-estate/${landing.slug}` }));
 }
