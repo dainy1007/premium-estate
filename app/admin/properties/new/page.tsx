@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -13,6 +13,17 @@ const COMMON_OPTIONS = ["CCTV", "도어락", "신발장", "인터폰", "싱크�
 const VARIABLE_OPTIONS = ["에어컨", "세탁기", "냉장고", "TV", "장롱", "붙박이장", "옷장", "수납장", "인터넷", "와이파이", "천장형 건조대", "건조대", "인덕션"];
 const ALL_OPTIONS = [...COMMON_OPTIONS, ...VARIABLE_OPTIONS];
 const ELIGIBLE_RESIDENTIAL = /원룸|미니투룸|투룸|쓰리룸|다가구|다세대|연립|빌라|상가주택/;
+
+type BuildingRow = {
+  buildingName: string;
+  town: string;
+  village: string;
+  lot: string;
+  address: string;
+  approvalDate: string;
+  zone: string;
+};
+
 function withStoredOptions(description: string, options: string[]) {
   const clean = description.replace(/\n?<!--PROPERTY_OPTIONS:[\s\S]*?-->/g, "").trimEnd();
   if (!options.length) return clean;
@@ -44,6 +55,10 @@ export default function NewPropertyPage() {
   const [imageFiles, setImageFiles] = useState<{ id: string; file: File; previewUrl: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [buildingRows, setBuildingRows] = useState<BuildingRow[]>([]);
+  const [buildingKeyword, setBuildingKeyword] = useState("");
+  const [buildingLoading, setBuildingLoading] = useState(true);
+  const [buildingMessage, setBuildingMessage] = useState("");
   const [form, setForm] = useState({
     title: "",
     type: "",
@@ -60,6 +75,44 @@ export default function NewPropertyPage() {
     description: "",
     image_url: "",
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadBuildingDirectory() {
+      setBuildingLoading(true);
+      try {
+        const response = await fetch("/api/admin/building-directory", { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok || !data?.ok) throw new Error(data?.error || "건물 장부 불러오기 실패");
+        if (!cancelled) setBuildingRows(Array.isArray(data.rows) ? data.rows : []);
+      } catch (error) {
+        console.error("건물 기본정보 불러오기 오류:", error);
+        if (!cancelled) setBuildingMessage("저장된 건물 장부를 불러오지 못했습니다.");
+      } finally {
+        if (!cancelled) setBuildingLoading(false);
+      }
+    }
+    void loadBuildingDirectory();
+    return () => { cancelled = true; };
+  }, []);
+
+  const buildingMatches = useMemo(() => {
+    const q = buildingKeyword.trim().toLowerCase();
+    if (!q) return [];
+    return buildingRows.filter((row) => [row.buildingName, row.town, row.village, row.lot, row.address, row.approvalDate, row.zone]
+      .filter(Boolean).join(" ").toLowerCase().includes(q)).slice(0, 8);
+  }, [buildingRows, buildingKeyword]);
+
+  const applyBuildingRow = (row: BuildingRow) => {
+    setForm((current) => ({
+      ...current,
+      title: current.title.trim() ? current.title : row.buildingName,
+      address: row.address,
+      location: row.address,
+    }));
+    setBuildingKeyword(row.buildingName || row.address);
+    setBuildingMessage(`${row.buildingName || "건물"} 기본정보를 불러왔습니다.${row.approvalDate ? ` 준공일 ${row.approvalDate}` : ""}${row.zone ? ` · ${row.zone}` : ""}`);
+  };
 
   const setPropertyType = (type: string) => {
     setForm((current) => ({ ...current, type }));
@@ -133,10 +186,19 @@ export default function NewPropertyPage() {
               <div><label className="mb-2 block text-sm font-medium text-[#0A2342]/80">거래유형</label><select value={form.deal_type} onChange={(e)=>setForm({...form,deal_type:e.target.value})} className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]"><option value="">거래유형 선택</option>{transactionTypes.map((type)=><option key={type} value={type}>{type}</option>)}</select></div>
               <div><label className="mb-2 block text-sm font-medium text-[#0A2342]/80">가격</label><input value={form.price} onChange={(e)=>setForm({...form,price:e.target.value})} className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]" placeholder="예: 500/45" /><p className="mt-2 text-xs text-[#0A2342]/55">검색용 가격: {formatKrwAmount(parsePropertyPriceAmount(form.price))}</p></div>
             </div>
+
+            <div className="rounded-2xl border border-[#C9A227]/35 bg-[#C9A227]/5 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-semibold">엑셀 장부 기본정보 불러오기</p><p className="mt-1 text-xs text-[#0A2342]/55">저장된 건물 장부에서 건물명·주소·준공일·구역을 검색해 선택하세요.</p></div><span className="text-xs font-semibold text-[#0A2342]/55">{buildingLoading ? "장부 불러오는 중..." : `${buildingRows.length}건`}</span></div>
+              <input value={buildingKeyword} onChange={(e)=>{setBuildingKeyword(e.target.value);setBuildingMessage("");}} placeholder="건물명 또는 주소 검색 (예: 황금빌, 상리 533)" className="mt-3 w-full rounded-xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]" />
+              {buildingMatches.length > 0 && <div className="mt-3 max-h-64 overflow-y-auto rounded-xl border border-[#0A2342]/10 bg-white">{buildingMatches.map((row, index)=><button key={`${row.buildingName}-${row.address}-${index}`} type="button" onClick={()=>applyBuildingRow(row)} className="flex w-full items-center justify-between gap-3 border-b border-[#0A2342]/10 px-4 py-3 text-left last:border-b-0 hover:bg-[#C9A227]/10"><span><b>{row.buildingName || "건물명 없음"}</b><span className="ml-2 text-sm text-[#0A2342]/65">{row.address}</span></span><span className="shrink-0 text-xs text-[#0A2342]/50">{[row.approvalDate, row.zone].filter(Boolean).join(" · ")}</span></button>)}</div>}
+              {buildingKeyword.trim() && !buildingLoading && buildingMatches.length === 0 && <p className="mt-2 text-xs text-[#0A2342]/55">일치하는 건물이 없습니다. 주소를 직접 입력할 수 있습니다.</p>}
+              {buildingMessage && <p className="mt-2 text-xs font-semibold text-blue-700">{buildingMessage}</p>}
+            </div>
+
             <div>
               <label className="mb-2 block text-sm font-medium text-[#0A2342]/80">지역 / 주소</label>
               <input value={form.address} onChange={(e)=>setForm({...form,address:e.target.value,location:e.target.value})} className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]" placeholder="예: 달성군 현풍읍 중리 447" />
-              <p className="mt-2 text-xs text-[#0A2342]/55">지역명 또는 전체 주소를 한 번만 입력하면 지역과 주소에 동일하게 저장됩니다.</p>
+              <p className="mt-2 text-xs text-[#0A2342]/55">장부에서 선택하면 주소가 자동 입력됩니다. 장부에 없는 매물은 직접 입력할 수 있습니다.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div><label className="mb-2 block text-sm font-medium text-[#0A2342]/80">면적</label><input value={form.area} onChange={(e)=>setForm({...form,area:e.target.value})} className="w-full rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]" placeholder="예: 49.59㎡" /></div>
