@@ -111,7 +111,7 @@ export default function NewPropertyPage() {
       location: row.address,
     }));
     setBuildingKeyword(row.buildingName || row.address);
-    setBuildingMessage(`${row.buildingName || "건물"} 기본정보를 불러왔습니다.${row.approvalDate ? ` 준공일 ${row.approvalDate}` : ""}${row.zone ? ` · ${row.zone}` : ""}`);
+    setBuildingMessage(`${row.buildingName || "건물"} 기본정보를 불러왔습니다.${row.approvalDate ? ` 엑셀 준공일 ${row.approvalDate}는 참고용입니다.` : ""}${row.zone ? ` · ${row.zone}` : ""} 실제 준공정보는 매물 등록 후 건축물대장 조회값을 우선 적용합니다.`);
   };
 
   const setPropertyType = (type: string) => {
@@ -158,13 +158,30 @@ export default function NewPropertyPage() {
       description: withStoredOptions(form.description, selectedOptions), image_url: "",
     }]).select("id").single();
     if (error || !property) { console.error("매물 등록 오류:", error); alert("매물 등록에 실패했습니다."); setSubmitting(false); return; }
+
+    let ledgerWarning = "";
+    if (unifiedAddress) {
+      try {
+        const ledgerResponse = await fetch("/api/admin/building-ledger", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ property_id: property.id, address: unifiedAddress }),
+        });
+        const ledgerData = await ledgerResponse.json();
+        if (!ledgerResponse.ok || !ledgerData?.ok) throw new Error(ledgerData?.error || "건축물대장 조회 실패");
+      } catch (ledgerError) {
+        console.warn("건축물대장 자동 조회 경고:", ledgerError);
+        ledgerWarning = "\n건축물대장 자동 조회는 완료되지 않았습니다. 관리자 건축물대장에서 다시 조회할 수 있습니다.";
+      }
+    }
+
     try {
       await uploadPropertyImages(property.id, imageFiles.map((image) => image.file), 0, form.title);
       await syncCoverImage(property.id);
     } catch (imageError) {
-      console.error("이미지 등록 오류:", imageError); alert("매물은 등록되었지만 이미지 저장에 실패했습니다."); setSubmitting(false); return;
+      console.error("이미지 등록 오류:", imageError); alert(`매물은 등록되었지만 이미지 저장에 실패했습니다.${ledgerWarning}`); setSubmitting(false); return;
     }
-    alert("매물이 등록되었습니다.");
+    alert(`매물이 등록되었습니다. 준공정보는 건축물대장 조회값을 우선 적용합니다.${ledgerWarning}`);
     window.location.href = "/admin";
   };
 
@@ -188,9 +205,9 @@ export default function NewPropertyPage() {
             </div>
 
             <div className="rounded-2xl border border-[#C9A227]/35 bg-[#C9A227]/5 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-semibold">엑셀 장부 기본정보 불러오기</p><p className="mt-1 text-xs text-[#0A2342]/55">저장된 건물 장부에서 건물명·주소·준공일·구역을 검색해 선택하세요.</p></div><span className="text-xs font-semibold text-[#0A2342]/55">{buildingLoading ? "장부 불러오는 중..." : `${buildingRows.length}건`}</span></div>
+              <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-semibold">엑셀 장부 기본정보 불러오기</p><p className="mt-1 text-xs text-[#0A2342]/55">저장된 건물 장부에서 건물명·주소·구역을 불러옵니다. 엑셀 준공일은 참고만 하고 실제 준공정보는 건축물대장을 우선 적용합니다.</p></div><span className="text-xs font-semibold text-[#0A2342]/55">{buildingLoading ? "장부 불러오는 중..." : `${buildingRows.length}건`}</span></div>
               <input value={buildingKeyword} onChange={(e)=>{setBuildingKeyword(e.target.value);setBuildingMessage("");}} placeholder="건물명 또는 주소 검색 (예: 황금빌, 상리 533)" className="mt-3 w-full rounded-xl border border-[#0A2342]/10 bg-white px-4 py-3 outline-none focus:border-[#C9A227]" />
-              {buildingMatches.length > 0 && <div className="mt-3 max-h-64 overflow-y-auto rounded-xl border border-[#0A2342]/10 bg-white">{buildingMatches.map((row, index)=><button key={`${row.buildingName}-${row.address}-${index}`} type="button" onClick={()=>applyBuildingRow(row)} className="flex w-full items-center justify-between gap-3 border-b border-[#0A2342]/10 px-4 py-3 text-left last:border-b-0 hover:bg-[#C9A227]/10"><span><b>{row.buildingName || "건물명 없음"}</b><span className="ml-2 text-sm text-[#0A2342]/65">{row.address}</span></span><span className="shrink-0 text-xs text-[#0A2342]/50">{[row.approvalDate, row.zone].filter(Boolean).join(" · ")}</span></button>)}</div>}
+              {buildingMatches.length > 0 && <div className="mt-3 max-h-64 overflow-y-auto rounded-xl border border-[#0A2342]/10 bg-white">{buildingMatches.map((row, index)=><button key={`${row.buildingName}-${row.address}-${index}`} type="button" onClick={()=>applyBuildingRow(row)} className="flex w-full items-center justify-between gap-3 border-b border-[#0A2342]/10 px-4 py-3 text-left last:border-b-0 hover:bg-[#C9A227]/10"><span><b>{row.buildingName || "건물명 없음"}</b><span className="ml-2 text-sm text-[#0A2342]/65">{row.address}</span></span><span className="shrink-0 text-xs text-[#0A2342]/50">{[row.approvalDate ? `엑셀 ${row.approvalDate}` : "", row.zone].filter(Boolean).join(" · ")}</span></button>)}</div>}
               {buildingKeyword.trim() && !buildingLoading && buildingMatches.length === 0 && <p className="mt-2 text-xs text-[#0A2342]/55">일치하는 건물이 없습니다. 주소를 직접 입력할 수 있습니다.</p>}
               {buildingMessage && <p className="mt-2 text-xs font-semibold text-blue-700">{buildingMessage}</p>}
             </div>
