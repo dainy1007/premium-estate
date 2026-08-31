@@ -2,10 +2,6 @@
 
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import * as XLSX from "xlsx";
-import { supabase } from "@/lib/supabase";
-
-const BUCKET = "property-images";
-const STORAGE_PATH = "admin-data/building-directory.json";
 
 type BuildingRow = {
   buildingName: string;
@@ -60,11 +56,11 @@ export default function BuildingDirectoryPage() {
   useEffect(() => { void loadSaved(); }, []);
 
   async function loadSaved() {
-    const { data, error } = await supabase.storage.from(BUCKET).download(STORAGE_PATH);
-    if (error || !data) return;
     try {
-      const saved = JSON.parse(await data.text()) as BuildingRow[];
-      if (Array.isArray(saved)) setRows(saved);
+      const response = await fetch("/api/admin/building-directory", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json() as { ok?: boolean; rows?: BuildingRow[] };
+      if (data.ok && Array.isArray(data.rows)) setRows(data.rows);
     } catch (error) {
       console.warn("건물 기본정보 불러오기 경고:", error);
     }
@@ -93,16 +89,17 @@ export default function BuildingDirectoryPage() {
     setSaving(true);
     setMessage("저장 중...");
     try {
-      const blob = new Blob([JSON.stringify(rows)], { type: "application/json;charset=utf-8" });
-      const { error } = await supabase.storage.from(BUCKET).upload(STORAGE_PATH, blob, {
-        upsert: true,
-        contentType: "application/json;charset=utf-8",
+      const response = await fetch("/api/admin/building-directory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
       });
-      if (error) throw error;
-      setMessage(`건물 기본정보 ${rows.length}건 저장 완료`);
+      const data = await response.json().catch(() => ({})) as { ok?: boolean; count?: number; error?: string };
+      if (!response.ok || !data.ok) throw new Error(data.error || "저장 실패");
+      setMessage(`건물 기본정보 ${data.count ?? rows.length}건 저장 완료`);
     } catch (error) {
       console.error(error);
-      setMessage("저장에 실패했습니다. 스토리지 권한을 확인해 주세요.");
+      setMessage(`저장에 실패했습니다. ${error instanceof Error ? error.message : "잠시 후 다시 시도해 주세요."}`);
     } finally {
       setSaving(false);
     }
