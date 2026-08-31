@@ -66,8 +66,8 @@ export default function Header() {
         transition={{ duration: 0.3 }}
         className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 backdrop-blur-sm"
       >
-        <div className="mx-auto flex h-[94px] max-w-[1600px] items-center justify-between px-4 sm:h-[108px] sm:px-8 xl:h-[126px] xl:px-12 2xl:px-16">
-          <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center xl:ml-20 2xl:ml-28">
+        <div className="relative mx-auto flex h-[94px] max-w-[1600px] items-center justify-between px-4 sm:h-[108px] sm:px-8 xl:h-[126px] xl:px-12 2xl:px-16">
+          <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center xl:absolute xl:left-[112px] xl:ml-0">
             <div className="min-w-0">
               <div className="whitespace-nowrap text-[24px] font-black leading-none tracking-[-0.045em] text-[#071f3b] sm:text-[31px] xl:text-[43px] 2xl:text-[46px]">
                 백조현대부동산중개
@@ -79,7 +79,7 @@ export default function Header() {
             </div>
           </Link>
 
-          <nav className="hidden items-center xl:flex">
+          <nav className="ml-auto hidden items-center xl:flex">
             {navItems.map((item, index) => (
               <div key={item.label} className="flex items-center">
                 {index > 0 && <span className="mx-5 h-5 w-px bg-slate-300 2xl:mx-6" />}
@@ -97,7 +97,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className={`text-2xl xl:hidden ${textClass}`}
+            className={`ml-auto text-2xl xl:hidden ${textClass}`}
             aria-label="메뉴 열기"
           >
             ☰
