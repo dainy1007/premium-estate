@@ -11,6 +11,7 @@ const adminLinks = [
   { href: "/admin/overview", label: "운영 현황" },
   { href: "/admin", label: "매물 관리" },
   { href: "/admin/building-ledger", label: "건축물대장" },
+  { href: "/admin/building-directory", label: "건물 장부" },
   { href: "/admin/bulk", label: "일괄 관리" },
   { href: "/admin/inquiries", label: "문의 관리" },
 ];
@@ -91,22 +92,10 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-6">
-            <Link href="/admin/overview" className="truncate font-bold text-[#0A2342]">
-              백조현대부동산 관리자
-            </Link>
-
+            <Link href="/admin/overview" className="truncate font-bold text-[#0A2342]">백조현대부동산 관리자</Link>
             <nav className="hidden items-center gap-2 md:flex" aria-label="관리자 메뉴">
               {adminLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={isActive(item.href) ? "page" : undefined}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    isActive(item.href)
-                      ? "bg-[#0A2342] text-white"
-                      : "text-slate-600 hover:bg-[#C9A227]/10 hover:text-[#0A2342]"
-                  }`}
-                >
+                <Link key={item.href} href={item.href} aria-current={isActive(item.href) ? "page" : undefined} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive(item.href) ? "bg-[#0A2342] text-white" : "text-slate-600 hover:bg-[#C9A227]/10 hover:text-[#0A2342]"}`}>
                   {item.label}
                 </Link>
               ))}
@@ -114,98 +103,25 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="hidden items-center gap-2 md:flex">
-            <a
-              href={BUILDING_LEDGER_VIEW_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-lg border border-[#C9A227] px-3 py-2 text-sm font-semibold text-[#0A2342] hover:bg-[#C9A227]/10"
-            >
-              건축물대장 열람
-            </a>
-            <a
-              href={REGISTRY_VIEW_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-lg border border-[#C9A227] px-3 py-2 text-sm font-semibold text-[#0A2342] hover:bg-[#C9A227]/10"
-            >
-              등기부등본 열람
-            </a>
-            <Link
-              href="/"
-              target="_blank"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              홈페이지 보기
-            </Link>
-            <form action="/api/admin/logout" method="post" data-ignore-unsaved-warning="true">
-              <button
-                type="submit"
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                로그아웃
-              </button>
-            </form>
+            <a href={BUILDING_LEDGER_VIEW_URL} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#C9A227] px-3 py-2 text-sm font-semibold text-[#0A2342] hover:bg-[#C9A227]/10">건축물대장 열람</a>
+            <a href={REGISTRY_VIEW_URL} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#C9A227] px-3 py-2 text-sm font-semibold text-[#0A2342] hover:bg-[#C9A227]/10">등기부등본 열람</a>
+            <Link href="/" target="_blank" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">홈페이지 보기</Link>
+            <form action="/api/admin/logout" method="post" data-ignore-unsaved-warning="true"><button type="submit" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">로그아웃</button></form>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen((current) => !current)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 md:hidden"
-            aria-expanded={mobileMenuOpen}
-            aria-controls="admin-mobile-menu"
-          >
-            메뉴
-          </button>
+          <button type="button" onClick={() => setMobileMenuOpen((current) => !current)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 md:hidden" aria-expanded={mobileMenuOpen} aria-controls="admin-mobile-menu">메뉴</button>
         </div>
 
         {mobileMenuOpen && (
           <div id="admin-mobile-menu" className="border-t border-slate-200 bg-white px-4 py-4 md:hidden">
             <nav className="grid gap-2" aria-label="모바일 관리자 메뉴">
               {adminLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`rounded-xl px-4 py-3 text-sm font-semibold ${
-                    isActive(item.href) ? "bg-[#0A2342] text-white" : "bg-slate-50 text-slate-700"
-                  }`}
-                >
-                  {item.label}
-                </Link>
+                <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)} className={`rounded-xl px-4 py-3 text-sm font-semibold ${isActive(item.href) ? "bg-[#0A2342] text-white" : "bg-slate-50 text-slate-700"}`}>{item.label}</Link>
               ))}
-              <a
-                href={BUILDING_LEDGER_VIEW_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]"
-              >
-                건축물대장 열람
-              </a>
-              <a
-                href={REGISTRY_VIEW_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]"
-              >
-                등기부등본 열람
-              </a>
-              <Link
-                href="/"
-                target="_blank"
-                className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700"
-              >
-                홈페이지 보기
-              </Link>
-              <form action="/api/admin/logout" method="post" data-ignore-unsaved-warning="true">
-                <button
-                  type="submit"
-                  className="w-full rounded-xl border border-red-200 px-4 py-3 text-left text-sm font-semibold text-red-600"
-                >
-                  로그아웃
-                </button>
-              </form>
+              <a href={BUILDING_LEDGER_VIEW_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]">건축물대장 열람</a>
+              <a href={REGISTRY_VIEW_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]">등기부등본 열람</a>
+              <Link href="/" target="_blank" className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">홈페이지 보기</Link>
+              <form action="/api/admin/logout" method="post" data-ignore-unsaved-warning="true"><button type="submit" className="w-full rounded-xl border border-red-200 px-4 py-3 text-left text-sm font-semibold text-red-600">로그아웃</button></form>
             </nav>
           </div>
         )}
