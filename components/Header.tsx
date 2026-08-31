@@ -66,22 +66,14 @@ export default function Header() {
         transition={{ duration: 0.3 }}
         className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 backdrop-blur-sm"
       >
-        <div className="mx-auto flex h-[106px] max-w-[1600px] items-center justify-between px-4 sm:h-[118px] sm:px-6 xl:h-[142px] xl:px-8 2xl:px-10">
-          <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center gap-3 sm:gap-4 xl:gap-5">
-            <div className="relative h-[74px] w-[74px] shrink-0 overflow-hidden rounded-full sm:h-[88px] sm:w-[88px] xl:h-[108px] xl:w-[108px]">
-              <img
-                src="/baekjo-header-logo.png"
-                alt="백조현대부동산중개 백조 로고"
-                className="absolute left-0 top-0 h-full w-auto max-w-none"
-              />
-            </div>
-
+        <div className="mx-auto flex h-[94px] max-w-[1600px] items-center justify-between px-4 sm:h-[108px] sm:px-6 xl:h-[126px] xl:px-8 2xl:px-10">
+          <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center">
             <div className="min-w-0">
-              <div className="whitespace-nowrap text-[22px] font-black leading-none tracking-[-0.045em] text-[#071f3b] sm:text-[28px] xl:text-[42px] 2xl:text-[44px]">
+              <div className="whitespace-nowrap text-[24px] font-black leading-none tracking-[-0.045em] text-[#071f3b] sm:text-[31px] xl:text-[43px] 2xl:text-[46px]">
                 백조현대부동산중개
               </div>
               <div className="mt-2 h-[3px] w-full bg-[#D5A514] xl:mt-3 xl:h-[4px]" />
-              <div className="mt-2 whitespace-nowrap text-[10px] font-bold tracking-[0.18em] text-[#173553] sm:text-[12px] xl:text-[16px] 2xl:text-[17px]">
+              <div className="mt-2 whitespace-nowrap text-[10px] font-bold tracking-[0.18em] text-[#173553] sm:text-[13px] xl:text-[16px] 2xl:text-[17px]">
                 BAEKJO HYUNDAI REAL ESTATE
               </div>
             </div>
@@ -128,7 +120,7 @@ export default function Header() {
         )}
       </motion.header>
 
-      {brightHome && <div aria-hidden className="h-[106px] sm:h-[118px] xl:h-[142px]" />}
+      {brightHome && <div aria-hidden className="h-[94px] sm:h-[108px] xl:h-[126px]" />}
     </>
   );
 }
