@@ -4,150 +4,33 @@ export const ALL_OPTIONS=[...COMMON_OPTIONS,...VARIABLE_OPTIONS] as const;
 export const MAINTENANCE_ITEMS=["수도세","인터넷","유선방송","공동전기세","복도청소비","정화조처리비","기타 공용관리비"] as const;
 
 export const DESCRIPTION_PRESETS=[
-  "깔끔하게 관리되어 쾌적하게 거주하기 좋아요.",
-  "채광이 좋고 실내가 밝아 답답함이 없어요.",
-  "공간 활용이 좋아 1인 거주에 적합하고 실속적이에요.",
-  "주방과 생활공간이 분리된 구조예요.",
-  "수납공간이 잘 갖춰져 있어 깔끔하게 생활할 수 있어요.",
-  "조용한 주거환경으로 편안하게 생활하기 좋아요.",
-  "주차 공간이 넉넉해 주차하기 편해요.",
-  "버스정류장과 가까워 대중교통 이용이 편리해요.",
-  "편의점 등 생활편의시설 이용이 편리한 위치예요.",
-  "디지스트 학생 및 직원 거주에 추천해요.",
-  "디지스트 통학·출퇴근하기 좋은 위치예요.",
-  "대구테크노폴리스 생활권 이용이 편리해요.",
-  "즉시 입주 가능해 빠른 입주를 원하는 분께 추천합니다.",
-  "가성비 좋은 월세 조건으로 부담 없이 거주하기 좋아요.",
+ "깔끔하게 관리되어 쾌적하게 거주하기 좋아요.","채광이 좋고 실내가 밝아 답답함이 없어요.","공간 활용이 좋아 1인 거주에 적합하고 실속적이에요.","주방과 생활공간이 분리된 구조예요.","수납공간이 잘 갖춰져 있어 깔끔하게 생활할 수 있어요.","조용한 주거환경으로 편안하게 생활하기 좋아요.","주차 공간이 넉넉해 주차하기 편해요.","버스정류장과 가까워 대중교통 이용이 편리해요.","편의점 등 생활편의시설 이용이 편리한 위치예요.","디지스트 학생 및 직원 거주에 추천해요.","디지스트 통학·출퇴근하기 좋은 위치예요.","대구테크노폴리스 생활권 이용이 편리해요.","즉시 입주 가능해 빠른 입주를 원하는 분께 추천합니다.","가성비 좋은 월세 조건으로 부담 없이 거주하기 좋아요."
 ] as const;
 
-const SMALL_HOME_PRESETS=[
-  ...DESCRIPTION_PRESETS,
-  "침실과 생활공간을 나누어 사용하기 좋은 구조예요.",
-  "혼자 거주하면서 공간을 실용적으로 사용하기 좋아요.",
+const ONE_ROOM_PRESETS=[
+ "깔끔하게 관리되어 쾌적하게 거주하기 좋아요.","채광이 좋아 실내가 밝고 답답함이 적어요.","1인 거주에 알맞은 실속 있는 원룸 구조예요.","가구 배치가 편리해 공간을 효율적으로 활용하기 좋아요.","수납공간이 잘 갖춰져 있어 깔끔하게 생활하기 좋아요.","주방 공간을 실용적으로 사용할 수 있어요.","창이 있어 환기와 실내 공기 관리가 편리해요.","조용한 주거환경을 원하는 분께 추천해요.","주차 공간을 편리하게 이용할 수 있어요.","버스정류장이 가까워 대중교통 이용이 편리해요.","편의점·마트·음식점 등 생활편의시설 이용이 편리해요.","디지스트 학생·직원 통학 및 출퇴근에 좋은 위치예요.","대구테크노폴리스 생활권 이용이 편리해요.","즉시 입주 가능해 빠른 입주를 원하는 분께 좋아요.","월세 부담을 줄이고 실속 있게 거주하려는 분께 추천해요.","베란다가 있어 세탁과 빨래 건조에 편리해요.","옵션이 잘 갖춰져 있어 이사 부담을 줄이기 좋아요.","혼자 편안하고 독립적으로 생활하기 좋은 공간이에요.","관리 상태가 좋아 바로 생활하기 편리해요.","직장인이나 학생이 생활하기 편리한 실용적인 매물이에요."
 ] as const;
-
-const APARTMENT_OFFICETEL_PRESETS=[
-  "관리 상태가 좋아 쾌적하게 거주하기 좋아요.",
-  "엘리베이터 이용이 편리한 건물이에요.",
-  "주차시설 이용이 편리해 차량을 보유한 분께 좋아요.",
-  "공동현관 및 보안시설이 갖춰져 있어 안심하고 생활하기 좋아요.",
-  "채광과 조망이 좋아 실내가 밝고 쾌적해요.",
-  "편의점·마트 등 생활편의시설 이용이 편리해요.",
-  "대중교통 이용이 편리한 위치예요.",
-  "즉시 입주 또는 입주시기 협의가 가능한 매물이에요.",
-  "대구테크노폴리스 생활권 이용이 편리해요.",
+const MINI_TWO_ROOM_PRESETS=[
+ "깔끔하게 관리되어 쾌적하게 거주하기 좋아요.","원룸보다 여유로운 공간을 원하는 분께 추천해요.","침실과 생활공간을 나누어 사용할 수 있어 실용적이에요.","주방과 생활공간이 분리되어 음식 냄새 관리에 편리해요.","혼자 거주하면서 공간을 넉넉하게 사용하기 좋아요.","채광이 좋아 실내가 밝고 쾌적해요.","창이 잘 나 있어 환기하기 편리해요.","수납공간이 잘 갖춰져 있어 정리하기 좋아요.","베란다가 있어 세탁과 빨래 건조에 편리해요.","가구 배치가 편리해 공간 활용도가 좋아요.","주차 공간을 편리하게 이용할 수 있어요.","조용한 주거환경으로 편안하게 생활하기 좋아요.","버스정류장이 가까워 대중교통 이용이 편리해요.","편의점·마트·음식점 등 생활편의시설 이용이 편리해요.","디지스트 학생·직원 통학 및 출퇴근에 좋은 위치예요.","대구테크노폴리스 생활권 이용이 편리해요.","즉시 입주 가능해 빠른 입주를 원하는 분께 좋아요.","옵션이 잘 갖춰져 있어 이사 부담을 줄이기 좋아요.","1인 거주 또는 두 공간을 분리해 쓰고 싶은 분께 적합해요.","실속 있는 월세 조건의 미니투룸을 찾는 분께 추천해요."
 ] as const;
-
-const HOUSE_PRESETS=[
-  "독립적인 주거생활을 원하는 분께 추천해요.",
-  "실내 공간이 넉넉해 가족 단위 거주에 좋아요.",
-  "주차 공간을 편리하게 이용할 수 있어요.",
-  "조용한 주거환경에서 여유롭게 생활하기 좋아요.",
-  "마당·테라스 등 외부공간 활용을 기대할 수 있는 주택이에요.",
-  "전원생활이나 세컨하우스를 찾는 분께 추천해요.",
-  "생활공간을 넓게 활용하고 싶은 분께 적합해요.",
-  "입주시기와 임대조건은 협의 가능합니다.",
+const TWO_ROOM_PRESETS=[
+ "깔끔하게 관리되어 쾌적하게 거주하기 좋아요.","방과 생활공간을 분리해 여유롭게 사용할 수 있어요.","침실과 작업실·드레스룸 등 용도별 공간 활용이 가능해요.","2인 거주나 넉넉한 1인 거주에 적합한 구조예요.","주방과 거실 공간을 편리하게 사용할 수 있어요.","채광이 좋아 실내가 밝고 쾌적해요.","창이 잘 나 있어 환기하기 편리해요.","수납공간이 잘 갖춰져 있어 정리하기 좋아요.","베란다가 있어 세탁과 빨래 건조에 편리해요.","가구 배치가 편리해 공간 활용도가 좋아요.","주차 공간을 편리하게 이용할 수 있어요.","조용한 주거환경으로 편안하게 생활하기 좋아요.","버스정류장이 가까워 대중교통 이용이 편리해요.","편의점·마트·음식점 등 생활편의시설 이용이 편리해요.","디지스트 학생·직원 통학 및 출퇴근에 좋은 위치예요.","대구테크노폴리스 생활권 이용이 편리해요.","즉시 입주 가능해 빠른 입주를 원하는 분께 좋아요.","신혼부부나 두 개의 독립 공간이 필요한 분께 추천해요.","옵션이 잘 갖춰져 있어 이사 부담을 줄이기 좋아요.","넉넉한 공간과 실용성을 함께 원하는 분께 추천해요."
 ] as const;
-
-const COMMERCIAL_PRESETS=[
-  "주변 주거세대와 유동인구를 배후수요로 기대할 수 있는 위치예요.",
-  "대로변 또는 주요 진입로 접근성이 좋아 매장 노출에 유리해요.",
-  "주변 상권과 연계해 생활밀착형 업종을 검토하기 좋은 위치예요.",
-  "주차와 차량 접근성을 활용하는 업종에 적합한지 검토해볼 수 있어요.",
-  "주변 아파트·원룸·오피스 수요를 겨냥한 업종을 검토하기 좋아요.",
-  "음식점·카페·편의점 등 생활편의 업종을 추천 후보로 검토할 수 있어요.",
-  "사무실·서비스업·소매점 등 다양한 업종을 검토하기 좋은 상가예요.",
-  "추천 업종은 상권과 건축물 용도 및 인허가 가능 여부를 확인한 뒤 결정하는 것이 좋아요.",
-] as const;
-
-const WAREHOUSE_FACTORY_PRESETS=[
-  "차량 진입과 물류 이동 동선을 확인하기 좋은 위치예요.",
-  "대형차량 진입 가능 여부를 확인해 물류·보관 용도로 검토하기 좋아요.",
-  "층고와 출입구 높이를 활용하는 창고·공장 용도로 검토하기 좋아요.",
-  "주차 및 야적공간 활용 여부를 확인해 다양한 사업용도로 검토할 수 있어요.",
-  "산업단지·IC·주요 도로 접근성을 활용하기 좋은 입지예요.",
-  "전력·용도·허가사항을 확인해 제조·보관·물류 업종으로 검토하기 좋아요.",
-] as const;
-
-const LAND_PRESETS=[
-  "도로 접면과 진입여건을 확인하기 좋은 토지예요.",
-  "토지 형상과 면적 활용도를 검토해 실수요 또는 투자용으로 살펴보기 좋아요.",
-  "용도지역과 건축 가능 여부를 확인해 활용계획을 세우기 좋아요.",
-  "주변 도로와 생활권 접근성을 함께 검토하기 좋은 위치예요.",
-  "주변 개발환경과 인근 토지 이용현황을 함께 확인해볼 만해요.",
-  "실수요·투자 목적에 따라 활용 가능성을 검토하기 좋은 토지예요.",
-] as const;
-
-export function getDescriptionPresetsForType(type:string):readonly string[]{
-  if(/상가/.test(type)&&!/상가주택/.test(type))return COMMERCIAL_PRESETS;
-  if(/창고|공장/.test(type))return WAREHOUSE_FACTORY_PRESETS;
-  if(/토지/.test(type))return LAND_PRESETS;
-  if(/아파트|오피스텔/.test(type))return APARTMENT_OFFICETEL_PRESETS;
-  if(/단독주택|다가구|상가주택/.test(type))return HOUSE_PRESETS;
-  if(/원룸|미니투룸|투룸|쓰리룸/.test(type))return SMALL_HOME_PRESETS;
-  return DESCRIPTION_PRESETS;
-}
-
+const THREE_ROOM_PRESETS=[...TWO_ROOM_PRESETS,"가족 단위 거주에 활용하기 좋은 넉넉한 구조예요.","방이 여러 개라 침실·아이방·서재 등으로 활용하기 좋아요."] as const;
+const APARTMENT_OFFICETEL_PRESETS=["관리 상태가 좋아 쾌적하게 거주하기 좋아요.","엘리베이터 이용이 편리한 건물이에요.","주차시설 이용이 편리해 차량을 보유한 분께 좋아요.","공동현관 및 보안시설이 갖춰져 있어 안심하고 생활하기 좋아요.","채광과 조망이 좋아 실내가 밝고 쾌적해요.","편의점·마트 등 생활편의시설 이용이 편리해요.","대중교통 이용이 편리한 위치예요.","즉시 입주 또는 입주시기 협의가 가능한 매물이에요.","대구테크노폴리스 생활권 이용이 편리해요."] as const;
+const HOUSE_PRESETS=["독립적인 주거생활을 원하는 분께 추천해요.","실내 공간이 넉넉해 가족 단위 거주에 좋아요.","주차 공간을 편리하게 이용할 수 있어요.","조용한 주거환경에서 여유롭게 생활하기 좋아요.","마당·테라스 등 외부공간 활용을 기대할 수 있는 주택이에요.","전원생활이나 세컨하우스를 찾는 분께 추천해요.","생활공간을 넓게 활용하고 싶은 분께 적합해요.","입주시기와 임대조건은 협의 가능합니다."] as const;
+const COMMERCIAL_PRESETS=["주변 주거세대와 유동인구를 배후수요로 기대할 수 있는 위치예요.","대로변 또는 주요 진입로 접근성이 좋아 매장 노출에 유리해요.","주변 상권과 연계해 생활밀착형 업종을 검토하기 좋은 위치예요.","주차와 차량 접근성을 활용하는 업종에 적합한지 검토해볼 수 있어요.","주변 아파트·원룸·오피스 수요를 겨냥한 업종을 검토하기 좋아요.","음식점·카페·편의점 등 생활편의 업종을 추천 후보로 검토할 수 있어요.","사무실·서비스업·소매점 등 다양한 업종을 검토하기 좋은 상가예요.","추천 업종은 상권과 건축물 용도 및 인허가 가능 여부를 확인한 뒤 결정하는 것이 좋아요."] as const;
+const WAREHOUSE_FACTORY_PRESETS=["차량 진입과 물류 이동 동선을 확인하기 좋은 위치예요.","대형차량 진입 가능 여부를 확인해 물류·보관 용도로 검토하기 좋아요.","층고와 출입구 높이를 활용하는 창고·공장 용도로 검토하기 좋아요.","주차 및 야적공간 활용 여부를 확인해 다양한 사업용도로 검토할 수 있어요.","산업단지·IC·주요 도로 접근성을 활용하기 좋은 입지예요.","전력·용도·허가사항을 확인해 제조·보관·물류 업종으로 검토하기 좋아요."] as const;
+const LAND_PRESETS=["도로 접면과 진입여건을 확인하기 좋은 토지예요.","토지 형상과 면적 활용도를 검토해 실수요 또는 투자용으로 살펴보기 좋아요.","용도지역과 건축 가능 여부를 확인해 활용계획을 세우기 좋아요.","주변 도로와 생활권 접근성을 함께 검토하기 좋은 위치예요.","주변 개발환경과 인근 토지 이용현황을 함께 확인해볼 만해요.","실수요·투자 목적에 따라 활용 가능성을 검토하기 좋은 토지예요."] as const;
+export function getDescriptionPresetsForType(type:string):readonly string[]{if(/상가/.test(type)&&!/상가주택/.test(type))return COMMERCIAL_PRESETS;if(/창고|공장/.test(type))return WAREHOUSE_FACTORY_PRESETS;if(/토지/.test(type))return LAND_PRESETS;if(/아파트|오피스텔/.test(type))return APARTMENT_OFFICETEL_PRESETS;if(/단독주택|다가구|상가주택/.test(type))return HOUSE_PRESETS;if(type==="미니투룸")return MINI_TWO_ROOM_PRESETS;if(type==="투룸")return TWO_ROOM_PRESETS;if(type==="쓰리룸")return THREE_ROOM_PRESETS;if(type==="원룸")return ONE_ROOM_PRESETS;return DESCRIPTION_PRESETS;}
 export const ELIGIBLE_RESIDENTIAL=/아파트|원룸|미니투룸|투룸|쓰리룸|단독주택|다가구|다세대|연립|빌라|오피스텔|상가주택/;
-
-export type PropertyInfoOverrides={
-  elevator:string;
-  parking:string;
-  moveIn:string;
-  heating:string;
-  direction:string;
-  buildingUse:string;
-  approvalDate:string;
-};
-
-export type AdminMeta={
-  options:string[];
-  maintenanceFee:string;
-  maintenanceItems:string[];
-  waterFeeSeparate:boolean;
-  descriptionPresets:string[];
-  ledgerLookupAddress:string;
-  ledgerStatus:""|"completed";
-  ledgerSummary:string;
-  ledgerUpdatedAt:string;
-  infoOverrides:PropertyInfoOverrides;
-};
-
-const META_RE=/\n?<!--PROPERTY_ADMIN_META:([\s\S]*?)-->/g;
-const LEGACY_OPTIONS_RE=/\n?<!--PROPERTY_OPTIONS:([\s\S]*?)-->/g;
-const STRUCTURED_INFO_LINE_RE=/^\s*(?:매물\s*정보|거래조건|금액|주소|관리비(?:\s*항목)?|매물\s*종류|엘리베이터|면적|공급\/전용\s*면적|방|화장실|방\/욕실|층수|주차|총주차대수|입주가능일|입주\s*가능일|난방|방향|건축물\s*용도|사용승인일)\s*(?::|：)?\s*.*$/gm;
-
+export type PropertyInfoOverrides={elevator:string;parking:string;moveIn:string;heating:string;direction:string;buildingUse:string;approvalDate:string;};
+export type AdminMeta={options:string[];maintenanceFee:string;maintenanceItems:string[];waterFeeSeparate:boolean;descriptionPresets:string[];ledgerLookupAddress:string;ledgerStatus:""|"completed";ledgerSummary:string;ledgerUpdatedAt:string;infoOverrides:PropertyInfoOverrides;};
+const META_RE=/\n?<!--PROPERTY_ADMIN_META:([\s\S]*?)-->/g;const LEGACY_OPTIONS_RE=/\n?<!--PROPERTY_OPTIONS:([\s\S]*?)-->/g;const STRUCTURED_INFO_LINE_RE=/^\s*(?:매물\s*정보|거래조건|금액|주소|관리비(?:\s*항목)?|매물\s*종류|엘리베이터|면적|공급\/전용\s*면적|방|화장실|방\/욕실|층수|주차|총주차대수|입주가능일|입주\s*가능일|난방|방향|건축물\s*용도|사용승인일)\s*(?::|：)?\s*.*$/gm;
 export function emptyInfoOverrides():PropertyInfoOverrides{return{elevator:"",parking:"",moveIn:"",heating:"",direction:"",buildingUse:"",approvalDate:""};}
 export function emptyAdminMeta():AdminMeta{return{options:[],maintenanceFee:"",maintenanceItems:[],waterFeeSeparate:false,descriptionPresets:[],ledgerLookupAddress:"",ledgerStatus:"",ledgerSummary:"",ledgerUpdatedAt:"",infoOverrides:emptyInfoOverrides()};}
-
-export function stripAdminMeta(description:string){
-  const hasAdminMeta=description.includes("<!--PROPERTY_ADMIN_META:");
-  let clean=description.replace(META_RE,"").replace(LEGACY_OPTIONS_RE,"");
-  if(hasAdminMeta){
-    clean=clean.replace(STRUCTURED_INFO_LINE_RE,"");
-    clean=clean.replace(/\n{3,}/g,"\n\n");
-  }
-  return clean.trimEnd();
-}
-
-export function parseAdminMeta(description:string):AdminMeta{
-  const meta=emptyAdminMeta();
-  const match=[...description.matchAll(META_RE)].at(-1);
-  if(match){try{const parsed=JSON.parse(decodeURIComponent(match[1]));return{...meta,...parsed,ledgerLookupAddress:String(parsed.ledgerLookupAddress||""),ledgerStatus:parsed.ledgerStatus==="completed"?"completed":"",ledgerSummary:String(parsed.ledgerSummary||""),ledgerUpdatedAt:String(parsed.ledgerUpdatedAt||""),options:Array.isArray(parsed.options)?parsed.options:[],maintenanceItems:Array.isArray(parsed.maintenanceItems)?parsed.maintenanceItems:[],descriptionPresets:Array.isArray(parsed.descriptionPresets)?parsed.descriptionPresets:[],infoOverrides:{...emptyInfoOverrides(),...(parsed.infoOverrides||{})}};}catch{/* fall through */}}
-  const legacy=[...description.matchAll(LEGACY_OPTIONS_RE)].at(-1);
-  if(legacy)meta.options=legacy[1].split("|").map(v=>v.trim()).filter(Boolean);
-  return meta;
-}
-export function buildDescriptionWithAdminMeta(description:string,meta:AdminMeta){
-  const clean=stripAdminMeta(description);
-  const encoded=encodeURIComponent(JSON.stringify(meta));
-  return `${clean}${clean?"\n":""}<!--PROPERTY_ADMIN_META:${encoded}-->`;
-}
-export function inferOptions(description:string,type:string){
-  if(!ELIGIBLE_RESIDENTIAL.test(type))return [];
-  const stored=parseAdminMeta(description).options;if(stored.length)return stored;
-  const result:string[]=[...COMMON_OPTIONS];
-  for(const option of VARIABLE_OPTIONS){const pattern=option==="TV"?/(?:^|[\s·,\/])TV(?:$|[\s·,\/])/i:new RegExp(option.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));if(pattern.test(description))result.push(option);}
-  return [...new Set(result)];
-}
+export function stripAdminMeta(description:string){const hasAdminMeta=description.includes("<!--PROPERTY_ADMIN_META:");let clean=description.replace(META_RE,"").replace(LEGACY_OPTIONS_RE,"");if(hasAdminMeta){clean=clean.replace(STRUCTURED_INFO_LINE_RE,"");clean=clean.replace(/\n{3,}/g,"\n\n");}return clean.trimEnd();}
+export function parseAdminMeta(description:string):AdminMeta{const meta=emptyAdminMeta();const match=[...description.matchAll(META_RE)].at(-1);if(match){try{const parsed=JSON.parse(decodeURIComponent(match[1]));return{...meta,...parsed,ledgerLookupAddress:String(parsed.ledgerLookupAddress||""),ledgerStatus:parsed.ledgerStatus==="completed"?"completed":"",ledgerSummary:String(parsed.ledgerSummary||""),ledgerUpdatedAt:String(parsed.ledgerUpdatedAt||""),options:Array.isArray(parsed.options)?parsed.options:[],maintenanceItems:Array.isArray(parsed.maintenanceItems)?parsed.maintenanceItems:[],descriptionPresets:Array.isArray(parsed.descriptionPresets)?parsed.descriptionPresets:[],infoOverrides:{...emptyInfoOverrides(),...(parsed.infoOverrides||{})}};}catch{}}const legacy=[...description.matchAll(LEGACY_OPTIONS_RE)].at(-1);if(legacy)meta.options=legacy[1].split("|").map(v=>v.trim()).filter(Boolean);return meta;}
+export function buildDescriptionWithAdminMeta(description:string,meta:AdminMeta){const clean=stripAdminMeta(description);const encoded=encodeURIComponent(JSON.stringify(meta));return `${clean}${clean?"\n":""}<!--PROPERTY_ADMIN_META:${encoded}-->`;}
+export function inferOptions(description:string,type:string){if(!ELIGIBLE_RESIDENTIAL.test(type))return [];const stored=parseAdminMeta(description).options;if(stored.length)return stored;const result:string[]=[...COMMON_OPTIONS];for(const option of VARIABLE_OPTIONS){const pattern=option==="TV"?/(?:^|[\s·,\/])TV(?:$|[\s·,\/])/i:new RegExp(option.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));if(pattern.test(description))result.push(option);}return [...new Set(result)];}
 export function inferMaintenanceFee(description:string){return description.match(/관리비\s*[:：]\s*([^\n]+)/)?.[1]?.trim()||"";}
