@@ -172,8 +172,14 @@ export async function POST(req:NextRequest){
     const ledger=await fetchLedger(address);
     const collective=isCollectiveType(text(p.type));
     let exclusiveArea="";
+    let unitWarning="";
     if(collective){
-      exclusiveArea=await fetchExclusiveUnitArea(ledger.loc,ledger.unit.dong,ledger.unit.ho);
+      try{
+        exclusiveArea=await fetchExclusiveUnitArea(ledger.loc,ledger.unit.dong,ledger.unit.ho);
+      }catch(e){
+        unitWarning=e instanceof Error?e.message:String(e);
+        console.warn("BUILDING_LEDGER_UNIT_AREA_PARTIAL_FAILURE",{propertyId,address,unitWarning});
+      }
     }
 
     const meta=parseAdminMeta(p.description||"");
@@ -183,6 +189,7 @@ export async function POST(req:NextRequest){
       ledger.totalFloor?`지상 ${ledger.totalFloor}층`:"",
       ledger.parkingCount?`주차 ${ledger.parkingCount}대`:"",
       exclusiveArea?`전용 ${exclusiveArea}㎡`:"",
+      unitWarning?"전용면적 기존 정보 유지":"",
     ].filter(Boolean).join(" · ");
     const next={...meta,ledgerLookupAddress:address,ledgerStatus:"completed" as const,ledgerSummary:summary||"보완 완료",ledgerUpdatedAt:new Date().toISOString(),infoOverrides:{...meta.infoOverrides}};
 
@@ -194,13 +201,10 @@ export async function POST(req:NextRequest){
     const description=buildDescriptionWithAdminMeta(p.description||"",next);
     const update:Record<string,unknown>={description};
 
-    // 집합건축물은 표제부의 건물 전체 연면적(totArea)을 매물 면적으로 절대 사용하지 않는다.
-    // 아파트·오피스텔·집합상가 등은 해당 동/호의 전유공용면적 중 '전유' 면적 합계를 매물 면적으로 사용한다.
     if(collective&&exclusiveArea){
       update.area=exclusiveArea;
       update.exclusive_area=exclusiveArea;
     }
-    // 일반 건축물만 기존과 같이 비어 있는 경우 표제부 연면적을 보완한다.
     if(!collective&&!text(p.area)&&ledger.totalArea)update.area=ledger.totalArea;
     if(!text(p.floor)&&ledger.totalFloor)update.floor=`-/${ledger.totalFloor}층`;
 
@@ -209,6 +213,8 @@ export async function POST(req:NextRequest){
 
     return NextResponse.json({
       ok:true,
+      partial:Boolean(unitWarning),
+      warning:unitWarning||undefined,
       property_id:propertyId,
       summary:next.ledgerSummary,
       description,
