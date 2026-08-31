@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { normalizePropertyForDisplay } from "@/lib/property-normalize";
+import { formatPropertyPriceDisplay } from "@/lib/property-price";
 import { Property } from "@/types/property";
 
 export default function FeaturedProperties() {
@@ -136,7 +137,7 @@ export default function FeaturedProperties() {
                       <div>
                         <p className="text-sm text-[#0A2342]/55">면적 {property.area || "문의"}</p>
                         <p className="mt-1 text-lg font-bold text-[#C9A227]">
-                          {isCompleted ? "계약완료" : property.price || "가격 문의"}
+                          {isCompleted ? "계약완료" : formatPropertyPriceDisplay(property.price)}
                         </p>
                       </div>
                       <span className="text-sm font-semibold text-[#0A2342] transition group-hover:text-[#C9A227]">
