@@ -13,6 +13,18 @@ const navItems = [
   { label: "상담문의", href: "/contact" },
 ];
 
+function SwanLogo() {
+  return (
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-[#C9A227] bg-[#0A2540] shadow-sm sm:h-16 sm:w-16" aria-label="백조 로고">
+      <svg viewBox="0 0 64 64" className="h-10 w-10 sm:h-11 sm:w-11" aria-hidden="true">
+        <path d="M25 13c7 1 11 6 10 12-1 5-6 8-10 12-4 4-5 8-2 12 5 6 17 5 26-1-6 11-18 16-29 11C10 54 9 44 14 36c4-6 11-9 14-14 2-4 1-7-3-9Z" fill="none" stroke="#D6AF38" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M27 45c9 2 18-1 26-8-4 9-12 15-23 17M31 49c8 1 15-1 21-6" fill="none" stroke="#D6AF38" strokeWidth="3" strokeLinecap="round"/>
+        <circle cx="27" cy="18" r="1.8" fill="#D6AF38"/>
+      </svg>
+    </div>
+  );
+}
+
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -51,18 +63,18 @@ export default function Header() {
 
   return (
     <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0, backgroundColor: scrolled ? "rgba(255,255,255,0.96)" : brightHome ? "rgba(255,255,255,0.82)" : "rgba(255,255,255,0)" }} transition={{ duration: 0.3 }} className="fixed inset-x-0 top-0 z-50 backdrop-blur-sm">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-        <Link href="/" onClick={handleHomeClick} className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0A2540] text-xs font-bold text-[#C9A227]">백조</div>
+      <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-6">
+        <Link href="/" onClick={handleHomeClick} className="flex items-center gap-4">
+          <SwanLogo />
           <div>
-            <p className={`text-lg font-extrabold tracking-wide ${darkText ? "text-[#0A2540]" : "text-white"}`}>백조현대부동산중개</p>
-            <p className={`text-xs ${darkText ? "text-[#0A2540]/60" : "text-white/80"}`}>Trusted Real Estate Partner</p>
+            <p className={`text-xl font-extrabold tracking-tight sm:text-2xl ${darkText ? "text-[#0A2540]" : "text-white"}`}>백조현대부동산중개</p>
+            <p className={`mt-0.5 text-xs sm:text-sm ${darkText ? "text-[#0A2540]/60" : "text-white/80"}`}>Trusted Real Estate Partner</p>
           </div>
         </Link>
         <nav className="hidden gap-8 md:flex">
           {navItems.map((item) => <Link key={item.label} href={item.href} onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : undefined} className={`text-sm font-medium hover:text-[#C9A227] ${darkText ? "text-[#0A2540]" : "text-white"}`}>{item.label}</Link>)}
         </nav>
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           <a href="tel:01077750014" className="rounded-full border border-[#C9A227] bg-white/70 px-4 py-2 text-sm font-semibold text-[#C9A227]">☎ 010-7775-0014</a>
           <Link href="/contact" className="rounded-full bg-[#C9A227] px-5 py-2.5 text-sm font-semibold text-[#0A2540]">상담문의</Link>
         </div>
