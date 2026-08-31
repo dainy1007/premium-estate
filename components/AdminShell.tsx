@@ -12,6 +12,7 @@ const adminLinks = [
   { href: "/admin", label: "매물 관리" },
   { href: "/admin/building-ledger", label: "건축물대장" },
   { href: "/admin/building-directory", label: "건물 장부" },
+  { href: "/admin/vacancy-sms", label: "공실 문자" },
   { href: "/admin/bulk", label: "일괄 관리" },
   { href: "/admin/inquiries", label: "문의 관리" },
 ];
