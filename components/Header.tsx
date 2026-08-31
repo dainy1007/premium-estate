@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const navItems = [
   { label: "HOME", href: "/" },
@@ -13,12 +13,21 @@ const navItems = [
   { label: "상담문의", href: "/contact" },
 ];
 
-const OFFICIAL_LOGO_URL = "https://raw.githubusercontent.com/dainy1007/premium-estate/assets-logo/public/baekjo-logo.png";
-
 function SwanLogo() {
+  const [logoSrc, setLogoSrc] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/baekjo-logo.webp.base64.tmp", { cache: "force-cache" })
+      .then((response) => response.ok ? response.text() : Promise.reject(new Error("logo load failed")))
+      .then((base64) => { if (active) setLogoSrc(`data:image/webp;base64,${base64.trim()}`); })
+      .catch(() => { if (active) setLogoSrc(""); });
+    return () => { active = false; };
+  }, []);
+
   return (
-    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full shadow-sm sm:h-[72px] sm:w-[72px]" aria-label="백조현대부동산 공식 로고">
-      <img src={OFFICIAL_LOGO_URL} alt="백조현대부동산 백조 로고" className="h-full w-full object-cover" />
+    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#C9A227]/60 bg-[#0A2540] shadow-sm sm:h-[72px] sm:w-[72px]" aria-label="백조현대부동산 공식 로고">
+      {logoSrc ? <img src={logoSrc} alt="백조현대부동산 백조 로고" className="h-full w-full object-cover" /> : <span className="text-xs font-bold text-[#C9A227]">백조</span>}
     </div>
   );
 }
