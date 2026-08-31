@@ -15,19 +15,18 @@ const navItems = [
 
 function SwanLogo() {
   const [logoSrc, setLogoSrc] = useState("");
-
   useEffect(() => {
     let active = true;
     fetch("/baekjo-logo.webp.base64.tmp", { cache: "force-cache" })
-      .then((response) => response.ok ? response.text() : Promise.reject(new Error("logo load failed")))
+      .then((r) => r.ok ? r.text() : Promise.reject(new Error("logo load failed")))
       .then((base64) => { if (active) setLogoSrc(`data:image/webp;base64,${base64.trim()}`); })
       .catch(() => { if (active) setLogoSrc(""); });
     return () => { active = false; };
   }, []);
 
   return (
-    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#C9A227]/60 bg-[#0A2540] shadow-sm sm:h-[72px] sm:w-[72px]" aria-label="백조현대부동산 공식 로고">
-      {logoSrc ? <img src={logoSrc} alt="백조현대부동산 백조 로고" className="h-full w-full object-cover" /> : <span className="text-xs font-bold text-[#C9A227]">백조</span>}
+    <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#D5AF45] bg-[#061f3d] shadow-md sm:h-[82px] sm:w-[82px]" aria-label="백조현대부동산 로고">
+      {logoSrc ? <img src={logoSrc} alt="백조현대부동산 백조 로고" className="h-full w-full object-cover" /> : <span className="text-sm font-extrabold text-[#D5AF45]">백조</span>}
     </div>
   );
 }
@@ -67,27 +66,32 @@ export default function Header() {
   };
 
   const darkText = scrolled || brightHome;
+  const textClass = darkText ? "text-[#071f3b]" : "text-white";
 
   return (
-    <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0, backgroundColor: scrolled ? "rgba(255,255,255,0.96)" : brightHome ? "rgba(255,255,255,0.82)" : "rgba(255,255,255,0)" }} transition={{ duration: 0.3 }} className="fixed inset-x-0 top-0 z-50 backdrop-blur-sm">
-      <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-6">
-        <Link href="/" onClick={handleHomeClick} className="flex items-center gap-4">
+    <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0, backgroundColor: scrolled ? "rgba(255,255,255,0.97)" : brightHome ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0)" }} transition={{ duration: 0.3 }} className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 backdrop-blur-sm">
+      <div className="mx-auto flex h-28 max-w-[1380px] items-center justify-between px-6 lg:px-8">
+        <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center gap-5">
           <SwanLogo />
-          <div>
-            <p className={`text-xl font-extrabold tracking-tight sm:text-2xl ${darkText ? "text-[#0A2540]" : "text-white"}`}>백조현대부동산중개</p>
-            <p className={`mt-0.5 text-xs sm:text-sm ${darkText ? "text-[#0A2540]/60" : "text-white/80"}`}>Trusted Real Estate Partner</p>
+          <div className="min-w-0">
+            <p className={`whitespace-nowrap text-[22px] font-black tracking-[-0.04em] sm:text-[28px] ${textClass}`}>백조현대부동산중개</p>
+            <div className="mt-2 hidden items-center gap-3 sm:flex">
+              <span className="h-px w-8 bg-[#D5AF45]" />
+              <p className={`whitespace-nowrap text-[10px] font-semibold tracking-[0.2em] sm:text-[11px] ${darkText ? "text-[#52647a]" : "text-white/80"}`}>BAEKJO HYUNDAI REAL ESTATE</p>
+            </div>
           </div>
         </Link>
-        <nav className="hidden gap-8 md:flex">
-          {navItems.map((item) => <Link key={item.label} href={item.href} onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : undefined} className={`text-sm font-medium hover:text-[#C9A227] ${darkText ? "text-[#0A2540]" : "text-white"}`}>{item.label}</Link>)}
+        <nav className="hidden items-center xl:flex">
+          {navItems.map((item, index) => (
+            <div key={item.label} className="flex items-center">
+              {index > 0 && <span className="mx-5 h-4 w-px bg-slate-300" />}
+              <Link href={item.href} onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : undefined} className={`whitespace-nowrap text-[15px] font-bold transition-colors hover:text-[#C9A227] ${textClass}`}>{item.label}</Link>
+            </div>
+          ))}
         </nav>
-        <div className="hidden items-center gap-3 lg:flex">
-          <a href="tel:01077750014" className="rounded-full border border-[#C9A227] bg-white/70 px-4 py-2 text-sm font-semibold text-[#C9A227]">☎ 010-7775-0014</a>
-          <Link href="/contact" className="rounded-full bg-[#C9A227] px-5 py-2.5 text-sm font-semibold text-[#0A2540]">상담문의</Link>
-        </div>
-        <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className={darkText ? "text-2xl text-[#0A2540] md:hidden" : "text-2xl text-white md:hidden"} aria-label="메뉴 열기">☰</button>
+        <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className={`text-2xl xl:hidden ${textClass}`} aria-label="메뉴 열기">☰</button>
       </div>
-      {mobileMenuOpen && <div className="bg-white p-6 shadow-lg md:hidden">{navItems.map((item) => <Link key={item.label} href={item.href} onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : () => setMobileMenuOpen(false)} className="block py-2 text-[#0A2540]">{item.label}</Link>)}<div className="mt-3 grid grid-cols-2 gap-3"><a href="tel:01077750014" className="rounded-full border border-[#C9A227] py-3 text-center font-semibold text-[#0A2540]">전화 상담</a><Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="rounded-full bg-[#C9A227] py-3 text-center font-semibold text-[#0A2540]">문의 남기기</Link></div></div>}
+      {mobileMenuOpen && <div className="bg-white p-6 shadow-lg xl:hidden">{navItems.map((item) => <Link key={item.label} href={item.href} onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : () => setMobileMenuOpen(false)} className="block border-b border-slate-100 py-3 font-semibold text-[#071f3b]">{item.label}</Link>)}</div>}
     </motion.header>
   );
 }
