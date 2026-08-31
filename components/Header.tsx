@@ -66,19 +66,19 @@ export default function Header() {
         transition={{ duration: 0.3 }}
         className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 backdrop-blur-sm"
       >
-        <div className="mx-auto flex h-[104px] max-w-[1600px] items-center justify-between px-4 sm:h-[120px] sm:px-6 xl:h-[148px] xl:px-8 2xl:px-10">
+        <div className="mx-auto flex h-[104px] max-w-[1600px] items-center justify-between px-4 sm:h-[120px] sm:px-6 xl:h-[126px] xl:px-8 2xl:px-10">
           <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center">
             <img
               src="/baekjo-header-logo.png"
               alt="백조현대부동산중개"
-              className="h-[82px] w-auto max-w-[72vw] object-contain sm:h-[98px] xl:h-[126px] 2xl:h-[132px]"
+              className="h-[88px] w-auto max-w-[78vw] object-contain sm:h-[104px] xl:h-[112px] 2xl:h-[116px]"
             />
           </Link>
 
           <nav className="hidden items-center xl:flex">
             {navItems.map((item, index) => (
               <div key={item.label} className="flex items-center">
-                {index > 0 && <span className="mx-6 h-5 w-px bg-slate-300" />}
+                {index > 0 && <span className="mx-5 h-5 w-px bg-slate-300" />}
                 <Link
                   href={item.href}
                   onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : undefined}
@@ -116,7 +116,7 @@ export default function Header() {
         )}
       </motion.header>
 
-      {brightHome && <div aria-hidden className="h-[104px] sm:h-[120px] xl:h-[148px]" />}
+      {brightHome && <div aria-hidden className="h-[104px] sm:h-[120px] xl:h-[126px]" />}
     </>
   );
 }
