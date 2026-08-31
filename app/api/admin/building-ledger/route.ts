@@ -17,8 +17,9 @@ const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const formatApprovalDate=(v:unknown)=>{const raw=text(v).replace(/\D/g,"");return raw.length===8?`${raw.slice(0,4)}.${raw.slice(4,6)}.${raw.slice(6,8)}`:text(v);};
 const norm=(v:unknown)=>{let s=text(v).replace(/\s+/g,"").replace(/(동|호)$/u,"").replace(/[^0-9A-Za-z가-힣]/g,"").toLowerCase();s=s.replace(/^제(?=\d)/u,"").replace(/^주(?=\d)/u,"");return /^\d+$/.test(s)?String(Number(s)):s;};
 const sameUnit=(a:unknown,b:string)=>{const aa=norm(a),bb=norm(b);return Boolean(aa&&bb&&aa===bb);};
-const isCollectiveType=(type:string)=>/아파트|오피스텔|집합상가|상가|다세대|연립|빌라/u.test(type);
-const isCommercialType=(type:string)=>/상가|사무실/u.test(type);
+const isWholeBuildingType=(type:string)=>/상가주택|다가구|단독주택/u.test(type);
+const isCollectiveType=(type:string)=>!isWholeBuildingType(type)&&/아파트|오피스텔|집합상가|상가|다세대|연립|빌라/u.test(type);
+const isCommercialType=(type:string)=>!isWholeBuildingType(type)&&/상가|사무실/u.test(type);
 class BuildingLedgerError extends Error{status:number;upstream:string;constructor(message:string,status=422,upstream=""){super(message);this.status=status;this.upstream=upstream;}}
 function normalizedServiceKey(value:string){const raw=value.trim();if(!raw)return raw;try{return raw.includes("%")?decodeURIComponent(raw):raw;}catch{return raw;}}
 function parseUnitAddress(address:string){const hoMatches=[...address.matchAll(/(?:^|[\s,\/·+&])([A-Za-z0-9가-힣-]+)\s*호(?=$|[\s,\/·+&])/gu)];const dongMatches=[...address.matchAll(/(?:^|[\s,])([A-Za-z0-9가-힣-]+)\s*동(?=$|[\s,])/gu)];const hos=[...new Set(hoMatches.map(m=>m[1]?.trim()).filter(Boolean) as string[])];const dong=dongMatches.at(-1)?.[1]?.trim()||"";let baseAddress=address;for(const m of [...hoMatches,...dongMatches])if(m[0])baseAddress=baseAddress.replace(m[0]," ");baseAddress=baseAddress.replace(/번지/gu,"").replace(/[\/·+&]/g," ").replace(/\s*,\s*/g," ").replace(/\s+/g," ").trim()||address;return{baseAddress,dong,ho:hos.at(-1)||"",hos};}
