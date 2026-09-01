@@ -70,11 +70,11 @@ export default function Header() {
           <Link
             href="/"
             onClick={handleHomeClick}
-            className="flex min-w-0 items-center xl:absolute xl:left-[108px] 2xl:left-[128px]"
+            className="flex min-w-0 items-center xl:absolute xl:left-[108px] xl:translate-x-[42px] 2xl:left-[128px] 2xl:translate-x-[50px]"
             aria-label="백조현대부동산중개 홈"
           >
             <img
-              src="/brand-logo?v=20260901-header-large"
+              src="/brand-logo?v=20260901-header-inset"
               alt="백조현대부동산중개"
               className="h-[76px] w-auto object-contain sm:h-[92px] xl:h-[116px] 2xl:h-[120px]"
             />
