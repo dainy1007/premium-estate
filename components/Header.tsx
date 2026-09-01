@@ -74,7 +74,7 @@ export default function Header() {
             aria-label="백조현대부동산중개 홈"
           >
             <img
-              src="/brand/baekjo-approved-logo.webp?v=20260901-1425"
+              src="/brand/baekjo-approved-header.webp?v=20260901-1433"
               alt="백조현대부동산중개"
               className="h-[72px] w-auto object-contain sm:h-[86px] xl:h-[102px] 2xl:h-[106px]"
             />
