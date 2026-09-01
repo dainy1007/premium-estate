@@ -74,11 +74,9 @@ export default function Header() {
             aria-label="백조현대부동산중개 홈"
           >
             <img
-              src="/baekjo-header-logo.png?v=20260901-final"
+              src="/brand/baekjo-header-user.svg?v=20260901-1125"
               alt="백조현대부동산중개"
-              width={2172}
-              height={724}
-              className="block h-[72px] w-auto max-w-[560px] object-contain sm:h-[86px] xl:h-[108px] xl:max-w-[620px] 2xl:h-[112px] 2xl:max-w-[650px]"
+              className="h-[72px] w-auto object-contain sm:h-[86px] xl:h-[102px] 2xl:h-[106px]"
             />
           </Link>
 
