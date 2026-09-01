@@ -55,6 +55,28 @@ export default function Contact() {
             <span className="block">매매, 임대, 투자 상담이 필요하시면 문의를 남겨주세요.</span>
             <span className="block">확인 후 빠르게 연락드리겠습니다.</span>
           </p>
+
+          <div className="mt-8 space-y-5 text-sm leading-6 text-white/85">
+            <div>
+              <p className="font-semibold text-white">상담 가능 분야</p>
+              <p className="mt-1 text-white/70">매매 · 전세 · 월세 · 상가 · 토지 · 창고/공장</p>
+            </div>
+            <div>
+              <p className="font-semibold text-white">주요 상담 지역</p>
+              <p className="mt-1 text-white/70">현풍 · 유가 · 구지 · 대구테크노폴리스</p>
+            </div>
+          </div>
+
+          <a
+            href="tel:01077750014"
+            className="mt-8 inline-flex items-center justify-center rounded-full border border-[#C9A227] px-6 py-3 font-bold text-[#E1B723] transition hover:bg-[#C9A227] hover:text-[#0A2342]"
+          >
+            전화 상담 바로가기 010-7775-0014
+          </a>
+
+          <p className="mt-5 text-sm leading-6 text-white/55">
+            문의 내용을 남겨주시면 확인 후 순차적으로 연락드립니다.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-2xl bg-white p-6 text-[#0A2342] shadow-xl">
