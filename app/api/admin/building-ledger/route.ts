@@ -157,11 +157,14 @@ async function fetchLedger(address: string) {
   const loc = await resolveAddress(unit.baseAddress);
   const { list } = await fetchHub("getBrTitleInfo", loc, 1, 100);
   if (!list.length) throw new BuildingLedgerError("BUILDING_LEDGER_NO_RESULT", 404);
-  const dongMatch = unit.dong ? list.find(v => sameUnit(v.dongNm, unit.dong) || sameUnit(v.bldNm, unit.dong) || text(v.bldNm).includes(`${unit.dong}동`)) : undefined;
+  const dongMatch = unit.dong ? list.find(v => sameUnit(v.dongNm, unit.dong) || sameUnit(v.bldNm, unit.dong) || text(v.bldNm).includes(`${unit.dong}동`) || text(v.bldNm).includes(`제${unit.dong}동`)) : undefined;
   const item = dongMatch || list.find(v => text(v.mainAtchGbCdNm).includes("주건축물")) || list[0];
   const parkingTotal = Number(item.indrMechUtcnt || 0) + Number(item.oudrMechUtcnt || 0) + Number(item.indrAutoUtcnt || 0) + Number(item.oudrAutoUtcnt || 0);
+  const registryKind = [item.regstrKindCdNm, item.regstrGbCdNm, item.regstrKindNm, item.regstrGbNm].map(text).filter(Boolean).join(" ");
+  const buildingLabel = [text(item.bldNm), text(item.dongNm), text(item.mainAtchGbCdNm)].filter(Boolean).join(" ");
+  const generalBuilding = /일반/u.test(registryKind) || Boolean(unit.dong && dongMatch && /주건축물/u.test(buildingLabel) && !/집합/u.test(registryKind));
   return {
-    loc, unit,
+    loc, unit, generalBuilding, registryKind,
     buildingName: text(item.bldNm), buildingUse: text(item.mainPurpsCdNm), mainPurpose: text(item.mainPurpsCdNm),
     structure: text(item.strctCdNm), approvalDate: formatApprovalDate(item.useAprDay), totalFloor: text(item.grndFlrCnt),
     undergroundFloor: text(item.ugrndFlrCnt), landArea: text(item.platArea), floorArea: text(item.archArea), totalArea: text(item.totArea),
@@ -187,7 +190,7 @@ function rowsByUnit(list: LedgerItem[], dong: string, ho: string) {
   const byHo = list.filter(v => rowMatchesHo(v, ho));
   if (!byHo.length) return [];
   if (!dong) return byHo;
-  const exact = byHo.filter(v => sameUnit(v.dongNm, dong) || sameUnit(v.bldNm, dong) || text(v.bldNm).includes(`${dong}동`) || text(v.dongNm).includes(`${dong}동`));
+  const exact = byHo.filter(v => sameUnit(v.dongNm, dong) || sameUnit(v.bldNm, dong) || text(v.bldNm).includes(`${dong}동`) || text(v.dongNm).includes(`${dong}동`) || text(v.bldNm).includes(`제${dong}동`));
   if (exact.length) return exact;
   const identities = [...new Set(byHo.map(v => text(v.mgmBldrgstPk) || text(v.mgmUpperBldrgstPk) || `${norm(v.dongNm)}|${norm(v.bldNm)}`).filter(Boolean))];
   return identities.length === 1 ? byHo : [];
@@ -260,13 +263,20 @@ export async function POST(req: NextRequest) {
 
     const ledger = await fetchLedger(address);
     const collective = isCollectiveType(text(p.type)), commercial = isCommercialType(text(p.type));
-    let unitAreas: UnitArea[] = [], unitWarning = "";
+    let unitAreas: UnitArea[] = [], unitWarning = "", unitErrorCode = "", unitNote = "";
     if (collective) {
       try {
         unitAreas = await fetchUnitAreas(ledger.loc, ledger.unit.dong, ledger.unit.hos.length ? ledger.unit.hos : (ledger.unit.ho ? [ledger.unit.ho] : []));
       } catch (e) {
+        unitErrorCode = e instanceof BuildingLedgerError ? e.message : "";
         unitWarning = e instanceof BuildingLedgerError ? (e.upstream || e.message) : (e instanceof Error ? e.message : String(e));
       }
+    }
+
+    if (unitWarning && ledger.generalBuilding && ledger.unit.dong && unitErrorCode === "UNIT_NOT_FOUND") {
+      const hoText = ledger.unit.hos.length ? ` · ${ledger.unit.hos.join(", ")}호 전유부 없음` : "";
+      unitNote = `${ledger.unit.dong}동 일반건축물 조회 완료${hoText}`;
+      unitWarning = "";
     }
 
     const exclusiveTotal = round3(unitAreas.reduce((s, v) => s + v.exclusive, 0));
@@ -274,7 +284,7 @@ export async function POST(req: NextRequest) {
     const areaLabel = unitAreas.length > 1 ? `${unitAreas.length}개 호실 합산 · 전용 ${exclusiveTotal}㎡${supplyTotal ? ` · 공급 ${supplyTotal}㎡` : ""}` : exclusiveTotal ? `전용 ${exclusiveTotal}㎡` : "";
 
     const meta = parseAdminMeta(p.description || "");
-    const summary = [ledger.buildingUse, ledger.approvalDate, ledger.totalFloor ? `지상 ${ledger.totalFloor}층` : "", areaLabel, unitWarning ? `전유부 재확인 필요 (${unitWarning})` : ""].filter(Boolean).join(" · ");
+    const summary = [ledger.buildingUse, ledger.approvalDate, ledger.totalFloor ? `지상 ${ledger.totalFloor}층` : "", areaLabel, unitNote, unitWarning ? `전유부 재확인 필요 (${unitWarning})` : ""].filter(Boolean).join(" · ");
     const next = {
       ...meta,
       ledgerLookupAddress: address,
@@ -317,7 +327,7 @@ export async function POST(req: NextRequest) {
         parkingCount: ledger.parkingCount, householdCount: ledger.householdCount, unitCount: ledger.unitCount,
         roadAddress: ledger.roadAddress, jibunAddress: ledger.jibunAddress,
         exclusiveArea: exclusiveTotal ? String(exclusiveTotal) : "", supplyArea: supplyTotal ? String(supplyTotal) : "",
-        unitAreas, dong: ledger.unit.dong, hos: ledger.unit.hos
+        unitAreas, dong: ledger.unit.dong, hos: ledger.unit.hos, registryKind: ledger.registryKind, generalBuilding: ledger.generalBuilding
       }
     });
   } catch (e) {
