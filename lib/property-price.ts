@@ -36,11 +36,22 @@ export function formatKrwAmount(amount: number | null): string {
   return `${new Intl.NumberFormat("ko-KR").format(amount)}원`;
 }
 
+function addThousandsSeparators(text: string): string {
+  return text.replace(/\d+(?:\.\d+)?/g, (value) => {
+    const [integerPart, decimalPart] = value.split(".");
+    const formattedInteger = Number(integerPart).toLocaleString("ko-KR");
+    return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+  });
+}
+
 export function formatPropertyPriceDisplay(price: string | null | undefined): string {
   const text = String(price ?? "").trim();
   if (!text) return "가격 문의";
   if (/가격\s*문의|협의|계약완료/i.test(text)) return text;
-  if (/원\s*$/.test(text)) return text;
-  if (/억\s*$/.test(text) && !text.includes("/")) return text;
-  return `${text}만원`;
+
+  const formatted = addThousandsSeparators(text.replace(/,/g, ""));
+
+  if (/원\s*$/.test(formatted)) return formatted;
+  if (/억\s*$/.test(formatted) && !formatted.includes("/")) return formatted;
+  return `${formatted}만원`;
 }
