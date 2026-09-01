@@ -60,10 +60,14 @@ function normalizedServiceKey(value: string) {
 function parseUnitAddress(address: string) {
   const hoMatches = [...address.matchAll(/(?:^|[\s,\/·+&])([A-Za-z0-9가-힣-]+)\s*호(?=$|[\s,\/·+&])/gu)];
   const dongMatches = [...address.matchAll(/(?:^|[\s,])([A-Za-z0-9가-힣-]+)\s*동(?=$|[\s,])/gu)];
-  const hos = [...new Set(hoMatches.map(m => m[1]?.trim()).filter(Boolean) as string[])];
+  const inferredHoMatch = hoMatches.length ? null : address.match(/(?:^|[\s,])([0-9]{2,5})\s*$/u);
+  const explicitHos = hoMatches.map(m => m[1]?.trim()).filter(Boolean) as string[];
+  const inferredHo = inferredHoMatch?.[1]?.trim() || "";
+  const hos = [...new Set([...explicitHos, ...(inferredHo ? [inferredHo] : [])])];
   const dong = dongMatches.at(-1)?.[1]?.trim() || "";
   let baseAddress = address;
   for (const m of [...hoMatches, ...dongMatches]) if (m[0]) baseAddress = baseAddress.replace(m[0], " ");
+  if (inferredHoMatch?.[0]) baseAddress = baseAddress.slice(0, baseAddress.length - inferredHoMatch[0].length).trim();
   baseAddress = baseAddress
     .replace(/(?:^|\s)\d+\s*층(?=$|\s)/gu, " ")
     .replace(/번지/gu, "")
