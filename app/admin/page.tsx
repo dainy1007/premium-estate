@@ -196,8 +196,8 @@ export default function AdminPage() {
           ))}
         </section>
 
-        <section className="mt-2 overflow-hidden rounded-[22px] bg-white shadow-sm">
-          <div className="border-b border-[#0A2342]/10 px-4 py-3 md:px-5">
+        <section className="mt-2 rounded-[22px] bg-white shadow-sm">
+          <div className="border-b border-[#0A2342]/10 bg-white px-4 py-3 xl:sticky xl:top-[65px] xl:z-40 xl:h-[86px] xl:rounded-t-[22px] xl:bg-white/95 xl:backdrop-blur md:px-5">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
               <div className="shrink-0">
                 <h2 className="text-lg font-bold">등록 매물 관리</h2>
@@ -216,9 +216,9 @@ export default function AdminPage() {
           {loading ? (
             <p className="py-8 text-center">매물을 불러오는 중입니다...</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto xl:overflow-visible">
               <table className="w-full min-w-[1160px] border-collapse">
-                <thead className="bg-[#F8F9FB]">
+                <thead className="bg-[#F8F9FB] xl:sticky xl:top-[151px] xl:z-30 xl:shadow-sm">
                   <tr>{["번호", "매물명", "유형", "지역·가격", "상태", "빠른 관리", "상세 관리"].map((v) => <th key={v} className="px-3 py-2.5 text-left text-sm">{v}</th>)}</tr>
                 </thead>
                 <tbody>
