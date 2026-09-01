@@ -19,7 +19,62 @@ const TWO_ROOM_PRESETS=[
 const THREE_ROOM_PRESETS=[...TWO_ROOM_PRESETS,"가족 단위 거주에 활용하기 좋은 넉넉한 구조예요.","방이 여러 개라 침실·아이방·서재 등으로 활용하기 좋아요."] as const;
 const APARTMENT_OFFICETEL_PRESETS=["관리 상태가 좋아 쾌적하게 거주하기 좋아요.","엘리베이터 이용이 편리한 건물이에요.","주차시설 이용이 편리해 차량을 보유한 분께 좋아요.","공동현관 및 보안시설이 갖춰져 있어 안심하고 생활하기 좋아요.","채광과 조망이 좋아 실내가 밝고 쾌적해요.","편의점·마트 등 생활편의시설 이용이 편리해요.","대중교통 이용이 편리한 위치예요.","즉시 입주 또는 입주시기 협의가 가능한 매물이에요.","대구테크노폴리스 생활권 이용이 편리해요."] as const;
 const HOUSE_PRESETS=["독립적인 주거생활을 원하는 분께 추천해요.","실내 공간이 넉넉해 가족 단위 거주에 좋아요.","주차 공간을 편리하게 이용할 수 있어요.","조용한 주거환경에서 여유롭게 생활하기 좋아요.","마당·테라스 등 외부공간 활용을 기대할 수 있는 주택이에요.","전원생활이나 세컨하우스를 찾는 분께 추천해요.","생활공간을 넓게 활용하고 싶은 분께 적합해요.","입주시기와 임대조건은 협의 가능합니다."] as const;
-const COMMERCIAL_PRESETS=["주변 주거세대와 유동인구를 배후수요로 기대할 수 있는 위치예요.","대로변 또는 주요 진입로 접근성이 좋아 매장 노출에 유리해요.","주변 상권과 연계해 생활밀착형 업종을 검토하기 좋은 위치예요.","주차와 차량 접근성을 활용하는 업종에 적합한지 검토해볼 수 있어요.","주변 아파트·원룸·오피스 수요를 겨냥한 업종을 검토하기 좋아요.","음식점·카페·편의점 등 생활편의 업종을 추천 후보로 검토할 수 있어요.","사무실·서비스업·소매점 등 다양한 업종을 검토하기 좋은 상가예요.","추천 업종은 상권과 건축물 용도 및 인허가 가능 여부를 확인한 뒤 결정하는 것이 좋아요."] as const;
+
+const COMMERCIAL_BASE_PRESETS=[
+ "상권과 업종 적합성을 함께 검토하기 좋은 상가예요.",
+ "사무실·서비스업·소매점 등 다양한 업종을 검토하기 좋아요.",
+ "신규 창업이나 이전을 검토하시는 분께 추천드려요.",
+ "보증금·월세 등 임대조건은 매물별로 협의해볼 수 있어요.",
+ "추천 업종은 건축물 용도와 인허가 가능 여부를 확인한 뒤 결정하는 것이 좋아요."
+] as const;
+
+function getFieldValueByLabel(labelText:string){
+ if(typeof document==="undefined")return "";
+ const label=Array.from(document.querySelectorAll("label")).find(node=>node.textContent?.replace(/\s+/g," ").trim().startsWith(labelText));
+ const field=label?.querySelector("input,textarea,select") as HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement|null;
+ return field?.value?.trim()||"";
+}
+function getPageTextValue(selector:string){
+ if(typeof document==="undefined")return "";
+ const field=document.querySelector(selector) as HTMLInputElement|HTMLTextAreaElement|null;
+ return field?.value?.trim()||"";
+}
+function buildCommercialPresets(){
+ const result:string[]=[...COMMERCIAL_BASE_PRESETS];
+ if(typeof document==="undefined")return result;
+ const floorText=getFieldValueByLabel("층수");
+ const title=getFieldValueByLabel("매물명");
+ const description=getFieldValueByLabel("매물 설명")||getFieldValueByLabel("매물설명")||getPageTextValue("textarea");
+ const context=`${title} ${description}`;
+ const floorMatch=floorText.match(/-?\d+/);
+ const floor=floorMatch?Number(floorMatch[0]):null;
+ if(floor===1){
+  result.unshift("1층 상가로 고객 접근성이 좋아요.","1층이라 매장 이용 동선이 편리하고 목적 방문 고객의 접근이 좋아요.");
+ }
+ else if(typeof floor==="number"&&floor>=2){
+  result.unshift(`${floor}층 상가로 사무실·뷰티·교육·서비스업 등 목적 방문형 업종을 검토하기 좋아요.`,"상층부 매장으로 예약·목적 방문 중심 업종을 검토하기 좋아요.");
+ }
+ else if(typeof floor==="number"&&floor<=0){
+  result.unshift("지하층 상가로 업종 특성과 출입 동선을 확인해 활용도를 검토하기 좋아요.");
+ }
+ if(/코너|사거리/.test(context))result.unshift("코너·사거리 인접 위치로 여러 방향에서 매장을 확인하기 좋아요.");
+ if(/대로변|도로변|큰길/.test(context))result.unshift("도로변 위치로 차량 이동 시 매장 노출을 기대하기 좋아요.");
+ if(/공원/.test(context))result.unshift("공원 인근으로 산책·여가 목적 유동과 연계한 업종을 검토하기 좋아요.");
+ if(/학교|초등|중학교|고등학교|학원/.test(context))result.unshift("학교·학원가 인근으로 교육·생활밀착형 업종을 검토하기 좋아요.");
+ if(/아파트|주거단지|원룸촌|주거밀집/.test(context))result.unshift("주변 주거세대를 배후수요로 하는 생활밀착형 업종을 검토하기 좋아요.");
+ if(/오피스|산업단지|공장|직장인/.test(context))result.unshift("주변 직장인·사업체 수요를 겨냥한 음식·서비스·사무 업종을 검토하기 좋아요.");
+ if(/주차/.test(context))result.unshift("주차 조건을 활용하는 업종인지 현장에서 함께 확인해보기 좋아요.");
+ if(/테크노폴리스/.test(context))result.unshift("대구테크노폴리스 생활권 상권과 연계해 업종을 검토하기 좋아요.");
+ return [...new Set(result)];
+}
+
+const COMMERCIAL_PRESETS=new Proxy([] as string[],{
+ get(_target,property){const current=buildCommercialPresets();const value=(current as unknown as Record<PropertyKey,unknown>)[property];return typeof value==="function"?(value as Function).bind(current):value;},
+ has(_target,property){return property in buildCommercialPresets();},
+ ownKeys(){return Reflect.ownKeys(buildCommercialPresets());},
+ getOwnPropertyDescriptor(_target,property){return Object.getOwnPropertyDescriptor(buildCommercialPresets(),property)||{configurable:true,enumerable:true,writable:false,value:undefined};}
+}) as readonly string[];
+
 const WAREHOUSE_FACTORY_PRESETS=["차량 진입과 물류 이동 동선을 확인하기 좋은 위치예요.","대형차량 진입 가능 여부를 확인해 물류·보관 용도로 검토하기 좋아요.","층고와 출입구 높이를 활용하는 창고·공장 용도로 검토하기 좋아요.","주차 및 야적공간 활용 여부를 확인해 다양한 사업용도로 검토할 수 있어요.","산업단지·IC·주요 도로 접근성을 활용하기 좋은 입지예요.","전력·용도·허가사항을 확인해 제조·보관·물류 업종으로 검토하기 좋아요."] as const;
 const LAND_PRESETS=["도로 접면과 진입여건을 확인하기 좋은 토지예요.","토지 형상과 면적 활용도를 검토해 실수요 또는 투자용으로 살펴보기 좋아요.","용도지역과 건축 가능 여부를 확인해 활용계획을 세우기 좋아요.","주변 도로와 생활권 접근성을 함께 검토하기 좋은 위치예요.","주변 개발환경과 인근 토지 이용현황을 함께 확인해볼 만해요.","실수요·투자 목적에 따라 활용 가능성을 검토하기 좋은 토지예요."] as const;
 export function getDescriptionPresetsForType(type:string):readonly string[]{if(/상가/.test(type)&&!/상가주택/.test(type))return COMMERCIAL_PRESETS;if(/창고|공장/.test(type))return WAREHOUSE_FACTORY_PRESETS;if(/토지/.test(type))return LAND_PRESETS;if(/아파트|오피스텔/.test(type))return APARTMENT_OFFICETEL_PRESETS;if(/단독주택|다가구|상가주택/.test(type))return HOUSE_PRESETS;if(type==="미니투룸")return MINI_TWO_ROOM_PRESETS;if(type==="투룸")return TWO_ROOM_PRESETS;if(type==="쓰리룸")return THREE_ROOM_PRESETS;if(type==="원룸")return ONE_ROOM_PRESETS;return DESCRIPTION_PRESETS;}
