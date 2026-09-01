@@ -3,8 +3,6 @@
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 
-const OFFICE_MAP_URL = "https://map.kakao.com/link/map/%EB%B0%B1%EC%A1%B0%ED%98%84%EB%8C%80%EB%B6%80%EB%8F%99%EC%82%B0%EC%A4%91%EA%B0%9C,35.6939,128.4598";
-
 export default function Contact() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -56,20 +54,6 @@ export default function Contact() {
           <p className="mt-4 leading-7 text-white/70">
             매매, 임대, 투자 상담이 필요하시면 문의를 남겨주세요. 확인 후 빠르게 연락드리겠습니다.
           </p>
-
-          <div className="mt-8 space-y-3 text-sm text-white/80">
-            <p>📍 백조현대부동산중개</p>
-            <p>대구광역시 달성군 유가읍 테크노공원로 69 파크뷰타워 105호</p>
-          </div>
-
-          <a
-            href={OFFICE_MAP_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-6 inline-block rounded-full bg-[#C9A227] px-5 py-2.5 text-sm font-semibold text-[#0A2342]"
-          >
-            지도 보기
-          </a>
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-2xl bg-white p-6 text-[#0A2342] shadow-xl">
