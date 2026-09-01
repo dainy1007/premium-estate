@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useState } from "react";
-import BRAND_LOGO_DATA from "@/lib/brand-logo-data";
 
 const navItems = [
   { label: "HOME", href: "/" },
@@ -75,7 +74,7 @@ export default function Header() {
             aria-label="백조현대부동산중개 홈"
           >
             <img
-              src={BRAND_LOGO_DATA}
+              src="/baekjo-header-logo.png"
               alt="백조현대부동산중개"
               className="h-[72px] w-auto object-contain sm:h-[86px] xl:h-[108px] 2xl:h-[112px]"
             />
