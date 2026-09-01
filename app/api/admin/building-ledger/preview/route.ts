@@ -12,7 +12,7 @@ type LocationKey={sigunguCd:string;bjdongCd:string;platGbCd:string;bun:string;ji
 const text=(value:unknown)=>String(value??"").trim();
 const formatApprovalDate=(value:unknown)=>{const raw=text(value).replace(/\D/g,"");return raw.length===8?`${raw.slice(0,4)}.${raw.slice(4,6)}.${raw.slice(6,8)}`:text(value);};
 function normalizedServiceKey(value:string){const raw=value.trim();if(!raw)return raw;try{return raw.includes("%")?decodeURIComponent(raw):raw;}catch{return raw;}}
-function baseAddress(address:string){return address.replace(/(?:^|[\s,\/·+&])([A-Za-z0-9가-힣-]+)\s*호(?=$|[\s,\/·+&])/gu," ").replace(/(?:^|[\s,])([A-Za-z0-9가-힣-]+)\s*동(?=$|[\s,])/gu," ").replace(/번지/gu,"").replace(/[\/·+&]/g," ").replace(/\s*,\s*/g," ").replace(/\s+/g," ").trim()||address;}
+function baseAddress(address:string){return address.replace(/(?:^|[\s,\/·+&])([A-Za-z0-9가-힣-]+)\s*호(?=$|[\s,\/·+&])/gu," ").replace(/(?:^|[\s,])([A-Za-z0-9가-힣-]+)\s*동(?=$|[\s,])/gu," ").replace(/(?:^|\s)\d+\s*층(?=$|\s)/gu," ").replace(/번지/gu,"").replace(/[\/·+&]/g," ").replace(/\s*,\s*/g," ").replace(/\s+/g," ").trim()||address;}
 
 async function resolveAddress(address:string):Promise<LocationKey>{
  if(!kakaoKey)throw new Error("KAKAO_REST_API_KEY_NOT_CONFIGURED");
@@ -27,7 +27,7 @@ async function resolveAddress(address:string):Promise<LocationKey>{
 async function fetchLedger(address:string){
  if(!buildingKey)throw new Error("BUILDING_LEDGER_SERVICE_KEY_NOT_CONFIGURED");
  const loc=await resolveAddress(address);
- const qs=new URLSearchParams({serviceKey:normalizedServiceKey(buildingKey),...loc,numOfRows:"200",pageNo:"1",_type:"json"});
+ const qs=new URLSearchParams({serviceKey:normalizedServiceKey(buildingKey),...loc,numOfRows:"100",pageNo:"1",_type:"json"});
  const response=await fetch(`https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo?${qs}`,{cache:"no-store"});
  const raw=await response.text();
  if(!response.ok)throw new Error(`BUILDING_LEDGER_${response.status}`);
