@@ -70,13 +70,13 @@ export default function Header() {
           <Link
             href="/"
             onClick={handleHomeClick}
-            className="flex min-w-0 items-center xl:absolute xl:left-[80px] 2xl:left-[96px]"
+            className="flex min-w-0 items-center xl:absolute xl:left-[108px] 2xl:left-[128px]"
             aria-label="백조현대부동산중개 홈"
           >
             <img
-              src="/brand-logo?v=20260901-final"
+              src="/brand-logo?v=20260901-header-large"
               alt="백조현대부동산중개"
-              className="h-[72px] w-auto object-contain sm:h-[86px] xl:h-[102px] 2xl:h-[106px]"
+              className="h-[76px] w-auto object-contain sm:h-[92px] xl:h-[116px] 2xl:h-[120px]"
             />
           </Link>
 
