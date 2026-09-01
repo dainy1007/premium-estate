@@ -10,21 +10,6 @@ export const metadata = {
 export default function ContactPage() {
   return (
     <main className="min-h-screen bg-[#F8F9FB] text-[#0A2342]">
-      <section className="bg-[#0A2342] px-6 pb-14 pt-24 text-white">
-        <div className="mx-auto max-w-6xl">
-          <Link href="/" className="text-sm font-semibold text-[#C9A227] hover:underline">
-            ← 홈으로
-          </Link>
-          <p className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-[#C9A227]">
-            Contact
-          </p>
-          <h1 className="mt-3 text-4xl font-bold sm:text-5xl">부동산 상담 문의</h1>
-          <p className="mt-4 max-w-2xl text-white/70">
-            찾으시는 매물과 희망 조건을 남겨주시면 확인 후 연락드리겠습니다.
-          </p>
-        </div>
-      </section>
-
       <Contact />
 
       <section className="mx-auto max-w-6xl px-6 py-12">
