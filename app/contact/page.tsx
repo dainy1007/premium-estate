@@ -9,7 +9,14 @@ export const metadata = {
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-[#F8F9FB] text-[#0A2342]">
+    <main className="relative min-h-screen bg-[#F8F9FB] text-[#0A2342]">
+      <Link
+        href="/"
+        className="fixed left-5 top-5 z-[70] rounded-full border border-white/25 bg-white/95 px-4 py-2 text-sm font-bold text-[#0A2342] shadow-lg backdrop-blur transition hover:bg-[#C9A227]"
+      >
+        ← HOME
+      </Link>
+
       <Contact />
 
       <section className="mx-auto max-w-6xl px-6 py-12">
