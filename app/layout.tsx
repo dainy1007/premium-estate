@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { siteConfig } from "@/lib/site-config";
 import ScrollToTop from "@/components/ScrollToTop";
+import AdminPhotoDragEnhancer from "@/components/AdminPhotoDragEnhancer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -117,6 +118,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <AdminPhotoDragEnhancer />
         <ScrollToTop />
       </body>
     </html>
