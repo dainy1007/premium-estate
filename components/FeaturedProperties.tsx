@@ -131,7 +131,7 @@ export default function FeaturedProperties() {
                   <div className="p-6">
                     <h3 className="line-clamp-2 text-xl font-bold text-[#0A2342]">{property.title}</h3>
                     <p className="mt-2 line-clamp-1 text-sm text-[#0A2342]/60">
-                      {property.address || property.location || "지역 문의"}
+                      {property.location || "지역 문의"}
                     </p>
                     <div className="mt-5 flex items-end justify-between gap-4 border-t border-[#0A2342]/10 pt-5">
                       <div>
