@@ -9,7 +9,13 @@ function withSquareMeter(value: unknown) { const text=sanitizePropertyArea(value
 function buildDisplayArea(property: Property) { const contract=withSquareMeter(property.contract_area),exclusive=withSquareMeter(property.exclusive_area); if(contract&&exclusive)return `계약 ${contract} / 전용 ${exclusive}`; if(contract)return `계약 ${contract}`; if(exclusive)return `전용 ${exclusive}`; return withSquareMeter(property.area); }
 
 export function deriveLocationFromAddress(value: unknown) {
-  const address=clean(value); if(!address)return ""; const parts=address.split(" ").filter(Boolean); const province=parts.find(part=>/(?:특별시|광역시|특별자치시|도)$/.test(part))||""; const cityCounty=parts.find(part=>/(?:시|군|구)$/.test(part)&&part!==province)||""; const town=parts.find(part=>/(?:읍|면|동)$/.test(part))||""; return [province,cityCounty,town].filter(Boolean).join(" ");
+  const address=clean(value); if(!address)return "";
+  const parts=address.split(" ").filter(Boolean);
+  if(parts.includes("달성군")&&!parts.some(part=>/^대구(?:광역)?시$/.test(part)))parts.unshift("대구시");
+  if(parts.includes("창녕군")&&!parts.some(part=>/^(?:경남|경상남도)$/.test(part)))parts.unshift("경남");
+  const townIndex=parts.findIndex(part=>/(?:읍|면|동)$/.test(part));
+  const limit=townIndex>=0?townIndex+1:parts.length;
+  return parts.slice(0,limit).filter(part=>/(?:특별시|광역시|특별자치시|도|시|군|구|읍|면|동)$/.test(part)||/^(?:경남|경북|전남|전북|충남|충북)$/.test(part)).join(" ");
 }
 const CANONICAL_TYPES=["아파트","원룸","미니투룸","투룸","쓰리룸","단독주택","다가구","상가주택","상가","오피스텔","창고","공장","토지"] as const;
 function canonicalExplicitType(value: unknown) { const explicitType=clean(value); if(!explicitType)return ""; if(/상가\s*주택|상가주택/i.test(explicitType))return "상가주택"; if(/단독\s*주택|단독주택/i.test(explicitType))return "단독주택"; if(/미니\s*투룸|미니투룸/i.test(explicitType))return "미니투룸"; return CANONICAL_TYPES.find(type=>explicitType===type||explicitType.includes(type))||""; }
