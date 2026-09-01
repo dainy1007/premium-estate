@@ -17,22 +17,13 @@ export default function Home() {
     { value: "24H", label: "상담 가능" },
   ];
 
-  const services = [
-    { label: "상가 매매·임대", href: "/search?type=%EC%83%81%EA%B0%80" },
-    { label: "원룸·투룸·다가구", href: "/search?type=%EC%86%8C%ED%98%95%EC%A3%BC%ED%83%9D" },
-    { label: "아파트 매매·전세", href: "/search?type=%EC%95%84%ED%8C%8C%ED%8A%B8" },
-    { label: "오피스텔 매매·임대", href: "/search?type=%EC%98%A4%ED%94%BC%EC%8A%A4%ED%85%94" },
-    { label: "창고·공장 전문", href: "/search?type=%EC%B0%BD%EA%B3%A0%C2%B7%EA%B3%B5%EC%9E%A5" },
-    { label: "토지 투자 상담", href: "/search?type=%ED%86%A0%EC%A7%80" },
-  ];
-
   const quickLinks = [
-    { label: "원룸/투룸", sub: "깔끔한 원룸부터 투룸까지", type: "소형주택", image: "/property-types/small-home-final.jpg?v=20260828-hq" },
-    { label: "다가구/주택", sub: "단독·다가구·전원주택", type: "주택", image: "/property-types/house-final.jpg?v=20260828-hq" },
-    { label: "오피스텔", sub: "주거와 업무를 한 번에", type: "오피스텔", image: "/property-types/officetel-final.jpg?v=20260828-hq" },
-    { label: "상가(사무실)", sub: "상가·사무실·점포", type: "상가", image: "/property-types/commercial-final.jpg?v=20260828-hq" },
-    { label: "아파트", sub: "다양한 아파트 매물", type: "아파트", image: "/property-types/apartment-final.jpg?v=20260828-hq" },
-    { label: "창고/공장/토지", sub: "창고·공장·토지 매물", type: "창고·공장", image: "/property-types/industrial-final.jpg?v=20260828-hq" },
+    { label: "원룸/투룸", sub: "원룸·투룸 임대 매물 확인부터 계약까지", type: "소형주택", image: "/property-types/small-home-final.jpg?v=20260828-hq" },
+    { label: "다가구/주택", sub: "단독·다가구·전원주택 매매·임대 상담", type: "주택", image: "/property-types/house-final.jpg?v=20260828-hq" },
+    { label: "오피스텔", sub: "주거·업무용 오피스텔 매매·임대", type: "오피스텔", image: "/property-types/officetel-final.jpg?v=20260828-hq" },
+    { label: "상가(사무실)", sub: "상가·사무실 매매·임대 현장 안내", type: "상가", image: "/property-types/commercial-final.jpg?v=20260828-hq" },
+    { label: "아파트", sub: "아파트 매매·전세 조건 비교 상담", type: "아파트", image: "/property-types/apartment-final.jpg?v=20260828-hq" },
+    { label: "창고/공장/토지", sub: "창고·공장·토지 매매·임대·투자 상담", type: "창고·공장", image: "/property-types/industrial-final.jpg?v=20260828-hq" },
   ];
 
   const regionLinks = [
@@ -87,7 +78,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white py-7 md:py-9">
+      <section id="services" className="scroll-mt-24 bg-white py-7 md:py-9">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {quickLinks.map((item) => (
@@ -105,7 +96,7 @@ export default function Home() {
                     <span className="text-sm font-extrabold sm:text-base">{item.label}</span>
                     <span className="text-xl text-[#C9A227]">›</span>
                   </div>
-                  <p className="mt-1 text-[11px] text-[#0A2342]/60">{item.sub}</p>
+                  <p className="mt-1 text-[11px] leading-5 text-[#0A2342]/65">{item.sub}</p>
                 </div>
               </Link>
             ))}
@@ -156,32 +147,6 @@ export default function Home() {
               </Link>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section id="services" className="scroll-mt-24 mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-[.35em] text-[#C9A227]">Our Services</p>
-          <h2 className="mt-3 text-3xl font-bold sm:text-4xl">부동산의 모든 서비스를 한 곳에서 제공합니다.</h2>
-          <p className="mt-4 text-base text-[#0A2342]/70 sm:text-lg">매매, 임대, 투자, 시세 분석까지 고객 맞춤형 솔루션으로 안내해드립니다.</p>
-        </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {services.map((s, index) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.5, delay: index * 0.06 }}
-            >
-              <Link href={s.href} className="block h-full rounded-3xl border border-[#0A2342]/10 bg-white p-8 shadow-sm">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#C9A227]/10 text-sm font-bold text-[#C9A227]">0{index + 1}</div>
-                <h3 className="mt-6 text-2xl font-semibold">{s.label}</h3>
-                <p className="mt-4 leading-7 text-[#0A2342]/70">현장 경험을 바탕으로 매물 확인부터 계약까지 꼼꼼하게 안내합니다.</p>
-                <p className="mt-6 text-sm font-semibold text-[#C9A227]">매물 보기 →</p>
-              </Link>
-            </motion.div>
-          ))}
         </div>
       </section>
 
