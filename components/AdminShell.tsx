@@ -9,6 +9,7 @@ const REGISTRY_VIEW_URL = "https://www.iros.go.kr";
 
 const adminLinks = [
   { href: "/admin/overview", label: "운영 현황" },
+  { href: "/admin/analytics", label: "방문 분석" },
   { href: "/admin", label: "매물 관리" },
   { href: "/admin/building-ledger", label: "건축물대장" },
   { href: "/admin/building-directory", label: "건물 장부" },
