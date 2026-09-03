@@ -267,8 +267,9 @@ export async function POST(req: NextRequest) {
 
     const ledger = await fetchLedger(address);
     const collective = isCollectiveType(text(p.type)), commercial = isCommercialType(text(p.type));
+    const wholeBuildingCommercial = commercial && ledger.generalBuilding;
     let unitAreas: UnitArea[] = [], unitWarning = "", unitErrorCode = "", unitNote = "";
-    if (collective) {
+    if (collective && !wholeBuildingCommercial) {
       try {
         unitAreas = await fetchUnitAreas(ledger.loc, ledger.unit.dong, ledger.unit.hos.length ? ledger.unit.hos : (ledger.unit.ho ? [ledger.unit.ho] : []));
       } catch (e) {
