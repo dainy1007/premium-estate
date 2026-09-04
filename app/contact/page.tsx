@@ -7,7 +7,15 @@ export const metadata = {
   description: "대구 달성군·테크노폴리스 부동산 매매, 임대, 투자 상담을 접수해 주세요.",
 };
 
-export default function ContactPage() {
+type ContactPageProps = {
+  searchParams: Promise<{ property?: string; id?: string }>;
+};
+
+export default async function ContactPage({ searchParams }: ContactPageProps) {
+  const params = await searchParams;
+  const propertyTitle = String(params.property ?? "").trim().slice(0, 180);
+  const propertyId = String(params.id ?? "").replace(/[^0-9]/g, "").slice(0, 20);
+
   return (
     <main className="relative min-h-screen bg-[#F8F9FB] text-[#0A2342]">
       <Link
@@ -17,7 +25,7 @@ export default function ContactPage() {
         ← HOME
       </Link>
 
-      <Contact />
+      <Contact propertyTitle={propertyTitle} propertyId={propertyId} />
 
       <section className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid gap-4 rounded-[28px] border border-[#0A2342]/10 bg-white p-6 shadow-sm sm:grid-cols-2">
