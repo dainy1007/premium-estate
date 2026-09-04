@@ -28,18 +28,20 @@ export function parsePropertyPriceAmount(price: string | null | undefined): numb
   return null;
 }
 
+function formatNumber(value: string): string {
+  const clean = value.replace(/,/g, "");
+  const [integerPart, decimalPart] = clean.split(".");
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+}
+
 export function formatKrwAmount(amount: number | null): string {
   if (amount === null) return "자동 계산 불가";
-  return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}원`;
+  return `${formatNumber(String(amount))}원`;
 }
 
 function addThousandsSeparators(text: string): string {
-  return text.replace(/\d+(?:\.\d+)?/g, (value) => {
-    const [integerPart, decimalPart] = value.split(".");
-    if (integerPart.length < 4) return value;
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
-  });
+  return text.replace(/\d[\d,]*(?:\.\d+)?/g, (value) => formatNumber(value));
 }
 
 export function formatPropertyPriceDisplay(price: string | null | undefined): string {
@@ -47,16 +49,27 @@ export function formatPropertyPriceDisplay(price: string | null | undefined): st
   if (!text) return "가격 문의";
   if (/가격\s*문의|협의|계약완료/i.test(text)) return text;
 
-  const normalized = text.replace(/,/g, "").replace(/\s+/g, " ").trim();
-  let formatted = addThousandsSeparators(normalized);
+  const normalized = text.replace(/\s+/g, " ").trim();
 
-  // 이미 금액 단위가 포함된 문구는 단위를 유지하고 4자리 이상 숫자에만 쉼표를 표시합니다.
+  // DB에 저장된 월세 축약형(예: 300/35, 1000/50)을 홈페이지 공통 표기로 변환합니다.
+  const slashRentMatch = normalized.match(/^(?:보증금\s*)?([\d,]+(?:\.\d+)?)\s*\/\s*(?:월세\s*)?([\d,]+(?:\.\d+)?)(?:\s*만원?)?$/u);
+  if (slashRentMatch) {
+    return `보증금 ${formatNumber(slashRentMatch[1])}만원 / 월세 ${formatNumber(slashRentMatch[2])}만원`;
+  }
+
+  // 이미 '보증금 ... / 월세 ...'로 저장된 경우에도 숫자 쉼표와 단위를 통일합니다.
+  const labeledRentMatch = normalized.match(/^보증금\s*([\d,]+(?:\.\d+)?)(?:\s*만원?)?\s*\/\s*월세\s*([\d,]+(?:\.\d+)?)(?:\s*만원?)?$/u);
+  if (labeledRentMatch) {
+    return `보증금 ${formatNumber(labeledRentMatch[1])}만원 / 월세 ${formatNumber(labeledRentMatch[2])}만원`;
+  }
+
+  let formatted = addThousandsSeparators(normalized.replace(/,/g, ""));
+
   if (/만원|억원|억|원/.test(formatted)) {
     formatted = formatted.replace(/(억)\s+(\d[\d,]*)(?!\s*만?원)/g, "$1 $2만원");
     return formatted;
   }
 
-  // "매매가 25500"처럼 금액 단위가 빠진 문구도 기존 홈페이지 정책상 만원 단위로 보정합니다.
   if (/^(?:매매가|전세가|보증금|월세)?\s*\d[\d,]*(?:\.\d+)?$/u.test(formatted)) {
     return `${formatted}만원`;
   }
