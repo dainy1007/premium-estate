@@ -1,4 +1,5 @@
 import type { Property } from "@/types/property";
+import { formatPropertyPriceDisplay } from "@/lib/property-price";
 
 function clean(value: unknown) { return String(value ?? "").replace(/\s+/g, " ").trim(); }
 
@@ -26,10 +27,10 @@ function addSmallHomeConvenience(description:string,type:string,context:string){
 function normalizeDescriptionGeography(description:unknown,address:unknown,type:string,dealType:unknown){let text=String(description??"").replace(/\r\n/g,"\n").trim().replace(/(\d+(?:\.\d+)?)F㎡/g,"$1㎡").replace(/전용\s*(\d+(?:\.\d+)?)F\b/g,"전용 $1㎡");const geographicLocation=deriveLocationFromAddress(address);if(!text||!geographicLocation)return text;const deal=clean(dealType),correctOpening=deal?`${geographicLocation}에 위치한 ${type} ${deal} 매물입니다.`:`${geographicLocation}에 위치한 ${type} 매물입니다.`;if(/^[^\n.]{1,50}에 위치한 [^\n.]{1,30} 매물입니다\./.test(text))text=text.replace(/^[^\n.]{1,50}에 위치한 [^\n.]{1,30} 매물입니다\./,correctOpening);else if(/^[^\n.]{1,30}에 위치한 매물 [^\n.]{1,20} 매물입니다\./.test(text))text=text.replace(/^[^\n.]{1,30}에 위치한 매물 [^\n.]{1,20} 매물입니다\./,correctOpening);return text;}
 export function normalizePropertyForDisplay<T extends Property>(property:T):T {
   const type=detectPropertyDisplayType(property);
-  // DB title is authoritative: manual admin edits must survive refresh.
   const title=clean(property.title);
   const geographicLocation=deriveLocationFromAddress(property.address),rawDescription=String(property.description??""),isAdminEdited=rawDescription.includes("<!--PROPERTY_ADMIN_META:");
   const normalizedDescription=isAdminEdited?rawDescription:normalizeDescriptionGeography(rawDescription,property.address,type,property.deal_type);
   const description=isAdminEdited?normalizedDescription:addSmallHomeConvenience(normalizedDescription,type,[property.title,property.address,property.location,property.description].filter(Boolean).join(" "));
-  return {...property,type,title,location:geographicLocation||property.location,area:buildDisplayArea(property),contract_area:sanitizePropertyArea(property.contract_area),exclusive_area:sanitizePropertyArea(property.exclusive_area),description};
+  const price=formatPropertyPriceDisplay(property.price);
+  return {...property,type,title,price,location:geographicLocation||property.location,area:buildDisplayArea(property),contract_area:sanitizePropertyArea(property.contract_area),exclusive_area:sanitizePropertyArea(property.exclusive_area),description};
 }
