@@ -91,8 +91,16 @@ export default function PropertyShareActions({ title }: PropertyShareActionsProp
     await copyUrl();
   };
 
+  const inquire = () => {
+    const propertyId = window.location.pathname.match(/\/properties\/(\d+)/)?.[1] ?? "";
+    const params = new URLSearchParams({ property: title });
+    if (propertyId) params.set("id", propertyId);
+    window.location.href = `/contact?${params.toString()}#contact`;
+  };
+
   return (
     <div className="mt-5 flex flex-wrap gap-3">
+      <button type="button" onClick={inquire} className="rounded-full bg-[#C9A227] px-5 py-2.5 text-sm font-bold text-[#0A2342] shadow-sm transition hover:brightness-95">💬 이 매물 문의하기</button>
       <button type="button" onClick={share} className="rounded-full border border-[#0A2342]/15 px-4 py-2 text-sm font-semibold transition hover:border-[#C9A227] hover:bg-[#C9A227]/10">↗ 공유하기</button>
       <button type="button" onClick={copyUrl} className="rounded-full border border-[#0A2342]/15 px-4 py-2 text-sm font-semibold transition hover:border-[#C9A227] hover:bg-[#C9A227]/10">{copied ? "복사 완료" : "🔗 주소 복사"}</button>
     </div>
