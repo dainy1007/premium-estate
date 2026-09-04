@@ -21,7 +21,7 @@ function cleanText(value: unknown, max = 500) {
 
 function cleanPath(value: unknown) {
   const path = cleanText(value, 300);
-  return path.startsWith("/") ? path : "/";
+  return path.startsWith("/") ? path.split("?")[0] : "/";
 }
 
 function sourceFrom(referrer: string, utmSource: string) {
@@ -45,6 +45,11 @@ export async function POST(request: NextRequest) {
   const supabase = getClient();
   if (!supabase) return NextResponse.json({ ok: false }, { status: 503 });
 
+  const cookie = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  if (await isValidAdminSession(cookie)) {
+    return NextResponse.json({ ok: true, skipped: true, reason: "admin" });
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await request.json();
@@ -63,12 +68,15 @@ export async function POST(request: NextRequest) {
 
   const referrer = cleanText(body.referrer, 800);
   const utmSource = cleanText(body.utmSource, 100);
+  const source = sourceFrom(referrer, utmSource);
+  if (source === "내부 이동") return NextResponse.json({ ok: true, skipped: true, reason: "internal" });
+
   const payload = {
     path,
     visitor_id: visitorId,
     session_id: sessionId,
     referrer,
-    source: sourceFrom(referrer, utmSource),
+    source,
     device: cleanText(body.device, 20) || "unknown",
     utm_source: utmSource || null,
     utm_medium: cleanText(body.utmMedium, 100) || null,
@@ -131,9 +139,33 @@ export async function GET(request: NextRequest) {
   const unique = (items: typeof rows, key: "visitor_id" | "session_id") =>
     new Set(items.map((item) => item[key]).filter(Boolean)).size;
 
+  const propertyIds = Array.from(
+    new Set(
+      rows
+        .map((row) => String(row.path).match(/^\/properties\/(\d+)$/)?.[1])
+        .filter(Boolean)
+        .map(Number),
+    ),
+  );
+  const propertyTitles = new Map<number, string>();
+  if (propertyIds.length) {
+    const { data: propertyData } = await supabase.from("properties").select("id,title").in("id", propertyIds);
+    for (const item of propertyData ?? []) propertyTitles.set(Number(item.id), String(item.title ?? ""));
+  }
+  const pageTitle = (path: string) => {
+    const match = path.match(/^\/properties\/(\d+)$/);
+    if (match) return propertyTitles.get(Number(match[1])) || `매물 #${match[1]}`;
+    if (path === "/") return "홈페이지 메인";
+    if (path === "/search") return "매물 검색";
+    if (path === "/properties") return "전체 매물";
+    if (path === "/contact") return "상담 문의";
+    return undefined;
+  };
+
   const pageMap = new Map<string, { views: number; visitors: Set<string> }>();
   const sourceMap = new Map<string, { views: number; visitors: Set<string> }>();
-  const deviceMap = new Map<string, number>();
+  const deviceMap = new Map<string, { views: number; visitors: Set<string> }>();
+  const sessionMap = new Map<string, typeof rows>();
 
   for (const row of rows) {
     const page = pageMap.get(row.path) ?? { views: 0, visitors: new Set<string>() };
@@ -147,8 +179,15 @@ export async function GET(request: NextRequest) {
     if (row.visitor_id) source.visitors.add(row.visitor_id);
     sourceMap.set(sourceName, source);
 
-    const device = row.device || "unknown";
-    deviceMap.set(device, (deviceMap.get(device) ?? 0) + 1);
+    const deviceName = row.device || "unknown";
+    const device = deviceMap.get(deviceName) ?? { views: 0, visitors: new Set<string>() };
+    device.views += 1;
+    if (row.visitor_id) device.visitors.add(row.visitor_id);
+    deviceMap.set(deviceName, device);
+
+    const sessionItems = sessionMap.get(row.session_id) ?? [];
+    sessionItems.push(row);
+    sessionMap.set(row.session_id, sessionItems);
   }
 
   const daily = Array.from({ length: 14 }, (_, index) => {
@@ -164,7 +203,7 @@ export async function GET(request: NextRequest) {
   });
 
   const topPages = [...pageMap.entries()]
-    .map(([path, value]) => ({ path, views: value.views, visitors: value.visitors.size }))
+    .map(([path, value]) => ({ path, title: pageTitle(path), views: value.views, visitors: value.visitors.size }))
     .sort((a, b) => b.views - a.views)
     .slice(0, 10);
 
@@ -174,8 +213,35 @@ export async function GET(request: NextRequest) {
     .slice(0, 10);
 
   const devices = [...deviceMap.entries()]
-    .map(([device, views]) => ({ device, views }))
+    .map(([device, value]) => ({ device, views: value.views, visitors: value.visitors.size }))
     .sort((a, b) => b.views - a.views);
+
+  const recentSessions = [...sessionMap.entries()]
+    .map(([sessionId, items]) => {
+      const ordered = [...items].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      const first = ordered[0];
+      const seen = new Set<string>();
+      const pages: Array<{ path: string; title?: string }> = [];
+      for (const item of ordered) {
+        if (seen.has(item.path)) continue;
+        seen.add(item.path);
+        pages.push({ path: item.path, title: pageTitle(item.path) });
+      }
+      return {
+        sessionId,
+        visitorId: first.visitor_id,
+        startedAt: first.created_at,
+        source: first.source || "기타",
+        landingPath: first.path,
+        landingTitle: pageTitle(first.path),
+        pageViews: ordered.length,
+        uniquePages: seen.size,
+        device: first.device || "unknown",
+        pages,
+      };
+    })
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+    .slice(0, 30);
 
   return NextResponse.json({
     ok: true,
@@ -193,5 +259,6 @@ export async function GET(request: NextRequest) {
     topPages,
     sources,
     devices,
+    recentSessions,
   });
 }
