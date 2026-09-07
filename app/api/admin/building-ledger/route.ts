@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildDescriptionWithAdminMeta, parseAdminMeta } from "@/lib/property-admin-meta";
+import { isTemporaryBuildingLedgerError, parseBuildingLedgerHubResponse } from "@/lib/building-ledger-response";
 
 export const runtime = "nodejs";
 
@@ -106,28 +107,32 @@ async function fetchHub(endpointName: string, loc: LocationKey, pageNo = 1, numO
   let lastStatus = 0, lastRaw = "";
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const r = await fetch(url, { cache: "no-store" });
+      const r = await fetch(url, {
+        headers: { Accept: "application/json, application/xml;q=0.9, text/xml;q=0.8" },
+        cache: "no-store"
+      });
       const raw = await r.text();
       lastStatus = r.status; lastRaw = raw;
       if (r.ok) {
-        let data: any;
-        try { data = JSON.parse(raw); }
-        catch {
+        const parsed = parseBuildingLedgerHubResponse(raw);
+        if (!parsed) {
           if (attempt < 3) { await sleep(350 * attempt); continue; }
-          throw new BuildingLedgerError("BUILDING_LEDGER_INVALID_RESPONSE", 502);
+          throw new BuildingLedgerError("BUILDING_LEDGER_INVALID_RESPONSE", 502, raw.slice(0, 180));
         }
-        const code = text(data?.response?.header?.resultCode);
+        const code = text(parsed.resultCode);
         if (code && code !== "00") {
-          const msg = text(data?.response?.header?.resultMsg);
-          if ((code === "99" || /tempor|service|timeout|초과|일시/i.test(msg)) && attempt < 3) {
+          const msg = text(parsed.resultMsg);
+          if (isTemporaryBuildingLedgerError(code, msg) && attempt < 3) {
             await sleep(350 * attempt); continue;
           }
           throw new BuildingLedgerError(`BUILDING_LEDGER_API_${code}`, 422, msg);
         }
-        const body = data?.response?.body;
-        const items = body?.items?.item;
-        const list: LedgerItem[] = Array.isArray(items) ? items : items ? [items] : [];
-        return { list, totalCount: Number(body?.totalCount || list.length), pageNo: Number(body?.pageNo || pageNo), numOfRows: Number(body?.numOfRows || numOfRows) };
+        return {
+          list: parsed.list,
+          totalCount: Number(parsed.totalCount || parsed.list.length),
+          pageNo: Number(parsed.pageNo || pageNo),
+          numOfRows: Number(parsed.numOfRows || numOfRows)
+        };
       }
       if ((r.status === 429 || r.status >= 500) && attempt < 3) { await sleep(400 * attempt); continue; }
       break;
