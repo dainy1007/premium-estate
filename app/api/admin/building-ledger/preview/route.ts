@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isTemporaryBuildingLedgerError, parseBuildingLedgerHubResponse } from "@/lib/building-ledger-response";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,7 @@ type LedgerItem=Record<string,unknown>;
 type LocationKey={sigunguCd:string;bjdongCd:string;platGbCd:string;bun:string;ji:string};
 
 const text=(value:unknown)=>String(value??"").trim();
+const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const formatApprovalDate=(value:unknown)=>{const raw=text(value).replace(/\D/g,"");return raw.length===8?`${raw.slice(0,4)}.${raw.slice(4,6)}.${raw.slice(6,8)}`:text(value);};
 function normalizedServiceKey(value:string){const raw=value.trim();if(!raw)return raw;try{return raw.includes("%")?decodeURIComponent(raw):raw;}catch{return raw;}}
 function baseAddress(address:string){return address.replace(/(?:^|[\s,\/·+&])([A-Za-z0-9가-힣-]+)\s*호(?=$|[\s,\/·+&])/gu," ").replace(/(?:^|[\s,])([A-Za-z0-9가-힣-]+)\s*동(?=$|[\s,])/gu," ").replace(/(?:^|\s)\d+\s*층(?=$|\s)/gu," ").replace(/번지/gu,"").replace(/[\/·+&]/g," ").replace(/\s*,\s*/g," ").replace(/\s+/g," ").trim()||address;}
@@ -28,24 +30,31 @@ async function fetchLedger(address:string){
  if(!buildingKey)throw new Error("BUILDING_LEDGER_SERVICE_KEY_NOT_CONFIGURED");
  const loc=await resolveAddress(address);
  const qs=new URLSearchParams({serviceKey:normalizedServiceKey(buildingKey),...loc,numOfRows:"100",pageNo:"1",_type:"json"});
- const response=await fetch(`https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo?${qs}`,{cache:"no-store"});
- const raw=await response.text();
- if(!response.ok)throw new Error(`BUILDING_LEDGER_${response.status}`);
- let data:any;
- try{data=JSON.parse(raw);}catch{throw new Error("BUILDING_LEDGER_INVALID_RESPONSE");}
- const code=text(data?.response?.header?.resultCode);
- if(code&&code!=="00")throw new Error(text(data?.response?.header?.resultMsg)||`BUILDING_LEDGER_API_${code}`);
- const items=data?.response?.body?.items?.item;
- const list:LedgerItem[]=Array.isArray(items)?items:items?[items]:[];
- if(!list.length)throw new Error("BUILDING_LEDGER_NO_RESULT");
- const item=list.find(v=>text(v.mainAtchGbCdNm).includes("주건축물"))||list[0];
- const parkingTotal=Number(item.indrMechUtcnt||0)+Number(item.oudrMechUtcnt||0)+Number(item.indrAutoUtcnt||0)+Number(item.oudrAutoUtcnt||0);
- return{
-  buildingName:text(item.bldNm),buildingUse:text(item.mainPurpsCdNm),structure:text(item.strctCdNm),approvalDate:formatApprovalDate(item.useAprDay),
-  totalFloor:text(item.grndFlrCnt),undergroundFloor:text(item.ugrndFlrCnt),landArea:text(item.platArea),floorArea:text(item.archArea),totalArea:text(item.totArea),
-  coverageRatio:text(item.bcRat),floorAreaRatio:text(item.vlRat),parkingCount:text(item.totPkngCnt)||String(parkingTotal||""),elevatorCount:text(item.rideUseElvtCnt),
-  householdCount:text(item.hhldCnt),unitCount:text(item.hoCnt)||text(item.fmlyCnt),roadAddress:text(item.newPlatPlc),jibunAddress:text(item.platPlc)
- };
+ const url=`https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo?${qs}`;
+ let lastStatus=0,lastRaw="";
+ for(let attempt=1;attempt<=3;attempt++){
+  const response=await fetch(url,{headers:{Accept:"application/json, application/xml;q=0.9, text/xml;q=0.8"},cache:"no-store"});
+  const raw=await response.text();
+  lastStatus=response.status;lastRaw=raw;
+  if(!response.ok){if((response.status===429||response.status>=500)&&attempt<3){await sleep(350*attempt);continue;}throw new Error(`BUILDING_LEDGER_${response.status}`);}
+  const parsed=parseBuildingLedgerHubResponse(raw);
+  if(!parsed){if(attempt<3){await sleep(350*attempt);continue;}throw new Error("BUILDING_LEDGER_INVALID_RESPONSE");}
+  if(parsed.resultCode&&parsed.resultCode!=="00"){
+   if(isTemporaryBuildingLedgerError(parsed.resultCode,parsed.resultMsg)&&attempt<3){await sleep(350*attempt);continue;}
+   throw new Error(parsed.resultMsg||`BUILDING_LEDGER_API_${parsed.resultCode}`);
+  }
+  const list:LedgerItem[]=parsed.list;
+  if(!list.length)throw new Error("BUILDING_LEDGER_NO_RESULT");
+  const item=list.find(v=>text(v.mainAtchGbCdNm).includes("주건축물"))||list[0];
+  const parkingTotal=Number(item.indrMechUtcnt||0)+Number(item.oudrMechUtcnt||0)+Number(item.indrAutoUtcnt||0)+Number(item.oudrAutoUtcnt||0);
+  return{
+   buildingName:text(item.bldNm),buildingUse:text(item.mainPurpsCdNm),structure:text(item.strctCdNm),approvalDate:formatApprovalDate(item.useAprDay),
+   totalFloor:text(item.grndFlrCnt),undergroundFloor:text(item.ugrndFlrCnt),landArea:text(item.platArea),floorArea:text(item.archArea),totalArea:text(item.totArea),
+   coverageRatio:text(item.bcRat),floorAreaRatio:text(item.vlRat),parkingCount:text(item.totPkngCnt)||String(parkingTotal||""),elevatorCount:text(item.rideUseElvtCnt),
+   householdCount:text(item.hhldCnt),unitCount:text(item.hoCnt)||text(item.fmlyCnt),roadAddress:text(item.newPlatPlc),jibunAddress:text(item.platPlc)
+  };
+ }
+ throw new Error(`BUILDING_LEDGER_${lastStatus||503}:${lastRaw.slice(0,120)}`);
 }
 
 export async function POST(req:NextRequest){
