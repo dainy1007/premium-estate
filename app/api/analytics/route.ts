@@ -46,10 +46,21 @@ export async function GET(request: NextRequest) {
   const pageTitle=(path:string)=>{const m=path.match(/^\/properties\/(\d+)$/); if(m)return propertyTitles.get(Number(m[1]))||`매물 #${m[1]}`; if(path==="/")return"홈페이지 메인"; if(path==="/search")return"매물 검색"; if(path==="/properties")return"전체 매물"; if(path==="/contact")return"상담 문의"; return undefined;};
   const sessionMap=new Map<string,typeof rows>(); for(const r of rows){const a=sessionMap.get(r.session_id)??[];a.push(r);sessionMap.set(r.session_id,a);}
   const sessions=[...sessionMap.entries()].map(([sessionId,items])=>{const ordered=[...items].sort((a,b)=>+new Date(a.created_at)-+new Date(b.created_at)); const first=ordered[0]; const seen=new Set<string>(); const pages:Array<{path:string;title?:string}>=[]; for(const i of ordered){if(!seen.has(i.path)){seen.add(i.path);pages.push({path:i.path,title:pageTitle(i.path)});}}
-    // Conservative heuristic: only flag the highly repetitive pattern we observed: direct PC traffic that opens exactly one SEO landing page and leaves.
-    const suspectedBot=(first.source==="직접 유입"||first.source==="direct") && first.device==="desktop" && ordered.length===1 && seen.size===1 && /^\/real-estate\//.test(first.path);
-    return {sessionId,visitorId:first.visitor_id,startedAt:first.created_at,source:first.source||"기타",landingPath:first.path,landingTitle:pageTitle(first.path),pageViews:ordered.length,uniquePages:seen.size,device:first.device||"unknown",pages,suspectedBot};
+    const directSeoSingleton=(first.source==="직접 유입"||first.source==="direct") && first.device==="desktop" && ordered.length===1 && seen.size===1 && /^\/real-estate\//.test(first.path);
+    return {sessionId,visitorId:first.visitor_id,startedAt:first.created_at,source:first.source||"기타",landingPath:first.path,landingTitle:pageTitle(first.path),pageViews:ordered.length,uniquePages:seen.size,device:first.device||"unknown",pages,suspectedBot:directSeoSingleton};
   }).sort((a,b)=>+new Date(b.startedAt)-+new Date(a.startedAt));
+
+  // Some automated crawlers create a second session for the same SEO landing page with a Naver referrer.
+  // If a one-page desktop SEO session is paired with an already-suspicious direct session on the same path
+  // within 90 seconds, classify the whole burst as automated so it cannot also appear as a real visit.
+  const directBotSeeds=sessions.filter(s=>s.suspectedBot);
+  for(const s of sessions){
+    if(s.suspectedBot || s.device!=="desktop" || s.pageViews!==1 || s.uniquePages!==1 || !/^\/real-estate\//.test(s.landingPath)) continue;
+    const t=+new Date(s.startedAt);
+    const paired=directBotSeeds.some(seed=>seed.landingPath===s.landingPath && Math.abs(+new Date(seed.startedAt)-t)<=90000);
+    if(paired) s.suspectedBot=true;
+  }
+
   const suspectedIds=new Set(sessions.filter(s=>s.suspectedBot).map(s=>s.sessionId)); const humanRows=rows.filter(r=>!suspectedIds.has(r.session_id));
   const todayKey=kstDateKey(new Date()), yesterdayKey=kstDateKey(startOfKstDay(1)); const todayRows=humanRows.filter(r=>kstDateKey(r.created_at)===todayKey), yesterdayRows=humanRows.filter(r=>kstDateKey(r.created_at)===yesterdayKey);
   const mapStats=(base:typeof humanRows,key:"path"|"source"|"device")=>{const m=new Map<string,{views:number;visitors:Set<string>}>();for(const r of base){const k=String(r[key]||"기타"),v=m.get(k)??{views:0,visitors:new Set<string>()};v.views++;if(r.visitor_id)v.visitors.add(r.visitor_id);m.set(k,v);}return m;};
