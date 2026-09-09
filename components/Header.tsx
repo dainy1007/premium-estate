@@ -10,6 +10,7 @@ const navItems = [
   { label: "회사소개", href: "/#about", sectionId: "about" },
   { label: "전문분야", href: "/#services", sectionId: "services" },
   { label: "매물검색", href: "/properties" },
+  { label: "고객후기", href: "/#reviews", sectionId: "reviews" },
   { label: "상담문의", href: "/contact" },
 ];
 
@@ -67,53 +68,28 @@ export default function Header() {
         className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 backdrop-blur-sm"
       >
         <div className="relative mx-auto flex h-[94px] max-w-[1700px] items-center justify-between px-4 sm:h-[108px] sm:px-8 xl:h-[126px] xl:px-10 2xl:px-12">
-          <Link
-            href="/"
-            onClick={handleHomeClick}
-            className="flex min-w-0 items-center xl:absolute xl:left-[108px] xl:translate-x-[42px] 2xl:left-[128px] 2xl:translate-x-[50px]"
-            aria-label="백조현대부동산중개 홈"
-          >
-            <img
-              src="/brand-logo?v=20260901-header-inset"
-              alt="백조현대부동산중개"
-              className="h-[76px] w-auto object-contain sm:h-[92px] xl:h-[116px] 2xl:h-[120px]"
-            />
+          <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center xl:absolute xl:left-[108px] xl:translate-x-[42px] 2xl:left-[128px] 2xl:translate-x-[50px]" aria-label="백조현대부동산중개 홈">
+            <img src="/brand-logo?v=20260901-header-inset" alt="백조현대부동산중개" className="h-[76px] w-auto object-contain sm:h-[92px] xl:h-[116px] 2xl:h-[120px]" />
           </Link>
 
           <nav className="ml-auto hidden items-center xl:flex">
             {navItems.map((item, index) => (
               <div key={item.label} className="flex items-center">
-                {index > 0 && <span className="mx-4 h-5 w-px bg-slate-300 2xl:mx-5" />}
-                <Link
-                  href={item.href}
-                  onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : undefined}
-                  className={`whitespace-nowrap text-[17px] font-bold transition-colors hover:text-[#C9A227] 2xl:text-[19px] ${textClass}`}
-                >
+                {index > 0 && <span className="mx-3 h-5 w-px bg-slate-300 2xl:mx-4" />}
+                <Link href={item.href} onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : undefined} className={`whitespace-nowrap text-[16px] font-bold transition-colors hover:text-[#C9A227] 2xl:text-[18px] ${textClass}`}>
                   {item.label}
                 </Link>
               </div>
             ))}
           </nav>
 
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className={`ml-auto text-2xl xl:hidden ${textClass}`}
-            aria-label="메뉴 열기"
-          >
-            ☰
-          </button>
+          <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className={`ml-auto text-2xl xl:hidden ${textClass}`} aria-label="메뉴 열기">☰</button>
         </div>
 
         {mobileMenuOpen && (
           <div className="bg-white p-6 shadow-lg xl:hidden">
             {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : () => setMobileMenuOpen(false)}
-                className="block border-b border-slate-100 py-3 font-semibold text-[#071f3b]"
-              >
+              <Link key={item.label} href={item.href} onClick={item.href === "/" ? handleHomeClick : item.sectionId ? (event) => handleSectionClick(event, item.sectionId!) : () => setMobileMenuOpen(false)} className="block border-b border-slate-100 py-3 font-semibold text-[#071f3b]">
                 {item.label}
               </Link>
             ))}
