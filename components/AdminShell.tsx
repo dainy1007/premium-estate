@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 
 const BUILDING_LEDGER_VIEW_URL = "https://www.eais.go.kr/moct/bci/aaa01/BCIAAA01V01";
+const LAND_LEDGER_VIEW_URL = "https://m.gov.kr/mw/AA020InfoCappView.do?CappBizCD=13100000026&HighCtgCD=A02001001&Mcode=10207&tp_seq=01";
 const REGISTRY_VIEW_URL = "https://www.iros.go.kr";
 const ADMIN_VIEW_STATE_PREFIX = "baekjo-admin-";
 
@@ -108,7 +109,6 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     clearAdminViewState();
     setMobileMenuOpen(false);
 
-    // 같은 메뉴를 다시 눌러도 로컬 검색/필터/선택 상태가 확실히 초기화되도록 새로 로드합니다.
     if (pathname === href) {
       event.preventDefault();
       window.location.assign(href);
@@ -132,6 +132,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
           <div className="hidden items-center gap-2 md:flex">
             <a href={BUILDING_LEDGER_VIEW_URL} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#C9A227] px-3 py-2 text-sm font-semibold text-[#0A2342] hover:bg-[#C9A227]/10">건축물대장 열람</a>
+            <a href={LAND_LEDGER_VIEW_URL} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#C9A227] px-3 py-2 text-sm font-semibold text-[#0A2342] hover:bg-[#C9A227]/10">토지대장 열람</a>
             <a href={REGISTRY_VIEW_URL} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#C9A227] px-3 py-2 text-sm font-semibold text-[#0A2342] hover:bg-[#C9A227]/10">등기부등본 열람</a>
             <Link href="/" target="_blank" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">홈페이지 보기</Link>
             <form action="/api/admin/logout" method="post" data-ignore-unsaved-warning="true"><button type="submit" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">로그아웃</button></form>
@@ -147,6 +148,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 <Link key={item.href} href={item.href} onClick={(event) => handleAdminMenuClick(event, item.href)} className={`rounded-xl px-4 py-3 text-sm font-semibold ${isActive(item.href) ? "bg-[#0A2342] text-white" : "bg-slate-50 text-slate-700"}`}>{item.label}</Link>
               ))}
               <a href={BUILDING_LEDGER_VIEW_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]">건축물대장 열람</a>
+              <a href={LAND_LEDGER_VIEW_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]">토지대장 열람</a>
               <a href={REGISTRY_VIEW_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]">등기부등본 열람</a>
               <Link href="/" target="_blank" className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">홈페이지 보기</Link>
               <form action="/api/admin/logout" method="post" data-ignore-unsaved-warning="true"><button type="submit" className="w-full rounded-xl border border-red-200 px-4 py-3 text-left text-sm font-semibold text-red-600">로그아웃</button></form>
