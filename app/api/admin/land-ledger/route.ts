@@ -60,22 +60,75 @@ function tag(xml: string, name: string) {
   return match ? decodeXml(match[1].trim()) : "";
 }
 
+function safeErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message || error.name;
+  return String(error || "unknown error");
+}
+
+async function fetchWithRetry(url: string, init: RequestInit, label: string) {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 9000);
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 350));
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  const reason = safeErrorMessage(lastError);
+  throw new LandLedgerError(`${label}_NETWORK_ERROR`, 502, `${label} 외부 API 연결 실패: ${reason}`);
+}
+
 async function resolveParcel(address: string) {
   if (!kakaoKey) throw new LandLedgerError("KAKAO_REST_API_KEY_NOT_CONFIGURED", 503);
-  const response = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
-    headers: { Authorization: `KakaoAK ${kakaoKey}` },
-    cache: "no-store",
-  });
+  const response = await fetchWithRetry(
+    `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`,
+    {
+      headers: { Authorization: `KakaoAK ${kakaoKey}` },
+      cache: "no-store",
+    },
+    "KAKAO_ADDRESS",
+  );
   if (!response.ok) throw new LandLedgerError(`KAKAO_ADDRESS_${response.status}`, response.status);
   const data = await response.json() as { documents?: KakaoDoc[] };
   const doc = data.documents?.[0]?.address;
-  if (!doc?.b_code || !doc.main_address_no) throw new LandLedgerError("LAND_ADDRESS_NOT_RESOLVED", 422);
+  if (!doc?.b_code || !doc.main_address_no) throw new LandLedgerError("LAND_ADDRESS_NOT_RESOLVED", 422, "지번 주소를 확인해주세요.");
 
   const main = doc.main_address_no.padStart(4, "0");
   const sub = (doc.sub_address_no || "0").padStart(4, "0");
   const mountain = doc.mountain_yn === "Y" ? "2" : "1";
   const pnu = `${doc.b_code}${mountain}${main}${sub}`;
   return { pnu, address: doc.address_name || address };
+}
+
+async function fetchVworld(url: string) {
+  try {
+    return await fetchWithRetry(url, {
+      headers: {
+        Accept: "application/xml,text/xml,*/*",
+        "User-Agent": "BaekjoHD-LandLedger/1.0",
+      },
+      cache: "no-store",
+    }, "VWORLD_LAND");
+  } catch (error) {
+    // 일부 서버 환경에서 api.vworld.kr HTTPS 연결이 순간적으로 실패하는 경우가 있어
+    // 서버-서버 조회에 한해 HTTP 엔드포인트를 한 번 더 시도한다.
+    if (url.startsWith("https://api.vworld.kr/")) {
+      const fallbackUrl = url.replace("https://api.vworld.kr/", "http://api.vworld.kr/");
+      return await fetchWithRetry(fallbackUrl, {
+        headers: {
+          Accept: "application/xml,text/xml,*/*",
+          "User-Agent": "BaekjoHD-LandLedger/1.0",
+        },
+        cache: "no-store",
+      }, "VWORLD_LAND");
+    }
+    throw error;
+  }
 }
 
 async function fetchParcelInfo(address: string): Promise<ParcelInfo> {
@@ -89,10 +142,7 @@ async function fetchParcelInfo(address: string): Promise<ParcelInfo> {
   });
   if (vworldDomain) params.set("domain", vworldDomain);
 
-  const response = await fetch(`https://api.vworld.kr/ned/data/ladfrlList?${params.toString()}`, {
-    headers: { Accept: "application/xml,text/xml,*/*" },
-    cache: "no-store",
-  });
+  const response = await fetchVworld(`https://api.vworld.kr/ned/data/ladfrlList?${params.toString()}`);
   const raw = await response.text();
   if (!response.ok) throw new LandLedgerError(`VWORLD_LAND_${response.status}`, response.status, raw.slice(0, 200));
 
