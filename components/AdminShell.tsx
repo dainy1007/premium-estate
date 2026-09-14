@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 
 const BUILDING_LEDGER_VIEW_URL = "https://www.eais.go.kr/moct/bci/aaa01/BCIAAA01V01";
 const REGISTRY_VIEW_URL = "https://www.iros.go.kr";
+const ADMIN_VIEW_STATE_PREFIX = "baekjo-admin-";
 
 const adminLinks = [
   { href: "/admin/overview", label: "운영 현황" },
@@ -89,15 +90,40 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     return pathname.startsWith(href);
   };
 
+  const clearAdminViewState = () => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let index = 0; index < sessionStorage.length; index += 1) {
+        const key = sessionStorage.key(index);
+        if (key?.startsWith(ADMIN_VIEW_STATE_PREFIX)) keysToRemove.push(key);
+      }
+      keysToRemove.forEach((key) => sessionStorage.removeItem(key));
+    } catch (error) {
+      console.warn("관리자 화면 상태 초기화 실패:", error);
+    }
+  };
+
+  const handleAdminMenuClick = (event: ReactMouseEvent<HTMLAnchorElement>, href: string) => {
+    if (event.defaultPrevented) return;
+    clearAdminViewState();
+    setMobileMenuOpen(false);
+
+    // 같은 메뉴를 다시 눌러도 로컬 검색/필터/선택 상태가 확실히 초기화되도록 새로 로드합니다.
+    if (pathname === href) {
+      event.preventDefault();
+      window.location.assign(href);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100">
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-6">
-            <Link href="/admin/overview" className="truncate font-bold text-[#0A2342]">백조현대부동산 관리자</Link>
+            <Link href="/admin/overview" onClick={(event) => handleAdminMenuClick(event, "/admin/overview")} className="truncate font-bold text-[#0A2342]">백조현대부동산 관리자</Link>
             <nav className="hidden items-center gap-2 md:flex" aria-label="관리자 메뉴">
               {adminLinks.map((item) => (
-                <Link key={item.href} href={item.href} aria-current={isActive(item.href) ? "page" : undefined} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive(item.href) ? "bg-[#0A2342] text-white" : "text-slate-600 hover:bg-[#C9A227]/10 hover:text-[#0A2342]"}`}>
+                <Link key={item.href} href={item.href} onClick={(event) => handleAdminMenuClick(event, item.href)} aria-current={isActive(item.href) ? "page" : undefined} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive(item.href) ? "bg-[#0A2342] text-white" : "text-slate-600 hover:bg-[#C9A227]/10 hover:text-[#0A2342]"}`}>
                   {item.label}
                 </Link>
               ))}
@@ -118,7 +144,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           <div id="admin-mobile-menu" className="border-t border-slate-200 bg-white px-4 py-4 md:hidden">
             <nav className="grid gap-2" aria-label="모바일 관리자 메뉴">
               {adminLinks.map((item) => (
-                <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)} className={`rounded-xl px-4 py-3 text-sm font-semibold ${isActive(item.href) ? "bg-[#0A2342] text-white" : "bg-slate-50 text-slate-700"}`}>{item.label}</Link>
+                <Link key={item.href} href={item.href} onClick={(event) => handleAdminMenuClick(event, item.href)} className={`rounded-xl px-4 py-3 text-sm font-semibold ${isActive(item.href) ? "bg-[#0A2342] text-white" : "bg-slate-50 text-slate-700"}`}>{item.label}</Link>
               ))}
               <a href={BUILDING_LEDGER_VIEW_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]">건축물대장 열람</a>
               <a href={REGISTRY_VIEW_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-[#C9A227] bg-[#C9A227]/10 px-4 py-3 text-sm font-semibold text-[#0A2342]">등기부등본 열람</a>
