@@ -13,7 +13,7 @@ const TYPE_GROUPS: Record<string, string[]> = {
   소형주택: ["원룸", "미니투룸", "투룸"],
   주택: ["쓰리룸", "단독주택", "상가주택", "다가구"],
   상가: ["상가"],
-  "창고·공장": ["창고", "공장"],
+  "창고·공장": ["창고", "공장", "토지"],
 };
 
 function formatPublicAddress(value?: string | null) {
