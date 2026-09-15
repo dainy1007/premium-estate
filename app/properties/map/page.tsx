@@ -9,9 +9,6 @@ import type { Property } from "@/types/property";
 
 const CENTER = { lat: 35.6939, lng: 128.4598 };
 
-type KakaoMaps = any;
-declare global { interface Window { kakao?: { maps: KakaoMaps } } }
-
 export default function PropertyMapPage() {
   const appKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -31,12 +28,6 @@ export default function PropertyMapPage() {
   const types = useMemo(() => ["전체", ...Array.from(new Set(properties.map((p) => p.type).filter(Boolean) as string[]))], [properties]);
   const visible = useMemo(() => type === "전체" ? properties : properties.filter((p) => p.type === type), [properties, type]);
 
-  const initialize = useCallback(() => {
-    if (initializedRef.current || !containerRef.current || !window.kakao?.maps) return;
-    initializedRef.current = true;
-    window.kakao.maps.load(() => renderMap());
-  }, []);
-
   const renderMap = useCallback(() => {
     const km = window.kakao?.maps;
     const el = containerRef.current;
@@ -47,7 +38,7 @@ export default function PropertyMapPage() {
     visible.forEach((property) => {
       const address = String(property.address || "").trim();
       if (!address) return;
-      geocoder.addressSearch(address, (result: any[], status: string) => {
+      geocoder.addressSearch(address, (result: Array<{ x: string; y: string }>, status: string) => {
         if (status !== km.services.Status.OK || !result[0]) return;
         const position = new km.LatLng(Number(result[0].y), Number(result[0].x));
         const marker = new km.Marker({ map, position });
@@ -55,6 +46,12 @@ export default function PropertyMapPage() {
       });
     });
   }, [visible]);
+
+  const initialize = useCallback(() => {
+    if (initializedRef.current || !containerRef.current || !window.kakao?.maps) return;
+    initializedRef.current = true;
+    window.kakao.maps.load(renderMap);
+  }, [renderMap]);
 
   useEffect(() => {
     if (!loading && initializedRef.current) renderMap();
