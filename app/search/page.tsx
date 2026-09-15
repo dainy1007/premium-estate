@@ -14,6 +14,12 @@ const TYPE_GROUPS: Record<string, string[]> = {
   주택: ["쓰리룸", "단독주택", "상가주택", "다가구"],
   상가: ["상가"],
   "창고·공장": ["창고", "공장", "토지"],
+  "토지·창고·공장": ["토지", "창고", "공장"],
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  "창고·공장": "토지·창고·공장",
+  "토지·창고·공장": "토지·창고·공장",
 };
 
 function formatPublicAddress(value?: string | null) {
@@ -69,6 +75,7 @@ function PropertySearchContent() {
   const searchParams = useSearchParams();
   const keyword = (searchParams.get("q") || "").trim();
   const type = (searchParams.get("type") || "").trim();
+  const typeLabel = TYPE_LABELS[type] || type;
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -88,7 +95,7 @@ function PropertySearchContent() {
   const resetLocalFilters = () => { setDealType("전체"); setSortOption("최신순"); setFeaturedOnly(false); setCurrentPage(1); };
 
   return <main className="min-h-screen bg-[#F8F9FB] text-[#0A2342]">
-    <section className="bg-[#0A2342] px-6 pb-14 pt-24 text-white"><div className="mx-auto max-w-7xl"><Link href="/" className="text-sm font-semibold text-[#C9A227] hover:underline">← 홈으로</Link><p className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-[#C9A227]">Property Search</p><h1 className="mt-3 text-4xl font-bold">매물 검색 결과</h1><p className="mt-4 text-white/70">{keyword && `검색어 “${keyword}”`}{keyword && type && " · "}{type && `유형 “${type}”`}</p></div></section>
+    <section className="bg-[#0A2342] px-6 pb-14 pt-24 text-white"><div className="mx-auto max-w-7xl"><Link href="/" className="text-sm font-semibold text-[#C9A227] hover:underline">← 홈으로</Link><p className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-[#C9A227]">Property Search</p><h1 className="mt-3 text-4xl font-bold">매물 검색 결과</h1><p className="mt-4 text-white/70">{keyword && `검색어 “${keyword}”`}{keyword && typeLabel && " · "}{typeLabel && `유형 “${typeLabel}”`}</p></div></section>
     <section className="mx-auto max-w-7xl px-6 py-10">
       <div className="mb-8 rounded-[24px] border border-[#0A2342]/10 bg-white p-5 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><p className="text-sm text-[#0A2342]/65">총 <strong className="text-[#0A2342]">{results.length}개</strong> 매물{results.length > 0 && <span className="ml-2 text-[#0A2342]/45">· {pageStart + 1}-{Math.min(pageStart + ITEMS_PER_PAGE, results.length)}번째 표시</span>}</p><div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap"><select value={dealType} onChange={(e) => setDealType(e.target.value)} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm">{dealTypes.map((item) => <option key={item}>{item}</option>)}</select><select value={sortOption} onChange={(e) => setSortOption(e.target.value)} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm"><option>최신순</option><option>오래된순</option><option>이름순</option></select><label className="flex cursor-pointer items-center gap-2 rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm font-semibold"><input type="checkbox" checked={featuredOnly} onChange={(e) => setFeaturedOnly(e.target.checked)} />추천만 보기</label><button type="button" onClick={resetLocalFilters} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm font-semibold">조건 초기화</button><Link href="/properties" className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-center text-sm font-semibold">상세 조건 검색</Link></div></div></div>
       {loading && <p className="py-20 text-center text-[#0A2342]/55">매물을 검색하는 중입니다...</p>}
