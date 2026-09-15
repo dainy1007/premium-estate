@@ -42,7 +42,10 @@ export default function PropertyMapPage() {
         if (status !== km.services.Status.OK || !result[0]) return;
         const position = new km.LatLng(Number(result[0].y), Number(result[0].x));
         const marker = new km.Marker({ map, position });
-        km.event.addListener(marker, "click", () => { window.location.href = `/properties/${property.id}`; });
+        const infoWindow = new km.InfoWindow({
+          content: `<div style="padding:8px 10px;font-size:12px;white-space:nowrap"><a href="/properties/${property.id}" style="color:#0A2342;font-weight:700;text-decoration:none">${deriveLocationFromAddress(address) || property.location || "매물"} · ${property.type || "매물"} →</a></div>`,
+        });
+        infoWindow.open(map, marker);
       });
     });
   }, [visible]);
