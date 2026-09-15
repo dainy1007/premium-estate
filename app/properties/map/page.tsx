@@ -1,0 +1,72 @@
+"use client";
+
+import Link from "next/link";
+import Script from "next/script";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { deriveLocationFromAddress } from "@/lib/property-normalize";
+import type { Property } from "@/types/property";
+
+const CENTER = { lat: 35.6939, lng: 128.4598 };
+
+type KakaoMaps = any;
+declare global { interface Window { kakao?: { maps: KakaoMaps } } }
+
+export default function PropertyMapPage() {
+  const appKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const initializedRef = useRef(false);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [type, setType] = useState("전체");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.from("properties").select("*, property_images(*)").order("created_at", { ascending: false });
+      setProperties(((data || []) as Property[]).filter((p) => p.is_hidden !== true && p.listing_status !== "completed"));
+      setLoading(false);
+    })();
+  }, []);
+
+  const types = useMemo(() => ["전체", ...Array.from(new Set(properties.map((p) => p.type).filter(Boolean) as string[]))], [properties]);
+  const visible = useMemo(() => type === "전체" ? properties : properties.filter((p) => p.type === type), [properties, type]);
+
+  const initialize = useCallback(() => {
+    if (initializedRef.current || !containerRef.current || !window.kakao?.maps) return;
+    initializedRef.current = true;
+    window.kakao.maps.load(() => renderMap());
+  }, []);
+
+  const renderMap = useCallback(() => {
+    const km = window.kakao?.maps;
+    const el = containerRef.current;
+    if (!km || !el) return;
+    el.innerHTML = "";
+    const map = new km.Map(el, { center: new km.LatLng(CENTER.lat, CENTER.lng), level: 7 });
+    const geocoder = new km.services.Geocoder();
+    visible.forEach((property) => {
+      const address = String(property.address || "").trim();
+      if (!address) return;
+      geocoder.addressSearch(address, (result: any[], status: string) => {
+        if (status !== km.services.Status.OK || !result[0]) return;
+        const position = new km.LatLng(Number(result[0].y), Number(result[0].x));
+        const marker = new km.Marker({ map, position });
+        km.event.addListener(marker, "click", () => { window.location.href = `/properties/${property.id}`; });
+      });
+    });
+  }, [visible]);
+
+  useEffect(() => {
+    if (!loading && initializedRef.current) renderMap();
+  }, [loading, renderMap]);
+
+  return <main className="min-h-screen bg-[#F8F9FB] pb-20 text-[#0A2342]">
+    {appKey && <Script id="property-kakao-map-sdk" src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`} strategy="afterInteractive" onLoad={initialize} onReady={initialize} />}
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-8">
+      <div className="mb-4 flex items-center justify-between gap-3"><div><Link href="/" className="text-sm font-semibold text-[#C9A227]">← 홈</Link><h1 className="mt-2 text-2xl font-extrabold">지도에서 매물 찾기</h1><p className="mt-1 text-sm text-[#0A2342]/60">백조현대부동산에 등록된 공개 매물만 표시됩니다.</p></div><Link href="/properties" className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm font-semibold">목록검색</Link></div>
+      <div className="mb-3 flex gap-2 overflow-x-auto pb-1">{types.map((v) => <button key={v} onClick={() => setType(v)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold ${type === v ? "border-[#C9A227] bg-[#C9A227]/15" : "border-[#0A2342]/15 bg-white"}`}>{v}</button>)}</div>
+      {!appKey ? <div className="rounded-2xl bg-white p-8 text-center shadow-sm">지도 설정을 확인해 주세요.</div> : <div ref={containerRef} className="h-[68vh] min-h-[480px] w-full overflow-hidden rounded-3xl bg-slate-100 shadow-sm" />}
+      <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm"><p className="text-sm font-semibold">현재 공개 매물 {visible.length}개</p><div className="mt-3 flex flex-wrap gap-2">{visible.slice(0, 12).map((p) => <Link key={p.id} href={`/properties/${p.id}`} className="rounded-full bg-[#F8F9FB] px-3 py-2 text-xs font-semibold">{deriveLocationFromAddress(p.address) || p.location} · {p.type || "매물"}</Link>)}</div></div>
+    </div>
+  </main>;
+}
