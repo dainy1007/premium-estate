@@ -73,9 +73,18 @@ export default function Home() {
               </Link>
             ))}
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-            {stats.map((s) => <div key={s.label} className="rounded-2xl border border-[#0A2342]/8 bg-white p-4 text-center shadow-sm"><p className="text-3xl font-extrabold text-[#C99700]">{s.value}</p><p className="mt-1 text-xs font-semibold text-[#0A2342]/75">{s.label}</p></div>)}
+
+          <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3">
+            {stats.map((s) => <div key={s.label} className="rounded-xl border border-[#0A2342]/8 bg-white px-1 py-3 text-center shadow-sm sm:px-3 sm:py-4"><p className="text-xl font-extrabold text-[#C99700] sm:text-3xl">{s.value}</p><p className="mt-1 text-[9px] font-semibold leading-4 text-[#0A2342]/75 sm:text-xs">{s.label}</p></div>)}
           </div>
+
+          <Link href="/properties/map" className="group mt-5 flex items-center justify-between rounded-2xl border border-[#0A2342]/10 bg-white px-4 py-4 shadow-sm transition hover:border-[#C9A227] hover:shadow-md sm:px-5">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#C9A227]/15 text-xl text-[#0A2342]">⌖</span>
+              <div className="min-w-0"><p className="text-base font-extrabold sm:text-lg">지도에서 매물 찾기</p><p className="mt-0.5 truncate text-[11px] text-[#0A2342]/60 sm:text-xs">백조현대부동산 등록 매물을 지도에서 확인하세요</p></div>
+            </div>
+            <span className="ml-3 text-2xl text-[#C9A227] transition group-hover:translate-x-1">›</span>
+          </Link>
         </div>
       </section>
 
