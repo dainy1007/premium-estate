@@ -18,7 +18,7 @@ export default function AiConsultButton() {
   }, [open]);
 
   return (
-    <div ref={wrapperRef} className="fixed bottom-24 right-3 z-[60] flex max-h-[calc(100vh-7rem)] flex-col items-end md:bottom-6 md:right-6">
+    <div ref={wrapperRef} className="fixed right-3 top-1/2 z-[60] flex max-h-[calc(100vh-5rem)] -translate-y-1/2 flex-col items-end md:right-6">
       {open && (
         <div className="mb-2 w-[min(270px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-[#0A2342]/10 bg-white shadow-2xl">
           <div className="flex items-start justify-between bg-[#0A2342] px-3.5 py-2.5 text-white"><div><p className="text-sm font-extrabold">백조 AI 상담</p><p className="mt-0.5 text-[10px] text-white/70">원하시는 메뉴를 선택해 주세요.</p></div><button type="button" onClick={() => setOpen(false)} aria-label="AI 상담 닫기" className="ml-3 text-lg leading-none text-white/80">×</button></div>
