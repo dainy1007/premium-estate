@@ -17,7 +17,8 @@ type KakaoMaps = {
   load: (callback: () => void) => void;
   LatLng: new (latitude: number, longitude: number) => unknown;
   Map: new (container: HTMLElement, options: { center: unknown; level: number }) => { setCenter: (position: unknown) => void; setLevel: (level: number) => void };
-  Marker: new (options: { map: unknown; position: unknown }) => unknown;
+  Marker: new (options: { map?: unknown; position: unknown }) => { setMap?: (map: unknown | null) => void };
+  MarkerClusterer: new (options: { map: unknown; averageCenter?: boolean; minLevel?: number; disableClickZoom?: boolean; styles?: Array<Record<string, string>> }) => { addMarkers: (markers: unknown[]) => void; clear: () => void };
   InfoWindow: new (options: { content: string }) => { open: (map: unknown, marker: unknown) => void };
   event: { addListener: (target: unknown, type: string, handler: () => void) => void };
   services: {
@@ -99,7 +100,7 @@ export default function Map() {
   return (
     <section className="bg-white px-6 py-20">
       {appKey && (
-        <Script id="kakao-map-sdk" src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`} strategy="afterInteractive" onLoad={initializeMap} onReady={initializeMap} onError={(error) => { console.error("[KakaoMap] SDK 로드 실패:", error); setStatus("error"); }} />
+        <Script id="kakao-map-sdk" src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services,clusterer`} strategy="afterInteractive" onLoad={initializeMap} onReady={initializeMap} onError={(error) => { console.error("[KakaoMap] SDK 로드 실패:", error); setStatus("error"); }} />
       )}
       <div className="mx-auto max-w-7xl">
         <div className="text-center"><p className="text-sm font-semibold tracking-[0.35em] text-[#C9A227]">LOCATION</p><h2 className="mt-3 text-3xl font-bold text-[#0A2342]">찾아오시는 길</h2><p className="mt-4 text-gray-600">{OFFICE_NAME}</p></div>
