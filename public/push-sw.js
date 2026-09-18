@@ -4,9 +4,10 @@ self.addEventListener("push", event => {
   event.waitUntil(self.registration.showNotification(data.title, {
     body: data.body,
     icon: "/favicon.ico",
-    badge: "/favicon.ico",
-    tag: "new-inquiry",
+    tag: `new-inquiry-${Date.now()}`,
     renotify: true,
+    requireInteraction: true,
+    vibrate: [200, 100, 200],
     data: { url: data.url || "/admin/inquiries" }
   }));
 });
