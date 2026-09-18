@@ -5,7 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPropertyPriceDisplay, parsePropertyPriceAmount } from "@/lib/property-price";
 import { deriveLocationFromAddress } from "@/lib/property-normalize";
 import { supabase } from "@/lib/supabase";
-import type { Property } from "@/types/property";\nimport PropertyMapSplit from "@/components/properties/PropertyMapSplit";
+import type { Property } from "@/types/property";
+import PropertyMapSplit from "@/components/properties/PropertyMapSplit";
 
 const ALL = "전체";
 const ITEMS_PER_PAGE = 9;
