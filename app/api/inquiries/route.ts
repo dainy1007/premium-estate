@@ -14,6 +14,7 @@ export async function POST(request: Request) {
   const db = createClient(url, key, { auth: { persistSession: false } });
   const { error } = await db.from("inquiries").insert({ name, phone, email: null, message, property_title: "홈페이지 매물 문의", status: "new" });
   if (error) return NextResponse.json({ error: "문의 저장 실패" }, { status: 500 });
-  try { await sendInquiryPush(name, message); } catch (error) { console.error("Inquiry push notification failed", error); }
-  return NextResponse.json({ ok: true });
+  let push = { sent: 0, configured: false };
+  try { push = await sendInquiryPush(name, message); console.log("Inquiry push result", push); } catch (error) { console.error("Inquiry push notification failed", error); }
+  return NextResponse.json({ ok: true, push });
 }
