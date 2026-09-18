@@ -22,7 +22,8 @@ export default function PropertyNearbyMap({address,naverUrl,kakaoUrl}:Props){
    clear(); const service=new k.services.Places();
    service.categorySearch(code,(data:any[],status:string)=>{
      if(status!==k.services.Status.OK){setPlaces([]);return;}
-     const valid=data.filter((p:any)=>p.category_group_code===code);\n     const next=valid.slice(0,20).map((p:any)=>({id:p.id,name:p.place_name,category:p.category_group_name,distance:Number(p.distance||0),lat:Number(p.y),lng:Number(p.x)}));
+     const valid=data.filter((p:any)=>p.category_group_code===code);
+     const next=valid.slice(0,20).map((p:any)=>({id:p.id,name:p.place_name,category:p.category_group_name,distance:Number(p.distance||0),lat:Number(p.y),lng:Number(p.x)}));
      setPlaces(next);
      next.forEach((p:Place)=>{const marker=new k.Marker({map:m,position:new k.LatLng(p.lat,p.lng)});markersRef.current.push(marker);});
    },{location:c,radius:r,sort:k.services.SortBy.DISTANCE});
