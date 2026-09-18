@@ -28,8 +28,8 @@ export default function AiConsultButton() {
     event.preventDefault();
     if (!name.trim() || !phone.trim() || !message.trim()) { setResult("성함, 연락처, 문의 내용을 입력해 주세요."); return; }
     setSubmitting(true); setResult("");
-    const { error } = await supabase.from("inquiries").insert({ name: name.trim(), phone: phone.trim(), email: null, message: message.trim(), property_title: null, status: "new" });
-    if (error) { setResult("접수 중 오류가 발생했습니다. 다시 시도해 주세요."); setSubmitting(false); return; }
+    const response = await fetch("/api/inquiries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim(), phone: phone.trim(), message: message.trim() }) });
+    if (!response.ok) { setResult("접수 중 오류가 발생했습니다. 다시 시도해 주세요."); setSubmitting(false); return; }
     setName(""); setPhone(""); setMessage(""); setResult("문의가 접수되었습니다. 확인 후 연락드리겠습니다."); setSubmitting(false);
   }
 
