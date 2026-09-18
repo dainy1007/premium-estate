@@ -81,3 +81,15 @@ export async function getRelatedProperties(id: number, type: string) {
     })
     .slice(0, 3);
 }
+
+
+function normalizedBuildingAddress(value: string | null | undefined) {
+  return String(value || "").trim().replace(/\s+/g, " ").replace(/\s*(?:제?\d+층)?\s*\d+호\s*$/u, "").trim();
+}
+
+export async function getSameAddressProperties(id: number, address?: string | null) {
+  const base = normalizedBuildingAddress(address);
+  if (!base) return [];
+  const { data } = await supabase.from("properties").select("*, property_images(*)").neq("id", id).order("created_at", { ascending:false }).limit(100);
+  return ((data ?? []) as Property[]).filter((p) => isPublicProperty(p) && p.listing_status !== "completed" && normalizedBuildingAddress(p.address) === base).map(applyVerifiedSaleInfo).slice(0, 6);
+}
