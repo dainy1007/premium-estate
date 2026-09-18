@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 
-export const VAPID_PUBLIC_KEY = "BFXDtHbQqG2qy2T9LTQBdKyxX6MkddcBNgEiLHMYlMVxyTVEDfcBKWUblon2DFT4JePEB9HRJLtR1vPM2oM1C6w";
+export const VAPID_PUBLIC_KEY = "BPP-b6IjZYkLoYQZ-gTMz1MhQqTy6IDVPhTq5O83N82BdU8u9JhE0djEh-vO5dq0Z5wVzCQ3gconX1SClvxtG44";
 
 function adminDb() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
