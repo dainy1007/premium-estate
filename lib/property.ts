@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { supabase } from "@/lib/supabase";
 import { normalizePropertyForDisplay } from "@/lib/property-normalize";
 import { formatPropertyPriceDisplay } from "@/lib/property-price";
@@ -32,7 +33,7 @@ function applyVerifiedSaleInfo(property: Property): Property {
   };
 }
 
-export async function getProperty(id: number) {
+export const getProperty = cache(async function getProperty(id: number) {
   const { data, error } = await supabase
     .from("properties")
     .select("*, property_images(*)")
@@ -47,7 +48,7 @@ export async function getProperty(id: number) {
   }
 
   return applyVerifiedSaleInfo(data as Property);
-}
+});
 
 export async function getLatestProperties(limit = 6) {
   const { data } = await supabase
