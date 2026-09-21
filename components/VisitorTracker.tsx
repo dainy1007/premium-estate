@@ -22,6 +22,17 @@ function getDeviceType() {
   return "desktop";
 }
 
+function conversionPath(target: Element | null) {
+  const el = target?.closest("a,button,[role=button]");
+  if (!el) return null;
+  const href = el instanceof HTMLAnchorElement ? (el.getAttribute("href") || "") : "";
+  const text = (el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+  if (href.startsWith("tel:")) return "/__event/phone";
+  if (/kakao|카카오/.test(href + " " + text)) return "/__event/kakao";
+  if (/문의|상담|연락/.test(text)) return "/__event/inquiry";
+  return null;
+}
+
 export default function VisitorTracker() {
   const pathname = usePathname();
 
@@ -59,7 +70,17 @@ export default function VisitorTracker() {
       }).catch(() => undefined);
     }, 700);
 
-    return () => window.clearTimeout(timer);
+    const onClick = (event: MouseEvent) => {
+      const eventPath = conversionPath(event.target as Element | null);
+      if (!eventPath) return;
+      void fetch("/api/analytics", {
+        method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
+        body: JSON.stringify({ path: eventPath, visitorId, sessionId, referrer: "", device: getDeviceType() }),
+      }).catch(() => undefined);
+    };
+    document.addEventListener("click", onClick, true);
+
+    return () => { window.clearTimeout(timer); document.removeEventListener("click", onClick, true); };
   }, [pathname]);
 
   return null;
