@@ -183,6 +183,7 @@ export default function AdminOverviewPage() {
                           <p className="truncate font-semibold">{property.title}</p>
                           {property.is_featured && <Badge>추천</Badge>}
                           {property.is_hidden && <Badge muted>숨김</Badge>}
+                          {property.listing_status === "reserved" && <Badge>예약중</Badge>}
                           {property.listing_status === "completed" && <Badge completed>계약완료</Badge>}
                         </div>
                         <p className="mt-1 text-sm text-slate-500">

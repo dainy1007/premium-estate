@@ -285,6 +285,7 @@ export default function AdminBulkPage() {
                           <div className="flex flex-wrap gap-2">
                             {property.is_featured && <StatusBadge label="추천" className="bg-amber-100 text-amber-800" />}
                             {property.is_hidden && <StatusBadge label="숨김" className="bg-slate-200 text-slate-700" />}
+                            {property.listing_status === "reserved" && <StatusBadge label="예약중" className="bg-amber-100 text-amber-800" />}
                             {completed && <StatusBadge label="계약완료" className="bg-blue-100 text-blue-800" />}
                             {!property.is_hidden && !completed && <StatusBadge label="노출중" className="bg-emerald-100 text-emerald-800" />}
                           </div>

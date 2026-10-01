@@ -9,7 +9,7 @@ export interface PropertyImage {
   created_at?: string;
 }
 
-export type PropertyListingStatus = "active" | "completed";
+export type PropertyListingStatus = "active" | "reserved" | "completed";
 
 export interface Property {
   id: number;
