@@ -1,3 +1,11 @@
+self.addEventListener("install", event => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener("activate", event => {
+  event.waitUntil(clients.claim());
+});
+
 self.addEventListener("push", event => {
   let data = { title: "백조현대부동산 새 상담 문의", body: "새로운 상담 문의가 접수되었습니다.", url: "/admin/inquiries" };
   try { if (event.data) data = { ...data, ...event.data.json() }; } catch {}

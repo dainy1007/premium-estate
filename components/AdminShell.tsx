@@ -36,10 +36,20 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       if (!active) return;
       setNewInquiryCount(count ?? 0);
       const latest = data?.[0] as {id:number;name:string;message:string}|undefined;
-      if (latest && notify && knownLatestInquiryId.current !== null && latest.id !== knownLatestInquiryId.current && "Notification" in window && Notification.permission === "granted") {
-        new Notification("백조현대부동산 신규 상담 문의",{body:`${latest.name}님 · ${latest.message.slice(0,40)}`});
-      }
+      const isNewInquiry = latest && notify && knownLatestInquiryId.current !== null && latest.id !== knownLatestInquiryId.current;
       if (latest) knownLatestInquiryId.current = latest.id;
+      if (isNewInquiry && "Notification" in window && Notification.permission === "granted") {
+        try {
+          const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
+          const subscription = await registration?.pushManager.getSubscription();
+          // Registered browsers receive the server push, including when this page is closed.
+          if (!subscription) {
+            const options = { body: `${latest.name}님 · ${latest.message.slice(0,40)}`, data: { url: "/admin/inquiries" } };
+            if (registration?.active) await registration.showNotification("백조현대부동산 신규 상담 문의", options);
+            else new Notification("백조현대부동산 신규 상담 문의", options);
+          }
+        } catch { console.warn("Foreground inquiry notification unavailable"); }
+      }
     };
     void refreshNewInquiries(false);
     const timer=window.setInterval(()=>void refreshNewInquiries(true),30000);
