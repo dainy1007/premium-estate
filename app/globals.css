@@ -24,3 +24,8 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Subtle sparkle on recommended property badges */
+.featured-sparkle::after { content: "✦"; position: absolute; right: -5px; top: -8px; color: #f4c430; font-size: 14px; text-shadow: 0 0 5px #fff; animation: featured-twinkle 4s ease-in-out infinite; pointer-events: none; }
+@keyframes featured-twinkle { 0%, 78%, 100% { opacity: 0; transform: scale(.6) rotate(-20deg); } 84%, 91% { opacity: 1; transform: scale(1.15) rotate(12deg); } }
+@media (prefers-reduced-motion: reduce) { .featured-sparkle::after { animation: none; opacity: 1; } }
