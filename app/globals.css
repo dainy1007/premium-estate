@@ -29,3 +29,12 @@ body {
 .featured-sparkle::after { content: "✦"; position: absolute; right: -5px; top: -8px; color: #f4c430; font-size: 14px; text-shadow: 0 0 5px #fff; animation: featured-twinkle 4s ease-in-out infinite; pointer-events: none; }
 @keyframes featured-twinkle { 0%, 78%, 100% { opacity: 0; transform: scale(.6) rotate(-20deg); } 84%, 91% { opacity: 1; transform: scale(1.15) rotate(12deg); } }
 @media (prefers-reduced-motion: reduce) { .featured-sparkle::after { animation: none; opacity: 1; } }
+
+/* Reserve a right-side rail while the compact consultation panel is expanded.
+   Property photos and listing cards must never sit beneath the fixed panel. */
+@media (min-width: 1280px) {
+  body:has(.ai-consult-panel-open) > main {
+    padding-right: 270px;
+    transition: padding-right 180ms ease;
+  }
+}
