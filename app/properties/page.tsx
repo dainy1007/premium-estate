@@ -123,7 +123,7 @@ export default function PropertiesPage() {
       if (sortOption === "추천순") { const featured = Number(b.is_featured) - Number(a.is_featured); if (featured !== 0) return featured; const order = (a.display_order ?? 0) - (b.display_order ?? 0); if (order !== 0) return order; }
       if (sortOption === "이름순") return a.title.localeCompare(b.title, "ko");
       if (sortOption === "낮은가격순" || sortOption === "높은가격순") { const aa = a.price_amount ?? parsePropertyPriceAmount(a.price); const bb = b.price_amount ?? parsePropertyPriceAmount(b.price); return sortOption === "낮은가격순" ? (aa ?? Number.MAX_SAFE_INTEGER) - (bb ?? Number.MAX_SAFE_INTEGER) : (bb ?? -1) - (aa ?? -1); }
-      const at = a.created_at ? new Date(a.created_at).getTime() : 0; const bt = b.created_at ? new Date(b.created_at).getTime() : 0;
+      const at = new Date(a.bumped_at || a.created_at || 0).getTime(); const bt = new Date(b.bumped_at || b.created_at || 0).getTime();
       return sortOption === "오래된순" ? at - bt : bt - at;
     });
   }, [properties, keyword, propertyType, dealType, location, minPrice, maxPrice, featuredOnly, sortOption]);
