@@ -65,8 +65,8 @@ export default function Header() {
         transition={{ duration: 0.3 }}
         className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 backdrop-blur-sm"
       >
-        <div className="relative mx-auto flex h-[94px] w-full max-w-[1600px] items-center justify-between gap-2 px-4 sm:h-[108px] sm:px-6 xl:grid xl:h-[126px] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)] xl:gap-4 xl:px-8 2xl:px-10">
-          <nav className="hidden min-w-0 items-center gap-0 xl:flex xl:justify-self-start">
+        <div className="relative mx-auto flex h-[94px] w-full max-w-[1600px] items-center justify-between gap-2 px-4 sm:h-[108px] sm:px-6 xl:flex xl:h-[126px] xl:gap-0 xl:px-6 2xl:px-10">
+          <nav className="hidden min-w-0 items-center gap-0 xl:flex xl:w-[34%] xl:shrink-0 xl:justify-start">
             {navItems.map((item, index) => (
               <div key={item.label} className="flex items-center">
                 {index > 0 && <span className="mx-2.5 h-4 w-px bg-slate-300 2xl:mx-3" />}
@@ -75,13 +75,13 @@ export default function Header() {
             ))}
           </nav>
 
-          <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center xl:justify-self-center" aria-label="백조현대부동산중개 홈">
-            <img src="/brand-logo?v=20260901-header-inset" alt="백조현대부동산중개" className="h-[76px] max-w-full object-contain sm:h-[92px] xl:h-[110px] 2xl:h-[120px]" />
+          <Link href="/" onClick={handleHomeClick} className="flex min-w-0 items-center xl:w-[34%] xl:shrink-0 xl:justify-center" aria-label="백조현대부동산중개 홈">
+            <img src="/brand-logo?v=20260901-header-inset" alt="백조현대부동산중개" className="h-[76px] w-auto max-w-full object-contain sm:h-[92px] xl:h-[100px] 2xl:h-[114px]" />
           </Link>
 
-          <a href="tel:01077750014" aria-label="010-7775-0014 전화 상담 연결" className="hidden items-center gap-2 text-[#071f3b] transition-colors hover:text-[#C9A227] xl:flex xl:justify-self-end">
+          <a href="tel:01077750014" aria-label="010-7775-0014 전화 상담 연결" className="hidden min-w-0 items-center gap-2 text-[#071f3b] transition-colors hover:text-[#C9A227] xl:flex xl:w-[32%] xl:shrink-0 xl:justify-end">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-8 w-8 shrink-0 2xl:h-10 2xl:w-10"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.56 3.58.56a1 1 0 011 1V20a1 1 0 01-1 1C10.61 21 3 13.39 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.46.56 3.58a1 1 0 01-.25 1.01l-2.19 2.2z"/></svg>
-            <span className="whitespace-nowrap text-[19px] font-extrabold tracking-tight 2xl:text-[25px]">010-7775-0014</span>
+            <span className="whitespace-nowrap text-[20px] font-extrabold tracking-tight 2xl:text-[25px]">010-7775-0014</span>
           </a>
 
           <a href="tel:01077750014" className="ml-auto mr-4 flex items-center gap-1.5 text-sm font-extrabold text-[#071f3b] xl:hidden" aria-label="전화 상담 010-7775-0014">☎ <span className="hidden sm:inline">010-7775-0014</span></a>
