@@ -7,7 +7,6 @@ export interface PropertyImage {
   is_cover: boolean;
   alt_text?: string | null;
   created_at?: string;
-  bumped_at?: string | null;
 }
 
 export type PropertyListingStatus = "active" | "reserved" | "completed";
@@ -22,6 +21,7 @@ export interface Property {
   description: string;
   image_url: string;
   created_at?: string;
+  bumped_at?: string | null;
   type?: string | null;
   deal_type?: string | null;
   address?: string | null;
