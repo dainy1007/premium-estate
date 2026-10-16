@@ -36,15 +36,15 @@ export default function AiConsultButton() {
   return (
     <div ref={wrapperRef} className="fixed bottom-5 right-3 z-[60] flex max-h-[calc(100vh-3rem)] flex-col items-end gap-2 md:right-5 xl:top-36 xl:bottom-auto">
       {open && (
-        <div className="ai-consult-panel-open mb-1 w-[min(215px,calc(100vw-24px))] max-h-[calc(100vh-9rem)] overflow-y-auto overflow-x-hidden rounded-2xl border border-[#0A2342]/10 bg-white shadow-2xl">
+        <div className="ai-consult-panel-open mb-1 w-[min(180px,calc(100vw-24px))] max-h-[calc(100vh-9rem)] overflow-y-auto overflow-x-hidden rounded-2xl border border-[#0A2342]/10 bg-white shadow-2xl">
           <div className="flex items-start justify-between bg-[#0A2342] px-3.5 py-2.5 text-white"><div><p className="text-sm font-extrabold">백조 AI 상담</p><p className="mt-0.5 text-[10px] text-white/70">원하시는 메뉴를 선택해 주세요.</p></div><button type="button" onClick={() => { setOpen(false); setInquiryOpen(false); }} aria-label="AI 상담 닫기" className="ml-3 text-lg leading-none text-white/80">×</button></div>
           {!inquiryOpen ? (
             <div className="grid gap-1 p-1.5">
-              <Link href="/properties" onClick={() => setOpen(false)} className="rounded-xl bg-[#F8F9FB] px-2.5 py-1.5 text-xs font-semibold">🏠 등록 매물 찾아보기</Link>
-              <Link href="/properties/map" onClick={() => setOpen(false)} className="rounded-xl bg-[#F8F9FB] px-2.5 py-1.5 text-xs font-semibold">📍 지도에서 매물 찾기</Link>
-              <button type="button" onClick={() => { setInquiryOpen(true); setResult(""); }} className="rounded-xl bg-[#FFF7DE] px-2.5 py-1.5 text-left text-xs font-extrabold text-[#0A2342]">✍️ 매물·상담 문의하기</button>
-              <a href="tel:01077750014" onClick={() => setOpen(false)} className="rounded-xl bg-[#F8F9FB] px-2.5 py-1.5 text-xs font-semibold">☎ 전화 상담 연결</a>
-              <a href="sms:01077750014" onClick={() => setOpen(false)} className="rounded-xl bg-[#F8F9FB] px-2.5 py-1.5 text-xs font-semibold">💬 문자로 문의하기</a>
+              <Link href="/properties" onClick={() => setOpen(false)} className="rounded-xl bg-[#F8F9FB] px-2.5 py-1.5 text-xs font-semibold">🏠 매물찾기</Link>
+              <Link href="/properties/map" onClick={() => setOpen(false)} className="rounded-xl bg-[#F8F9FB] px-2.5 py-1.5 text-xs font-semibold">📍 지도보기</Link>
+              <button type="button" onClick={() => { setInquiryOpen(true); setResult(""); }} className="rounded-xl bg-[#FFF7DE] px-2.5 py-1.5 text-left text-xs font-extrabold text-[#0A2342]">💬 상담하기</button>
+              <a href="tel:01077750014" onClick={() => setOpen(false)} className="rounded-xl bg-[#F8F9FB] px-2.5 py-1.5 text-xs font-semibold">☎ 전화연결</a>
+              <a href="sms:01077750014" onClick={() => setOpen(false)} className="rounded-xl bg-[#F8F9FB] px-2.5 py-1.5 text-xs font-semibold">✉️ 문자문의</a>
             </div>
           ) : (
             <form onSubmit={submitInquiry} className="p-3">
