@@ -6,11 +6,9 @@ import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useState } from "react";
 
 const navItems = [
-  { label: "HOME", href: "/" },
-  { label: "회사소개", href: "/#about", sectionId: "about" },
-  { label: "전문분야", href: "/#services", sectionId: "services" },
   { label: "매물검색", href: "/properties" },
-  { label: "고객후기", href: "/#reviews", sectionId: "reviews" },
+  { label: "전문분야", href: "/#services", sectionId: "services" },
+  { label: "회사소개", href: "/#about", sectionId: "about" },
   { label: "상담문의", href: "/contact" },
 ];
 
@@ -72,6 +70,8 @@ export default function Header() {
             <img src="/brand-logo?v=20260901-header-inset" alt="백조현대부동산중개" className="h-[76px] w-auto object-contain sm:h-[92px] xl:h-[116px] 2xl:h-[120px]" />
           </Link>
 
+          <a href="tel:01077750014" aria-label="010-7775-0014 전화 상담 연결" className="hidden xl:absolute xl:left-[43%] xl:flex xl:-translate-x-1/2 items-center gap-2 text-[#071f3b] hover:text-[#C9A227] transition-colors"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-9 w-9 2xl:h-11 2xl:w-11"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.56 3.58.56a1 1 0 011 1V20a1 1 0 01-1 1C10.61 21 3 13.39 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.46.56 3.58a1 1 0 01-.25 1.01l-2.19 2.2z"/></svg><span className="whitespace-nowrap text-[19px] font-extrabold tracking-tight 2xl:text-[23px]">010-7775-0014</span></a>
+
           <nav className="ml-auto hidden items-center xl:flex">
             {navItems.map((item, index) => (
               <div key={item.label} className="flex items-center">
@@ -83,6 +83,7 @@ export default function Header() {
             ))}
           </nav>
 
+          <a href="tel:01077750014" className="ml-auto mr-4 flex items-center gap-1.5 text-sm font-extrabold text-[#071f3b] xl:hidden" aria-label="전화 상담 010-7775-0014">☎ <span className="hidden sm:inline">010-7775-0014</span></a>
           <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className={`ml-auto text-2xl xl:hidden ${textClass}`} aria-label="메뉴 열기">☰</button>
         </div>
 
