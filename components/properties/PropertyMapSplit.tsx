@@ -7,14 +7,19 @@ import {deriveLocationFromAddress} from "@/lib/property-normalize";
 import {formatPropertyPriceDisplay} from "@/lib/property-price";
 type Props={items:Property[];onOpen:(id:number)=>void};
 export default function PropertyMapSplit({items,onOpen}:Props){
- const ref=useRef<HTMLDivElement>(null),mapRef=useRef<any>(null),markers=useRef<any[]>([]),geocoded=useRef(new Map<number,{lat:number,lng:number}>());
+ const ref=useRef<HTMLDivElement>(null),mapRef=useRef<any>(null),clustererRef=useRef<any>(null),markers=useRef<any[]>([]),geocoded=useRef(new Map<number,{lat:number,lng:number}>());
  const key=process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY; const [ready,setReady]=useState(false),[selected,setSelected]=useState<number|null>(null);
- const draw=useCallback(()=>{const k=window.kakao?.maps as any,map=mapRef.current;if(!k||!map)return;markers.current.forEach(m=>m.setMap(null));markers.current=[];items.forEach(p=>{const c=geocoded.current.get(p.id);if(!c)return;const marker=new k.Marker({map,position:new k.LatLng(c.lat,c.lng)});k.event.addListener(marker,"click",()=>{setSelected(p.id);document.getElementById(`map-property-${p.id}`)?.scrollIntoView({behavior:"smooth",block:"nearest"});});markers.current.push(marker);});},[items]);
+ const draw=useCallback(()=>{const k=window.kakao?.maps as any,map=mapRef.current;if(!k||!map)return;
+  if(!clustererRef.current){clustererRef.current=new k.MarkerClusterer({map,averageCenter:true,minLevel:5,disableClickZoom:false,gridSize:70,styles:[{width:"48px",height:"48px",background:"#1677e8",borderRadius:"50%",color:"#fff",textAlign:"center",lineHeight:"48px",fontSize:"15px",fontWeight:"800",boxShadow:"0 2px 8px rgba(0,0,0,.2)",border:"2px solid #fff"}]});}
+  clustererRef.current.clear();markers.current.forEach(m=>m.setMap(null));markers.current=[];
+  items.forEach(p=>{const c=geocoded.current.get(p.id);if(!c)return;const marker=new k.Marker({position:new k.LatLng(c.lat,c.lng)});k.event.addListener(marker,"click",()=>{setSelected(p.id);document.getElementById(`map-property-${p.id}`)?.scrollIntoView({behavior:"smooth",block:"nearest"});});markers.current.push(marker);});
+  clustererRef.current.addMarkers(markers.current);
+ },[items]);
  const locate=useCallback(()=>{const k=window.kakao?.maps as any;if(!k||!mapRef.current)return;const g=new k.services.Geocoder();items.forEach(p=>{if(geocoded.current.has(p.id)){draw();return;}const address=String(p.address||p.location||"").trim();if(!address)return;g.addressSearch(address,(r:any[],s:string)=>{if(s===k.services.Status.OK&&r[0]){geocoded.current.set(p.id,{lat:+r[0].y,lng:+r[0].x});draw();}});});},[items,draw]);
  const init=useCallback(()=>{const k=window.kakao?.maps as any;if(!k||!ref.current||mapRef.current)return;k.load(()=>{const map=new k.Map(ref.current,{center:new k.LatLng(35.6939,128.4598),level:8});mapRef.current=map;setReady(true);locate();});},[locate]);
  useEffect(()=>{if(key&&window.kakao?.maps)init()},[key,init]);useEffect(()=>{if(ready)locate()},[items,ready,locate]);
  return <div className="mt-6 overflow-hidden rounded-2xl border border-[#0A2342]/10 bg-white shadow-sm">
- {key&&<Script id="property-search-map-sdk" src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&autoload=false&libraries=services`} strategy="afterInteractive" onLoad={init} onReady={init}/>}
+ {key&&<Script id="property-search-map-sdk" src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&autoload=false&libraries=services,clusterer`} strategy="afterInteractive" onLoad={init} onReady={init}/>}
  <div className="grid min-h-[680px] lg:grid-cols-[2fr_1fr]">
   <div className="relative min-h-[430px] lg:min-h-[680px]"><div ref={ref} className="absolute inset-0 bg-slate-100"/><div className="absolute left-4 top-4 z-10 rounded-full bg-white/95 px-4 py-2 text-xs font-bold shadow">지도에 {items.length}개 매물</div></div>
   <div className="max-h-[680px] overflow-y-auto border-l border-[#0A2342]/10 bg-[#F7F8FA]">
