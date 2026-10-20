@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPropertyPriceDisplay, parsePropertyPriceAmount } from "@/lib/property-price";
 import { deriveLocationFromAddress } from "@/lib/property-normalize";
@@ -34,6 +36,14 @@ function publicLocation(property: Property) {
 }
 
 export default function PropertiesPage() {
+  return <Suspense fallback={<main className="min-h-screen bg-[#F8F9FB]" />}><PropertiesContent /></Suspense>;
+}
+
+function PropertiesContent() {
+  const searchParams = useSearchParams();
+  const requestedType = searchParams.get("type") || "";
+  const typeGroups: Record<string, string[]> = { "소형주택": ["원룸","미니투룸","투룸"], "주택": ["쓰리룸","단독주택","상가주택","다가구"], "창고·공장": ["창고","공장","토지"] };
+  const allowedTypes = typeGroups[requestedType] || (requestedType ? [requestedType] : []);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -44,7 +54,7 @@ export default function PropertiesPage() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [featuredOnly, setFeaturedOnly] = useState(false);
-  const [sortOption, setSortOption] = useState<SortOption>("추천순");
+  const [sortOption, setSortOption] = useState<SortOption>("최신순");
   const [currentPage, setCurrentPage] = useState(1);
   const skipResetRef = useRef(true);
   const restoreScrollRef = useRef<number | null>(null);
@@ -52,7 +62,7 @@ export default function PropertiesPage() {
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(SEARCH_STATE_KEY);
-      if (raw) {
+      if (raw && !requestedType) {
         const saved = JSON.parse(raw) as Partial<SavedSearchState>;
         setKeyword(String(saved.keyword || ""));
         setPropertyType(String(saved.propertyType || ALL));
@@ -61,13 +71,13 @@ export default function PropertiesPage() {
         setMinPrice(String(saved.minPrice || ""));
         setMaxPrice(String(saved.maxPrice || ""));
         setFeaturedOnly(Boolean(saved.featuredOnly));
-        setSortOption((saved.sortOption || "추천순") as SortOption);
+        setSortOption((saved.sortOption || "최신순") as SortOption);
         setCurrentPage(Math.max(1, Number(saved.currentPage || 1)));
         restoreScrollRef.current = Math.max(0, Number(saved.scrollY || 0));
       }
     } catch (error) { console.warn("검색 상태 복원 경고:", error); }
     window.setTimeout(() => { skipResetRef.current = false; }, 0);
-  }, []);
+  }, [requestedType]);
 
   useEffect(() => {
     async function load() {
@@ -112,6 +122,7 @@ export default function PropertiesPage() {
       const searchable = [property.title, property.location, property.address, property.description, property.price, property.type, property.deal_type].filter(Boolean).join(" ").toLowerCase();
       const amount = property.price_amount ?? parsePropertyPriceAmount(property.price);
       return (!query || searchable.includes(query))
+        && (allowedTypes.length === 0 || allowedTypes.includes(String(property.type || "")))
         && (propertyType === ALL || property.type === propertyType)
         && (dealType === ALL || property.deal_type === dealType)
         && (location === ALL || property.location === location)
@@ -126,7 +137,7 @@ export default function PropertiesPage() {
       const at = new Date(a.bumped_at || a.created_at || 0).getTime(); const bt = new Date(b.bumped_at || b.created_at || 0).getTime();
       return sortOption === "오래된순" ? at - bt : bt - at;
     });
-  }, [properties, keyword, propertyType, dealType, location, minPrice, maxPrice, featuredOnly, sortOption]);
+  }, [properties, keyword, requestedType, propertyType, dealType, location, minPrice, maxPrice, featuredOnly, sortOption]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProperties.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
@@ -135,7 +146,7 @@ export default function PropertiesPage() {
   const pages = useMemo(() => { const end = Math.min(totalPages, Math.max(5, safePage + 2)); const start = Math.max(1, end - 4); return Array.from({ length: end - start + 1 }, (_, i) => start + i); }, [safePage, totalPages]);
 
   function saveSearchPosition() { const state:SavedSearchState = { keyword, propertyType, dealType, location, minPrice, maxPrice, featuredOnly, sortOption, currentPage:safePage, scrollY:window.scrollY }; sessionStorage.setItem(SEARCH_STATE_KEY, JSON.stringify(state)); }
-  function resetFilters() { setKeyword(""); setPropertyType(ALL); setDealType(ALL); setLocation(ALL); setMinPrice(""); setMaxPrice(""); setFeaturedOnly(false); setSortOption("추천순"); setCurrentPage(1); sessionStorage.removeItem(SEARCH_STATE_KEY); }
+  function resetFilters() { setKeyword(""); setPropertyType(ALL); setDealType(ALL); setLocation(ALL); setMinPrice(""); setMaxPrice(""); setFeaturedOnly(false); setSortOption("최신순"); setCurrentPage(1); sessionStorage.removeItem(SEARCH_STATE_KEY); }
   function moveToPage(page: number) { setCurrentPage(Math.min(Math.max(page, 1), totalPages)); window.scrollTo({ top: 420, behavior: "smooth" }); }
 
   return <main className="min-h-screen bg-[#F8F9FB] text-[#0A2342]">
