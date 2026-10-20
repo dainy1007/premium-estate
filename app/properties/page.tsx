@@ -154,15 +154,15 @@ function PropertiesContent() {
     <section className="mx-auto max-w-7xl px-3 py-4 sm:px-6 md:py-10">
       <div className="z-30 rounded-2xl border border-[#0A2342]/10 bg-white p-3 shadow-sm sm:p-5 md:sticky md:top-4 md:shadow-[0_12px_30px_-20px_rgba(10,35,66,0.55)]">
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-[2fr_1fr_1fr_1fr]">
-          <div className="col-span-2 lg:col-span-1"><Field label="검색어"><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="매물명, 주소, 지역, 설명 검색" className="input" /></Field></div>
+          <div className="col-span-2 lg:col-span-1"><Field label="검색어"><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="매물명, 주소, 지역 검색" className="input !min-h-0 !py-2 !text-sm" /></Field></div>
           <SelectField label="매물유형" value={propertyType} options={propertyTypes} onChange={setPropertyType} />
           <SelectField label="거래유형" value={dealType} options={dealTypes} onChange={setDealType} />
           <SelectField label="지역" value={location} options={locations} onChange={setLocation} />
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2 lg:max-w-2xl"><PriceField label="최저가격" value={minPrice} onChange={setMinPrice} /><PriceField label="최고가격" value={maxPrice} onChange={setMaxPrice} /></div>
-        <div className="mt-3 flex flex-col gap-2 border-t border-[#0A2342]/10 pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-2 flex flex-col gap-2 border-t border-[#0A2342]/10 pt-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-[#0A2342]/65">공개 매물 {properties.length}개 중 <strong>{filteredProperties.length}개</strong></p>
-          <div className="flex flex-wrap gap-3"><button type="button" onClick={() => setFeaturedOnly((v) => !v)} className={`rounded-full border px-4 py-2 text-sm font-semibold ${featuredOnly ? "border-[#C9A227] bg-[#C9A227]/15" : "border-[#0A2342]/15"}`}>추천만 보기</button><select value={sortOption} onChange={(e) => setSortOption(e.target.value as SortOption)} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm">{(["추천순", "최신순", "오래된순", "이름순", "낮은가격순", "높은가격순"] as SortOption[]).map((v) => <option key={v}>{v}</option>)}</select><button type="button" onClick={resetFilters} className="rounded-full border border-[#0A2342]/15 px-4 py-2 text-sm font-semibold">조건 초기화</button></div>
+          <div className="flex flex-wrap gap-1.5"><button type="button" onClick={() => setFeaturedOnly((v) => !v)} className={`rounded-full border px-2.5 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-semibold ${featuredOnly ? "border-[#C9A227] bg-[#C9A227]/15" : "border-[#0A2342]/15"}`}>추천만 보기</button><select value={sortOption} onChange={(e) => setSortOption(e.target.value as SortOption)} className="rounded-full border border-[#0A2342]/15 bg-white px-2.5 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">{(["추천순", "최신순", "오래된순", "이름순", "낮은가격순", "높은가격순"] as SortOption[]).map((v) => <option key={v}>{v}</option>)}</select><button type="button" onClick={resetFilters} className="rounded-full border border-[#0A2342]/15 px-2.5 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-semibold">조건 초기화</button></div>
         </div>
       </div>
       {loading && <p className="py-20 text-center text-[#0A2342]/60">매물을 불러오는 중입니다...</p>}
@@ -174,9 +174,9 @@ function PropertiesContent() {
   </main>;
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <div><label className="mb-2 block text-sm font-semibold">{label}</label>{children}</div>; }
-function SelectField({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) { return <Field label={label}><select value={value} onChange={(e) => onChange(e.target.value)} className="input">{options.map((v) => <option key={v}>{v}</option>)}</select></Field>; }
-function PriceField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) { return <Field label={label}><select value={value} onChange={(e) => onChange(e.target.value)} className="input">{PRICE_OPTIONS.map(([text, val]) => <option key={`${label}-${val}`} value={val}>{text}</option>)}</select></Field>; }
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <div><label className="mb-1 block text-xs font-semibold sm:text-sm">{label}</label>{children}</div>; }
+function SelectField({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) { return <Field label={label}><select value={value} onChange={(e) => onChange(e.target.value)} className="input !min-h-0 !py-2 !text-sm">{options.map((v) => <option key={v}>{v}</option>)}</select></Field>; }
+function PriceField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) { return <Field label={label}><select value={value} onChange={(e) => onChange(e.target.value)} className="input !min-h-0 !py-2 !text-sm">{PRICE_OPTIONS.map(([text, val]) => <option key={`${label}-${val}`} value={val}>{text}</option>)}</select></Field>; }
 function PageButton({ children, disabled, onClick }: { children: React.ReactNode; disabled: boolean; onClick: () => void }) { return <button disabled={disabled} onClick={onClick} className="rounded-full border border-[#0A2342]/15 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-35">{children}</button>; }
 function Badge({ children }: { children: React.ReactNode }) { return <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#0A2342] shadow-sm">{children}</span>; }
 function StatusBadge({ children }: { children: React.ReactNode }) { return <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-sm">{children}</span>; }
