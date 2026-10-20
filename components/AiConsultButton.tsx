@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function AiConsultButton() {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [inquiryOpen, setInquiryOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
